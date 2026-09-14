@@ -1352,6 +1352,96 @@ footer {
   color: var(--success);
 }
 
+.cost-tag {
+  display: inline-block;
+  margin-inline-start: 4px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  vertical-align: middle;
+  background: rgba(244,168,37,0.16);
+  color: var(--accent);
+}
+
+/* Single-mode share card */
+.single-share-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 0 16px 24px;
+}
+
+.single-share-card {
+  width: 100%;
+  max-width: 480px;
+  background: linear-gradient(160deg, var(--bg-card), var(--bg-card-hover));
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  text-align: center;
+}
+
+.single-share-card h2 {
+  margin: 0 0 4px;
+  font-size: 1.3rem;
+}
+
+.single-share-card .share-tagline {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  margin-bottom: 16px;
+}
+
+.single-share-card .share-rating {
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.single-share-card .share-rating-label {
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  margin-bottom: 18px;
+}
+
+.share-player-list {
+  text-align: right;
+  margin-bottom: 14px;
+}
+
+.share-player-list h4 {
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  margin: 10px 0 6px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 4px;
+}
+
+.share-player-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  padding: 3px 0;
+}
+
+.share-player-row .name {
+  font-weight: 700;
+}
+
+.share-player-row .rating {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.single-share-card .share-footer {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+  color: var(--text-dim);
+  font-size: 0.7rem;
+}
+
 .squad-rating-summary {
   text-align: center;
   color: var(--text-dim);

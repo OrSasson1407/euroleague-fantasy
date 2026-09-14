@@ -157,9 +157,10 @@
   <section id="screen-start" class="screen">
     <div class="center-box">
       <p style="color:var(--text-dim); max-width:520px; margin:0 auto 24px;">
-        בכל סיבוב תוגרל קבוצה ועונה אקראית. תראו את כל שחקני הסגל של אותה עונה ותבחרו שחקן אחד להרכב שלכם.
+        בכל סיבוב תוגרל קבוצה ועונה אקראית. תראו את כל שחקני הסגל של אותה עונה, ולכל שחקן זמין תבחרו בעצמכם אם הוא משתבץ לחמישייה הפותחת או לספסל.
         שחקן שכבר נבחר (מכל עונה שלו) לא יהיה זמין לבחירה נוספת.
         החמישייה הפותחת והספסל כל אחד מורכב מ-2 מגנים, 2 חלוצים וסנטר - כל שחקן משתבץ לפי העמדה האמיתית שלו בלבד.
+        בסיום הדראפט תוכלו גם להחליף שחקנים בין החמישייה לספסל (רק באותה עמדה).
       </p>
       <div class="era-filter">
         <div class="era-filter-label">טווח עידן להרכב:</div>
@@ -174,6 +175,14 @@
         <div class="era-filter-label">שיטת משחק (תצוגתית - מראה איזה שחקנים מתאימים להרכב):</div>
         <div class="system-select-grid" id="single-system-grid"></div>
       </div>
+      <div class="era-filter">
+        <div class="era-filter-label">מצב תקציב:</div>
+        <div class="era-filter-buttons" id="budget-mode-buttons">
+          <button class="era-btn selected" data-budget="0">רגיל (בלי מגבלה)</button>
+          <button class="era-btn" data-budget="650">תקציב מוגבל (650 נק')</button>
+        </div>
+      </div>
+      <p class="career-last-summary" id="single-best-display" hidden></p>
       <button id="btn-start">התחלת משחק</button>
       <div style="margin-top:16px;"><button class="secondary" id="btn-home-from-start">חזרה לדף הבית</button></div>
     </div>
@@ -200,6 +209,29 @@
     <div class="players-grid" id="players-grid"></div>
   </section>
 
+  <section id="screen-single-lineup" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 style="margin-top:0;">סדרו את ההרכב</h2>
+      <p style="color:var(--text-dim); max-width:560px; margin:0 auto 24px;">
+        לפני שממשיכים - אפשר להחליף שחקנים בין החמישייה הפותחת לספסל. לחצו על שחקן ואז על שחקן אחר באותה עמדה כדי להחליף ביניהם.
+      </p>
+    </div>
+    <div class="h2h-status">
+      <div class="h2h-player-panel" id="single-lineup-starters-panel">
+        <div class="h2h-player-name">חמישייה פותחת</div>
+        <div class="h2h-slots" id="single-lineup-starters"></div>
+      </div>
+      <div class="h2h-player-panel" id="single-lineup-bench-panel">
+        <div class="h2h-player-name">ספסל</div>
+        <div class="h2h-slots" id="single-lineup-bench"></div>
+      </div>
+    </div>
+    <div class="final-actions">
+      <button id="btn-single-lineup-continue">המשך &raquo;</button>
+      <button class="secondary" id="btn-home-from-single-lineup">לדף הבית</button>
+    </div>
+  </section>
+
   <section id="screen-final" class="screen">
     <div class="center-box" style="padding-top:0;">
       <h2 style="margin-top:0;">ההרכב שלכם מוכן!</h2>
@@ -214,8 +246,29 @@
       <div class="squad-grid" id="bench-grid"></div>
     </div>
     <div class="final-actions">
+      <button id="btn-single-share">🖼️ כרטיס לשיתוף</button>
+      <button id="btn-single-exhibition">🏀 משחק תערוכה</button>
       <button id="btn-restart">משחק חדש</button>
       <button class="secondary" id="btn-home-from-final">לדף הבית</button>
+    </div>
+  </section>
+
+  <section id="screen-single-share" class="screen">
+    <div class="single-share-wrap">
+      <div class="single-share-card" id="single-share-card"></div>
+    </div>
+    <div class="final-actions">
+      <button class="secondary" id="btn-single-share-back">חזרה &raquo;</button>
+    </div>
+  </section>
+
+  <section id="screen-single-exhibition" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 style="margin-top:0;">משחק תערוכה</h2>
+    </div>
+    <div id="single-exhibition-content"></div>
+    <div class="final-actions">
+      <button class="secondary" id="btn-single-exhibition-back">חזרה &raquo;</button>
     </div>
   </section>
 

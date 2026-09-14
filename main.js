@@ -5,7 +5,10 @@
     home: "screen-home",
     start: "screen-start",
     round: "screen-round",
+    singleLineup: "screen-single-lineup",
     final: "screen-final",
+    singleShare: "screen-single-share",
+    singleExhibition: "screen-single-exhibition",
     h2hSetup: "screen-h2h-setup",
     h2hDraft: "screen-h2h-draft",
     h2hSystem: "screen-h2h-system",
@@ -135,6 +138,9 @@
     window.LeagueGame.showTeamSelect();
   });
   document.getElementById("btn-home-from-start").addEventListener("click", function () {
+    showScreen("home");
+  });
+  document.getElementById("btn-home-from-single-lineup").addEventListener("click", function () {
     showScreen("home");
   });
   document.getElementById("btn-home-from-final").addEventListener("click", function () {

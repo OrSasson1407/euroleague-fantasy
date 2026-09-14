@@ -8,6 +8,7 @@
     { id: "single_first", title: "צעד ראשון", desc: "השלמתם הרכב אחד במצב בניית סגל", icon: "🥉" },
     { id: "single_elite", title: "סגל עלית", desc: "השלמתם הרכב עם דירוג משוקלל של 85 ומעלה", icon: "💎" },
     { id: "single_legend", title: "כוכב-על", desc: "שיבצתם בהרכב שחקן עם דירוג 95 ומעלה", icon: "🌟" },
+    { id: "single_exhibition_win", title: "ניצחון תערוכה", desc: "ניצחתם במשחק תערוכה חד-פעמי במצב בניית סגל", icon: "🎮" },
     { id: "h2h_first_win", title: "ניצחון ראשון", desc: "ניצחתם סדרת 1 על 1 ראשונה", icon: "🥇" },
     { id: "h2h_sweep", title: "מטאטא", desc: "ניצחתם סדרת 1 על 1 בתוצאה 2-0", icon: "🧹" },
     { id: "h2h_upset", title: "רוח גבית", desc: "ניצחתם ב-1 על 1 למרות דירוג ממוצע נמוך יותר מהיריב", icon: "🐎" },
