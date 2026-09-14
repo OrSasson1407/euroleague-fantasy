@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>בונה הקבוצה של כל הזמנים - יורוליג</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>הרכב כל הזמנים - יורוליג</h1>
+    <p>בחרו מצב משחק</p>
+  </header>
+
+  <section id="screen-home" class="screen active">
+    <div class="center-box">
+      <div class="mode-cards">
+        <button class="mode-card" id="btn-mode-single">
+          <div class="mode-card-title">בניית סגל</div>
+          <div class="mode-card-desc">10 סיבובים - הרכיבו הרכב חלומי אחד (חמישייה פותחת + ספסל) מתוך היסטוריית היורוליג</div>
+        </button>
+        <button class="mode-card" id="btn-mode-h2h">
+          <div class="mode-card-title">1 על 1</div>
+          <div class="mode-card-desc">התמודדו מול חבר או מול המחשב - כל אחד בונה חמישייה (2 מגנים, 2 חלוצים, סנטר), ובסוף נראה מי מנצח בסימולציה</div>
+        </button>
+        <button class="mode-card" id="btn-mode-league">
+          <div class="mode-card-title">ליגה</div>
+          <div class="mode-card-desc">בחרו קבוצה אהובה, הרכיבו לה סגל של 10 שחקנים מכל השנים שלה, ואז שחקו נגד 19 קבוצות אמיתיות נוספות בליגה מלאה של 20</div>
+        </button>
+        <button class="mode-card" id="btn-mode-trivia">
+          <div class="mode-card-title">טריוויה</div>
+          <div class="mode-card-desc">בחרו לזהות קבוצה או לזהות עונה - 25 שאלות בכל נושא. כמה תקלעו?</div>
+        </button>
+        <button class="mode-card" id="btn-mode-badges">
+          <div class="mode-card-title">🏅 באנרים</div>
+          <div class="mode-card-desc">אספו באנרים על הישגים בכל המשחקונים - כמה תצליחו לפתוח?</div>
+        </button>
+        <button class="mode-card" id="btn-mode-player-search">
+          <div class="mode-card-title">🔍 פרופיל שחקן</div>
+          <div class="mode-card-desc">חפשו כל שחקן מתוך היסטוריית היורוליג וראו את כל העונות שלו, כולל היסטוריית דירוג</div>
+        </button>
+        <button class="mode-card" id="btn-mode-career">
+          <div class="mode-card-title">🏀 קריירה</div>
+          <div class="mode-card-desc">התחילו כשחקן בן 16 באקדמיה, התפתחו עד לליגה המקצוענית, ונהלו קריירה שלמה עד הפרישה</div>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section id="screen-badges" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 style="margin-top:0;">באנרים</h2>
+      <p class="badges-progress" id="badges-progress"></p>
+    </div>
+    <div class="badges-grid" id="badges-grid"></div>
+    <div class="final-actions">
+      <button class="secondary" id="btn-home-from-badges">לדף הבית</button>
+    </div>
+  </section>
+
+  <section id="screen-player-search" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 style="margin-top:0;">פרופיל שחקן</h2>
+      <input type="text" id="player-search-input" class="player-search-input" placeholder="הקלידו שם שחקן, למשל Nikos Zisis..." />
+    </div>
+    <div class="player-search-results" id="player-search-results"></div>
+    <div class="player-profile" id="player-profile" hidden></div>
+    <div class="final-actions">
+      <button class="secondary" id="btn-home-from-player-search">לדף הבית</button>
+    </div>
+  </section>
+
+  <section id="screen-career-home" class="screen">
+    <div class="center-box">
+      <h2 style="margin-top:0;">קריירה</h2>
+      <p style="color:var(--text-dim); max-width:520px; margin:0 auto 24px;">
+        התחילו כשחקן צעיר בגיל 16, התפתחו באקדמיה, הצטרפו לליגה המקצוענית ונהלו קריירה שלמה - חוזים, פציעות, נבחרת לאומית ופרישה.
+      </p>
+      <div id="career-continue-wrap" hidden style="margin-bottom:12px;">
+        <button id="btn-career-continue">המשך קריירה קיימת</button>
+      </div>
+      <button id="btn-career-new">קריירה חדשה</button>
+      <div class="career-last-summary" id="career-last-summary" hidden></div>
+      <div style="margin-top:16px;"><button class="secondary" id="btn-home-from-career-home">חזרה לדף הבית</button></div>
+    </div>
+  </section>
+
+  <section id="screen-career-create" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 style="margin-top:0;">יצירת שחקן (גיל 16)</h2>
+      <input type="text" id="career-name-input" class="player-search-input" placeholder="שם השחקן..." />
+    </div>
+    <div class="era-filter">
+      <div class="era-filter-label">עמדה:</div>
+      <div class="era-filter-buttons" id="career-position-buttons">
+        <button class="era-btn selected" data-pos="Guard">מגן</button>
+        <button class="era-btn" data-pos="Forward">חלוץ</button>
+        <button class="era-btn" data-pos="Center">סנטר</button>
+      </div>
+    </div>
+    <div class="era-filter">
+      <div class="era-filter-label">אקדמיה:</div>
+      <div class="system-select-grid" id="career-academy-grid"></div>
+    </div>
+    <div class="era-filter">
+      <div class="era-filter-label">תכונת אופי התחלתית:</div>
+      <div class="system-select-grid" id="career-archetype-grid"></div>
+    </div>
+    <div class="era-filter">
+      <div class="era-filter-label">רקע:</div>
+      <div class="system-select-grid" id="career-background-grid"></div>
+    </div>
+    <div class="era-filter">
+      <div class="era-filter-label">מצב קושי:</div>
+      <div class="system-select-grid" id="career-difficulty-grid"></div>
+    </div>
+    <div class="era-filter">
+      <div class="era-filter-label">חלוקת נקודות התחלתיות:</div>
+      <div class="career-points-row">
+        <button class="secondary" id="btn-career-def-plus">⬅ עוד הגנה</button>
+        <div class="career-points-item">
+          <span>התקפה: <strong id="career-off-points">50</strong></span>
+          <span>הגנה: <strong id="career-def-points">50</strong></span>
+        </div>
+        <button class="secondary" id="btn-career-off-plus">עוד התקפה ➡</button>
+      </div>
+    </div>
+    <div class="final-actions">
+      <button id="btn-career-start">התחילו קריירה &raquo;</button>
+      <button class="secondary" id="btn-home-from-career-create">לדף הבית</button>
+    </div>
+  </section>
+
+  <section id="screen-career-hub" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 id="career-hub-title" style="margin-top:0;"></h2>
+      <div class="round-meta" id="career-hub-status"></div>
+    </div>
+    <div id="career-hub-content"></div>
+    <div class="final-actions">
+      <button class="secondary" id="btn-home-from-career-hub">לדף הבית</button>
+    </div>
+  </section>
+
+  <section id="screen-career-summary" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 style="margin-top:0;">סיכום קריירה</h2>
+    </div>
+    <div id="career-summary-content"></div>
+    <div class="final-actions">
+      <button id="btn-career-new-2">קריירה חדשה</button>
+      <button class="secondary" id="btn-home-from-career-summary">לדף הבית</button>
+    </div>
+  </section>
+
+  <section id="screen-start" class="screen">
+    <div class="center-box">
+      <p style="color:var(--text-dim); max-width:520px; margin:0 auto 24px;">
+        בכל סיבוב תוגרל קבוצה ועונה אקראית. תראו את כל שחקני הסגל של אותה עונה ותבחרו שחקן אחד להרכב שלכם.
+        שחקן שכבר נבחר (מכל עונה שלו) לא יהיה זמין לבחירה נוספת.
+        החמישייה הפותחת והספסל כל אחד מורכב מ-2 מגנים, 2 חלוצים וסנטר - כל שחקן משתבץ לפי העמדה האמיתית שלו בלבד.
+      </p>
+      <div class="era-filter">
+        <div class="era-filter-label">טווח עידן להרכב:</div>
+        <div class="era-filter-buttons" id="era-filter-buttons">
+          <button class="era-btn selected" data-min="0" data-max="9999">כל הזמנים</button>
+          <button class="era-btn" data-min="2000" data-max="2009">2000-2009</button>
+          <button class="era-btn" data-min="2010" data-max="2019">2010-2019</button>
+          <button class="era-btn" data-min="2020" data-max="2026">2020-2026</button>
+        </div>
+      </div>
+      <div class="era-filter">
+        <div class="era-filter-label">שיטת משחק (תצוגתית - מראה איזה שחקנים מתאימים להרכב):</div>
+        <div class="system-select-grid" id="single-system-grid"></div>
+      </div>
+      <button id="btn-start">התחלת משחק</button>
+      <div style="margin-top:16px;"><button class="secondary" id="btn-home-from-start">חזרה לדף הבית</button></div>
+    </div>
+  </section>
+
+  <section id="screen-round" class="screen">
+    <div class="progress-bar" id="progress-bar"></div>
+    <div class="round-meta" id="round-meta"></div>
+    <div class="h2h-status">
+      <div class="h2h-player-panel" id="round-starters-panel">
+        <div class="h2h-player-name">חמישייה פותחת</div>
+        <div class="h2h-slots" id="round-starters-slots"></div>
+      </div>
+      <div class="h2h-player-panel" id="round-bench-panel">
+        <div class="h2h-player-name">ספסל</div>
+        <div class="h2h-slots" id="round-bench-slots"></div>
+      </div>
+    </div>
+    <div class="team-card">
+      <div class="team-name" id="round-team"></div>
+      <div class="team-season" id="round-season"></div>
+      <button class="secondary reroll-btn" id="btn-reroll">🔄 הגרלה מחדש (<span id="reroll-count">2</span>)</button>
+    </div>
+    <div class="players-grid" id="players-grid"></div>
+  </section>
+
+  <section id="screen-final" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 style="margin-top:0;">ההרכב שלכם מוכן!</h2>
+      <div class="squad-rating-summary" id="squad-rating-summary"></div>
+    </div>
+    <div class="squad-section">
+      <h2>חמישייה פותחת</h2>
+      <div class="squad-grid" id="starters-grid"></div>
+    </div>
+    <div class="squad-section">
+      <h2>ספסל</h2>
+      <div class="squad-grid" id="bench-grid"></div>
+    </div>
+    <div class="final-actions">
+      <button id="btn-restart">משחק חדש</button>
+      <button class="secondary" id="btn-home-from-final">לדף הבית</button>
+    </div>
+  </section>
+
+  <section id="screen-h2h-setup" class="screen">
+    <div class="center-box">
+      <h2 style="margin-top:0;">1 על 1</h2>
+      <p style="color:var(--text-dim); max-width:520px; margin:0 auto 24px;">
+        כל שחקן מרכיב חמישייה: 2 מגנים, 2 חלוצים וסנטר אחד. התורות מתחלפים בין שני הצדדים -
+        בכל תור תוגרל קבוצה ועונה אקראית ותבחרו שחקן זמין מהסגל שלה. בסוף הבחירה תשוחק הסדרה משחק אחר משחק.
+      </p>
+      <div class="era-filter">
+        <div class="era-filter-label">פורמט הסדרה:</div>
+        <div class="era-filter-buttons" id="h2h-format-buttons">
+          <button class="era-btn selected" data-games-to-win="2">Bo3 (עד 2 ניצחונות)</button>
+          <button class="era-btn" data-games-to-win="3">Bo5 (עד 3 ניצחונות)</button>
+        </div>
+      </div>
+      <div class="h2h-setup-buttons">
+        <button id="btn-h2h-vs-friend">נגד חבר (באותו מחשב)</button>
+        <button id="btn-h2h-vs-computer">נגד המחשב</button>
+      </div>
+      <div style="margin-top:16px;"><button class="secondary" id="btn-home-from-h2hsetup">חזרה לדף הבית</button></div>
+    </div>
+  </section>
+
+  <section id="screen-h2h-draft" class="screen">
+    <div class="h2h-status">
+      <div class="h2h-player-panel" id="h2h-panel-1">
+        <div class="h2h-player-name" id="h2h-player1-label">שחקן 1</div>
+        <div class="h2h-slots" id="h2h-slots-1"></div>
+      </div>
+      <div class="h2h-turn-indicator" id="h2h-turn-indicator"></div>
+      <div class="h2h-player-panel" id="h2h-panel-2">
+        <div class="h2h-player-name" id="h2h-player2-label">שחקן 2</div>
+        <div class="h2h-slots" id="h2h-slots-2"></div>
+      </div>
+    </div>
+    <div class="team-card">
+      <div class="team-name" id="h2h-round-team"></div>
+      <div class="team-season" id="h2h-round-season"></div>
+      <button class="secondary reroll-btn" id="btn-h2h-reroll">🔄 הגרלה מחדש (<span id="h2h-reroll-count">2</span>)</button>
+    </div>
+    <div class="players-grid" id="h2h-players-grid"></div>
+  </section>
+
+  <section id="screen-h2h-system" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 style="margin-top:0;" id="h2h-system-title">בחרו שיטת משחק</h2>
+      <p style="color:var(--text-dim); max-width:560px; margin:0 auto 24px;">
+        שחקנים שמתאימים לשיטה מקבלים בונוס להתקפה/הגנה, ומי שלא - קנס קטן. משפיע על כל 5 השחקנים.
+      </p>
+    </div>
+    <div class="system-select-grid" id="h2h-system-grid"></div>
+    <div class="final-actions">
+      <button class="secondary" id="btn-home-from-h2hsystem">לדף הבית</button>
+    </div>
+  </section>
+
+  <section id="screen-h2h-game" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 style="margin-top:0;">משחק בסדרה</h2>
+      <div class="round-meta" id="h2h-game-status"></div>
+    </div>
+    <div class="h2h-series-log" id="h2h-series-log-live"></div>
+    <div class="h2h-game-preview" id="h2h-game-preview"></div>
+    <div class="final-actions">
+      <button id="btn-h2h-game-next">הצג תוצאה &raquo;</button>
+      <button class="secondary" id="btn-home-from-h2hgame">לדף הבית</button>
+    </div>
+  </section>
+
+  <section id="screen-h2h-result" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 id="h2h-result-title" style="margin-top:0;"></h2>
+      <div class="h2h-series-log" id="h2h-series-log"></div>
+      <div class="h2h-score-board" id="h2h-score-board"></div>
+    </div>
+    <div class="h2h-final-rosters">
+      <div class="h2h-final-team">
+        <h3 id="h2h-final-team1-name"></h3>
+        <div class="squad-grid" id="h2h-final-team1-grid"></div>
+      </div>
+      <div class="h2h-final-team">
+        <h3 id="h2h-final-team2-name"></h3>
+        <div class="squad-grid" id="h2h-final-team2-grid"></div>
+      </div>
+    </div>
+    <div class="final-actions">
+      <button id="btn-h2h-rematch">משחק חוזר (אותם הרכבים)</button>
+      <button id="btn-h2h-restart">משחק חדש</button>
+      <button class="secondary" id="btn-home-from-h2hresult">לדף הבית</button>
+    </div>
+  </section>
+
+  <section id="screen-league-team-select" class="screen">
+    <div class="center-box">
+      <h2 style="margin-top:0;">בחרו קבוצה</h2>
+      <p style="color:var(--text-dim); max-width:520px; margin:0 auto 24px;">
+        בחרו את הקבוצה האהובה עליכם. לאחר מכן תרכיבו לה סגל של 10 שחקנים: 2 מגנים, 2 חלוצים וסנטר בחמישייה הפותחת, ואותו הרכב עמדות בספסל. בכל בחירה תוכלו לבחור בעצמכם אם השחקן משתבץ לחמישייה הפותחת או לספסל - כל עוד יש שם מקום פנוי בעמדה שלו. בכל סיבוב תוגרל עונה אקראית של אותה קבוצה בלבד.
+      </p>
+      <div class="team-select-grid" id="league-team-grid"></div>
+      <div style="margin-top:16px;"><button class="secondary" id="btn-home-from-league-teamselect">חזרה לדף הבית</button></div>
+    </div>
+  </section>
+
+  <section id="screen-league-draft" class="screen">
+    <div class="progress-bar" id="league-progress-bar"></div>
+    <div class="round-meta" id="league-round-meta"></div>
+    <div class="h2h-status">
+      <div class="h2h-player-panel" id="league-squad-panel-1">
+        <div class="h2h-player-name">חמישייה פותחת</div>
+        <div class="h2h-slots" id="league-squad-slots-1"></div>
+      </div>
+      <div class="h2h-player-panel" id="league-squad-panel-2">
+        <div class="h2h-player-name">ספסל</div>
+        <div class="h2h-slots" id="league-squad-slots-2"></div>
+      </div>
+    </div>
+    <div class="team-card">
+      <div class="team-name" id="league-round-team"></div>
+      <div class="team-season" id="league-round-season"></div>
+      <button class="secondary reroll-btn" id="btn-league-reroll">🔄 הגרלה מחדש (<span id="league-reroll-count">2</span>)</button>
+    </div>
+    <div class="players-grid" id="league-players-grid"></div>
+  </section>
+
+  <section id="screen-league-lineup" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 style="margin-top:0;">סדרו את ההרכב</h2>
+      <p style="color:var(--text-dim); max-width:560px; margin:0 auto 24px;">
+        לפני שהליגה מתחילה - אפשר להחליף שחקנים בין החמישייה הפותחת לספסל. לחצו על שחקן ואז על שחקן אחר באותה עמדה כדי להחליף ביניהם.
+      </p>
+    </div>
+    <div class="h2h-status">
+      <div class="h2h-player-panel" id="league-lineup-starters-panel">
+        <div class="h2h-player-name">חמישייה פותחת</div>
+        <div class="h2h-slots" id="league-lineup-starters"></div>
+      </div>
+      <div class="h2h-player-panel" id="league-lineup-bench-panel">
+        <div class="h2h-player-name">ספסל</div>
+        <div class="h2h-slots" id="league-lineup-bench"></div>
+      </div>
+    </div>
+    <div class="final-actions">
+      <button id="btn-league-lineup-continue">המשך לליגה &raquo;</button>
+      <button class="secondary" id="btn-home-from-league-lineup">לדף הבית</button>
+    </div>
+  </section>
+
+  <section id="screen-league-system" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 style="margin-top:0;">בחרו שיטת משחק</h2>
+      <p style="color:var(--text-dim); max-width:560px; margin:0 auto 24px;">
+        בתור המאמן, בחרו שיטת משחק לקבוצה שלכם לכל העונה. שחקנים שמתאימים לשיטה (לפי תכונת האופי שלהם) מקבלים בונוס להתקפה/הגנה; שחקנים שלא מתאימים מקבלים קנס קטן. משפיע על כל 10 השחקנים, עם משקל של 65% לחמישייה הפותחת ו-35% לספסל - בדיוק כמו בחישוב הדירוג המשוקלל.
+      </p>
+    </div>
+    <div class="system-select-grid" id="league-system-grid"></div>
+    <div class="final-actions">
+      <button class="secondary" id="btn-home-from-league-system">לדף הבית</button>
+    </div>
+  </section>
+
+  <section id="screen-league-simchoice" class="screen">
+    <div class="center-box">
+      <h2 style="margin-top:0;">איך תרצו לצפות בליגה?</h2>
+      <p style="color:var(--text-dim); max-width:520px; margin:0 auto 24px;">
+        אפשר לראות את כל תוצאות הליגה בבת אחת, או לעקוב אחרי המשחקים של ההרכב שלכם אחד אחרי השני.
+      </p>
+      <div class="h2h-setup-buttons">
+        <button id="btn-league-sim-all">סימולציה מלאה (מיידית)</button>
+        <button id="btn-league-sim-live">משחק אחר משחק</button>
+      </div>
+      <div style="margin-top:16px;"><button class="secondary" id="btn-home-from-league-simchoice">חזרה לדף הבית</button></div>
+    </div>
+  </section>
+
+  <section id="screen-league-live" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 style="margin-top:0;">המשחקים של ההרכב שלכם</h2>
+      <div class="round-meta" id="league-live-status"></div>
+      <div class="round-meta" id="league-live-record"></div>
+      <div class="round-meta" id="league-live-rank"></div>
+    </div>
+    <div class="league-live-log" id="league-live-log"></div>
+    <div class="final-actions">
+      <button id="btn-league-live-next">המשחק הבא &raquo;</button>
+      <button class="secondary" id="btn-home-from-league-live">לדף הבית</button>
+    </div>
+  </section>
+
+  <section id="screen-league-trade" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 style="margin-top:0;" id="league-trade-title">חלון העברות</h2>
+      <p style="color:var(--text-dim); max-width:560px; margin:0 auto 16px;">
+        אפשר להחליף שחקן אחד מההרכב שלכם בשחקן אחר, מאותה עמדה, מתוך היסטוריית הקבוצה. בחרו שחקן להחלפה ואז בחרו את המחליף - או פשוט המשיכו הלאה בלי לבצע שינוי.
+      </p>
+    </div>
+    <div class="h2h-status">
+      <div class="h2h-player-panel" id="league-trade-current-panel" style="flex-basis:100%;">
+        <div class="h2h-player-name">ההרכב הנוכחי - בחרו שחקן להחלפה</div>
+        <div class="h2h-slots" id="league-trade-current"></div>
+      </div>
+    </div>
+    <div class="team-card" id="league-trade-candidates-card" style="display:none;">
+      <div class="team-name">מחליפים אפשריים באותה עמדה</div>
+      <div class="players-grid" id="league-trade-candidates"></div>
+    </div>
+    <div class="final-actions">
+      <button class="secondary" id="btn-league-trade-skip">להמשיך בלי החלפה &raquo;</button>
+      <button class="secondary" id="btn-home-from-league-trade">לדף הבית</button>
+    </div>
+  </section>
+
+  <section id="screen-league-table" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 id="league-result-title" style="margin-top:0;"></h2>
+      <p class="league-mvp" id="league-mvp"></p>
+    </div>
+    <div class="league-table-wrap">
+      <table class="league-table">
+        <thead>
+          <tr><th>#</th><th>קבוצה</th><th>דירוג</th><th>נצ'</th><th>הפ'</th><th>הפרש</th></tr>
+        </thead>
+        <tbody id="league-table-body"></tbody>
+      </table>
+    </div>
+    <div class="final-actions">
+      <button id="btn-league-playoffs">המשך לפלייאוף (8 גדולות) &raquo;</button>
+      <button class="secondary" id="btn-league-restart">משחק חדש</button>
+      <button class="secondary" id="btn-home-from-league-table">לדף הבית</button>
+    </div>
+  </section>
+
+  <section id="screen-league-playoffs" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 id="playoffs-result-title" style="margin-top:0;"></h2>
+    </div>
+    <div class="playoffs-bracket" id="playoffs-bracket"></div>
+    <div class="final-actions">
+      <button id="btn-league-restart-2">משחק חדש</button>
+      <button class="secondary" id="btn-home-from-league-playoffs">לדף הבית</button>
+    </div>
+  </section>
+
+  <section id="screen-trivia-select" class="screen">
+    <div class="center-box">
+      <h2 style="margin-top:0;">טריוויה</h2>
+      <p style="color:var(--text-dim); max-width:520px; margin:0 auto 24px;">
+        בחרו באיזה נושא תרצו להתמקד. בכל נושא יהיו 25 שאלות ובסוף תקבלו ציון.
+      </p>
+      <div class="era-filter">
+        <div class="era-filter-buttons">
+          <button class="era-btn" id="btn-trivia-timed-toggle">⏱ מצב מתוזמן: כבוי</button>
+        </div>
+      </div>
+      <div class="h2h-setup-buttons">
+        <button id="btn-trivia-team">זהו את הקבוצה</button>
+        <button id="btn-trivia-season">זהו את העונה</button>
+      </div>
+      <div style="margin-top:16px;"><button class="secondary" id="btn-home-from-trivia-select">חזרה לדף הבית</button></div>
+    </div>
+  </section>
+
+  <section id="screen-trivia-question" class="screen">
+    <div class="progress-bar" id="trivia-progress-bar"></div>
+    <div class="round-meta" id="trivia-round-meta"></div>
+    <div class="trivia-timer-bar" id="trivia-timer-bar" hidden><div class="trivia-timer-fill" id="trivia-timer-fill"></div></div>
+    <div class="team-card">
+      <div class="team-name" id="trivia-question-title"></div>
+      <div class="team-season" id="trivia-question-sub"></div>
+    </div>
+    <div class="players-grid" id="trivia-roster-grid"></div>
+    <div class="trivia-options" id="trivia-options"></div>
+    <div class="trivia-feedback" id="trivia-feedback"></div>
+    <div style="text-align:center; margin-top:16px;">
+      <button id="btn-trivia-next" style="display:none;">השאלה הבאה &raquo;</button>
+    </div>
+  </section>
+
+  <section id="screen-trivia-final" class="screen">
+    <div class="center-box">
+      <h2 id="trivia-final-title" style="margin-top:0;"></h2>
+      <p id="trivia-final-sub" style="color:var(--text-dim);"></p>
+      <div class="trivia-mistakes" id="trivia-mistakes"></div>
+      <button id="btn-trivia-restart">משחק חדש</button>
+      <div style="margin-top:16px;"><button class="secondary" id="btn-home-from-trivia-final">לדף הבית</button></div>
+    </div>
+  </section>
+
+  <footer>גרסה 1 &middot; נתוני סגלים היסטוריים לצורך משחק בלבד</footer>
+</div>
+
+<script src="euroleague_data.js"></script>
+<script src="ratings_enrich.js"></script>
+<script src="play_systems.js"></script>
+<script src="player_search.js"></script>
+<script src="achievements.js"></script>
+<script src="main.js"></script>
+<script src="game.js"></script>
+<script src="h2h.js"></script>
+<script src="league.js"></script>
+<script src="trivia.js"></script>
+<script src="player_profile.js"></script>
+<script src="career.js"></script>
+</body>
+</html>
