@@ -596,15 +596,6 @@
     return { label: label, budget: AUCTION_BUDGET, needs: freshNeeds(), picks: [] };
   }
 
-  function auctionSlotsRemaining(sideIndex) {
-    var needs = auction.sides[sideIndex].needs;
-    return needs.Guard + needs.Forward + needs.Center;
-  }
-
-  function auctionSideDone(sideIndex) {
-    return auctionSlotsRemaining(sideIndex) === 0;
-  }
-
   // A simple willingness-to-pay heuristic for the computer opponent: scales
   // roughly $3-$18 across the real rating range, so it competes harder for
   // stars without ever being a perfect, unbeatable bidder.
@@ -696,7 +687,8 @@
       nextBid: 1,
       winner: null,
       askSide: null,
-      refusedAtBase: 0,
+      askedCount: 0,
+      brokeWanters: [],
     };
     state.mode = mode;
     state.pickedNames = new Set();
@@ -722,26 +714,34 @@
     auction.currentPlayer = candidate;
     auction.nextBid = 1;
     auction.winner = null;
-    auction.refusedAtBase = 0;
+    auction.askedCount = 0;
+    auction.brokeWanters = []; // sides that wanted this player but couldn't afford the current bid
 
-    var starter = auction.roundStarter;
-    var other = 1 - starter;
-    var starterEligible = !auctionSideDone(starter) && auction.sides[starter].needs[candidate.player.position] > 0;
-    askSide(starterEligible ? starter : other);
+    askSide(auction.roundStarter);
   }
 
+  // Asks one side whether they want the current player at auction.nextBid.
+  // A side that doesn't need the position, or can't afford the price, is
+  // auto-declined without a real choice - but a forced decline due to
+  // budget (not need) is tracked in brokeWanters, so the player can still
+  // end up with them for free if nobody else ends up bidding either. This
+  // guarantees every side's roster always finishes, even once broke.
   function askSide(sideIndex) {
     auction.askSide = sideIndex;
     var cp = auction.currentPlayer;
     var side = auction.sides[sideIndex];
     var needsPosition = side.needs[cp.player.position] > 0;
-    var remaining = auctionSlotsRemaining(sideIndex);
-    var canAfford = side.budget - auction.nextBid >= remaining - 1;
 
     renderAuctionScreen();
 
-    if (!needsPosition || !canAfford) {
-      resolveDecision(sideIndex, false);
+    if (!needsPosition) {
+      handleDecline(sideIndex, false);
+      return;
+    }
+
+    var canAfford = side.budget >= auction.nextBid;
+    if (!canAfford) {
+      handleDecline(sideIndex, true);
       return;
     }
 
@@ -750,31 +750,42 @@
       var bidSnapshot = auction.nextBid;
       setTimeout(function () {
         if (!auction || auction.currentPlayer !== cpSnapshot || auction.askSide !== sideIndex) return;
-        resolveDecision(sideIndex, computerWantsBid(cpSnapshot.player, bidSnapshot));
+        handleChoice(computerWantsBid(cpSnapshot.player, bidSnapshot));
       }, 650);
     }
     // Otherwise: wait for the human's click on the agree/refuse buttons.
   }
 
-  function resolveDecision(sideIndex, agreed) {
-    var otherSide = 1 - sideIndex;
+  function handleChoice(agreed) {
+    var sideIndex = auction.askSide;
     if (agreed) {
       auction.winner = sideIndex;
       auction.nextBid++;
-      askSide(otherSide);
+      askSide(1 - sideIndex);
       return;
     }
+    handleDecline(sideIndex, false);
+  }
+
+  function handleDecline(sideIndex, broke) {
     if (auction.winner !== null) {
+      // Someone already agreed to a lower price - they win at that price.
       finalizeSale(auction.winner, auction.nextBid - 1);
       return;
     }
-    auction.refusedAtBase++;
-    if (auction.refusedAtBase >= 2) {
-      auction.roundStarter = 1 - auction.roundStarter;
-      advanceAuction();
+    if (broke) auction.brokeWanters.push(sideIndex);
+    auction.askedCount++;
+    if (auction.askedCount < 2) {
+      askSide(1 - sideIndex);
       return;
     }
-    askSide(otherSide);
+    // Both sides have now been asked at the base price with no winner.
+    if (auction.brokeWanters.length > 0) {
+      finalizeSale(auction.brokeWanters[0], 0);
+    } else {
+      auction.roundStarter = 1 - auction.roundStarter;
+      advanceAuction();
+    }
   }
 
   function finalizeSale(sideIndex, price) {
@@ -891,11 +902,11 @@
   document.getElementById("btn-h2h-auction-agree").addEventListener("click", function () {
     if (!auction || auction.askSide === null) return;
     if (auction.mode === "computer" && auction.askSide === 1) return;
-    resolveDecision(auction.askSide, true);
+    handleChoice(true);
   });
   document.getElementById("btn-h2h-auction-refuse").addEventListener("click", function () {
     if (!auction || auction.askSide === null) return;
     if (auction.mode === "computer" && auction.askSide === 1) return;
-    resolveDecision(auction.askSide, false);
+    handleChoice(false);
   });
 })();
