@@ -130,13 +130,16 @@
       "תור " + (state.turn + 1) + " מתוך " + TOTAL_TURNS + "<br>" +
       "<strong>" + side.label + "</strong> - נדרשים עוד: " + needsSummaryText(side.needs);
 
-    document.getElementById("h2h-round-team").textContent = picked.combo.team;
+    document.getElementById("h2h-round-team").innerHTML = window.TeamBadge.html(picked.combo.team) + picked.combo.team;
     document.getElementById("h2h-round-season").textContent = "עונת " + formatSeason(picked.combo.season);
 
     var grid = document.getElementById("h2h-players-grid");
     grid.innerHTML = "";
     var eligiblePlayers = [];
-    picked.combo.players.forEach(function (player) {
+    var sortedPlayers = picked.combo.players.slice().sort(function (a, b) {
+      return (b.rating || 0) - (a.rating || 0);
+    });
+    sortedPlayers.forEach(function (player) {
       var taken = state.pickedNames.has(normalizeName(player.name));
       var slotFull = !taken && (!player.position || !(side.needs[player.position] > 0));
       var disabled = taken || slotFull;
@@ -446,6 +449,8 @@
       state.sides[1].label + " (דירוג ממוצע: " + averageRating(state.sides[1].picks).toFixed(1) + ")";
     renderFinalTeamGrid("h2h-final-team1-grid", state.sides[0]);
     renderFinalTeamGrid("h2h-final-team2-grid", state.sides[1]);
+
+    window.Effects.confetti();
 
     window.Achievements.markPlayed("h2h");
     var seriesPlayed = window.Achievements.incrementCounter("h2h_series_played");

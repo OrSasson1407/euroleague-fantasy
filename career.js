@@ -664,7 +664,7 @@
       var btn = document.createElement("button");
       btn.className = "system-card";
       btn.innerHTML =
-        '<div class="system-name">' + o.club + (o.isLoan ? " (השאלה)" : "") + "</div>" +
+        '<div class="system-name">' + window.TeamBadge.html(o.club) + o.club + (o.isLoan ? " (השאלה)" : "") + "</div>" +
         '<div class="system-desc">תפקיד: ' + o.role + " &middot; משכורת: ₪" + o.salary.toLocaleString() + "</div>";
       btn.addEventListener("click", function () {
         acceptDraft(o);
@@ -685,7 +685,8 @@
   // ---------- Pro season hub ----------
 
   function renderSeasonHub() {
-    document.getElementById("career-hub-title").textContent = career.team.label + " · גיל " + career.age;
+    document.getElementById("career-hub-title").innerHTML =
+      window.TeamBadge.html(career.team.label) + career.team.label + " · גיל " + career.age;
     document.getElementById("career-hub-status").innerHTML =
       ratingHeaderHtml() +
       '<div class="career-status-line">' +
@@ -1067,7 +1068,10 @@
     lines.push("שיא עונתי: " + record.wins + "-" + record.losses);
     lines.push("מיקום בטבלה: " + record.leagueRank + " מתוך " + record.leagueTotal);
     lines.push("ממוצע נקודות: " + record.ppg);
-    if (record.champion) lines.push("🏆 אלופת העונה!");
+    if (record.champion) {
+      lines.push("🏆 אלופת העונה!");
+      window.Effects.confetti();
+    }
     record.awards.forEach(function (a) {
       if (a !== "אלופת העונה!") lines.push("🌟 " + a);
     });
@@ -1226,7 +1230,7 @@
       var btn = document.createElement("button");
       btn.className = "system-card";
       btn.innerHTML =
-        '<div class="system-name">' + o.club + (o.stay ? " (הישארות)" : "") + "</div>" +
+        '<div class="system-name">' + window.TeamBadge.html(o.club) + o.club + (o.stay ? " (הישארות)" : "") + "</div>" +
         '<div class="system-desc">תפקיד: ' + o.role + " &middot; משכורת: ₪" + o.salary.toLocaleString() + "</div>";
       btn.addEventListener("click", function () {
         acceptContract(o);

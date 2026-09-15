@@ -179,12 +179,15 @@
     meta.innerHTML = "סיבוב " + pickNumber + " מתוך " + TOTAL_ROUNDS +
       (state.budgetTotal > 0 ? ' &middot; <span class="cost-tag">תקציב נותר: ' + state.budgetRemaining + "</span>" : "");
 
-    document.getElementById("round-team").textContent = picked.combo.team;
+    document.getElementById("round-team").innerHTML = window.TeamBadge.html(picked.combo.team) + picked.combo.team;
     document.getElementById("round-season").textContent = "עונת " + formatSeason(picked.combo.season);
 
     var grid = document.getElementById("players-grid");
     grid.innerHTML = "";
-    picked.combo.players.forEach(function (player) {
+    var sortedPlayers = picked.combo.players.slice().sort(function (a, b) {
+      return (b.rating || 0) - (a.rating || 0);
+    });
+    sortedPlayers.forEach(function (player) {
       var taken = state.pickedNames.has(normalizeName(player.name));
       var tooExpensive = !taken && !canAfford(player);
       var room1 = !taken && !tooExpensive && player.position && state.needsByHalf.starter[player.position] > 0;
@@ -396,6 +399,7 @@
       }
       var bestValue = isNewBest ? finalTotal : previousBest.value;
       html += "<br>שיא אישי: <strong>" + bestValue.toFixed(1) + "</strong>" + (isNewBest && previousBest ? " &nbsp;🎉 שיא חדש!" : "");
+      if (isNewBest && previousBest) window.Effects.confetti();
 
       summaryEl.innerHTML = html;
       state.lastFinalTotal = finalTotal;
@@ -519,13 +523,16 @@
     var content = document.getElementById("single-exhibition-content");
     content.innerHTML =
       '<div class="career-event-card">' +
-      "<p>ההרכב שלכם נגד " + challenger.team + " " + formatSeason(challenger.season) + "</p>" +
+      "<p>ההרכב שלכם נגד " + window.TeamBadge.html(challenger.team) + challenger.team + " " + formatSeason(challenger.season) + "</p>" +
       '<div class="share-rating">' + myScore + " - " + oppScore + "</div>" +
       "<p>לפי רבעים: " + quartersText + "</p>" +
       "<p>" + (won ? "🏆 ניצחתם!" : "😔 הפסדתם הפעם") + "</p>" +
       "</div>";
 
-    if (won) window.Achievements.unlock("single_exhibition_win");
+    if (won) {
+      window.Achievements.unlock("single_exhibition_win");
+      window.Effects.confetti();
+    }
 
     showScreen("singleExhibition");
   }

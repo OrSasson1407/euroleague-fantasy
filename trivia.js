@@ -202,7 +202,11 @@
       var label = question.type === "season" ? formatSeason(raw) : raw;
       var btn = document.createElement("button");
       btn.className = "trivia-option-btn";
-      btn.textContent = label;
+      if (question.type === "team") {
+        btn.innerHTML = window.TeamBadge.html(raw, "badge-sm") + label;
+      } else {
+        btn.textContent = label;
+      }
       btn.addEventListener("click", function () {
         handleAnswer(raw, btn);
       });

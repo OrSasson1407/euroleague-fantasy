@@ -90,7 +90,7 @@
     uniqueClubs().forEach(function (club) {
       var btn = document.createElement("button");
       btn.className = "team-select-btn";
-      btn.textContent = club;
+      btn.innerHTML = window.TeamBadge.html(club) + "<span>" + club + "</span>";
       btn.addEventListener("click", function () {
         chooseClub(club);
       });
@@ -208,12 +208,15 @@
     document.getElementById("league-round-meta").textContent =
       "בחירה " + pickNumber + " מתוך " + TOTAL_PICKS + " · " + state.myTeamClub;
 
-    document.getElementById("league-round-team").textContent = picked.combo.team;
+    document.getElementById("league-round-team").innerHTML = window.TeamBadge.html(picked.combo.team) + picked.combo.team;
     document.getElementById("league-round-season").textContent = "עונת " + formatSeason(picked.combo.season);
 
     var grid = document.getElementById("league-players-grid");
     grid.innerHTML = "";
-    picked.combo.players.forEach(function (player) {
+    var sortedPlayers = picked.combo.players.slice().sort(function (a, b) {
+      return (b.rating || 0) - (a.rating || 0);
+    });
+    sortedPlayers.forEach(function (player) {
       var taken = state.pickedNames.has(normalizeName(player.name));
       var room1 = !taken && player.position && state.needsByHalf[1][player.position] > 0;
       var room2 = !taken && player.position && state.needsByHalf[2][player.position] > 0;
@@ -806,7 +809,10 @@
 
     window.Achievements.markPlayed("league");
     window.Achievements.unlock("league_first");
-    if (myRank === 1) window.Achievements.unlock("league_champion");
+    if (myRank === 1) {
+      window.Achievements.unlock("league_champion");
+      window.Effects.confetti();
+    }
     if (mine && mine.losses === 0) window.Achievements.unlock("league_undefeated");
     var seasonsCompleted = window.Achievements.incrementCounter("league_seasons_completed");
     if (seasonsCompleted >= 3) window.Achievements.unlock("league_veteran");
@@ -819,7 +825,7 @@
       var diff = t.pf - t.pa;
       tr.innerHTML =
         "<td>" + (i + 1) + "</td>" +
-        "<td>" + t.label + "</td>" +
+        "<td>" + window.TeamBadge.html(t.label, "badge-sm") + t.label + "</td>" +
         "<td>" + t.rating.toFixed(1) + "</td>" +
         "<td>" + t.wins + "</td>" +
         "<td>" + t.losses + "</td>" +
@@ -870,7 +876,7 @@
   function matchTeamRowHtml(team, score, isWinner) {
     return (
       '<div class="pmatch-team' + (isWinner ? " winner" : "") + (team.isMine ? " mine" : "") + '">' +
-      '<span class="pmatch-name">' + team.label + (team.isMine ? " ★" : "") + "</span>" +
+      '<span class="pmatch-name">' + window.TeamBadge.html(team.label, "badge-sm") + team.label + (team.isMine ? " ★" : "") + "</span>" +
       '<span class="pmatch-score">' + score + "</span>" +
       "</div>"
     );
@@ -917,6 +923,7 @@
     if (data.champion.isMine) {
       titleEl.textContent = "מזל טוב! ההרכב שלכם אלופת הפלייאוף! 🏆";
       window.Achievements.unlock("league_playoff_champion");
+      window.Effects.confetti();
     } else if (myInTop8) {
       var run = describeMyRun(data);
       titleEl.textContent = "ההרכב שלכם הודח ב" + run.roundName + ". אלופת הפלייאוף: " + data.champion.label;
