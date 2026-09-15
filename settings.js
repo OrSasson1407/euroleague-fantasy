@@ -25,8 +25,8 @@
     var html = "";
 
     html += '<div class="settings-section"><div class="settings-row">' +
-      '<div><div class="settings-row-title">אפקטים חזותיים</div>' +
-      '<div class="settings-row-desc">קונפטי בניצחונות ואנימציית מעבר בין מסכים</div></div>' +
+      '<div><div class="settings-row-title">אפקטים וצלילים</div>' +
+      '<div class="settings-row-desc">קונפטי, אנימציות מעבר בין מסכים, וצלילי קליק/באזר בדראפט ובתוצאות</div></div>' +
       '<button class="settings-toggle-btn" id="btn-settings-toggle-effects">' +
       (effectsOn ? "מופעל ✅" : "כבוי ❌") + "</button>" +
       "</div></div>";

@@ -82,6 +82,58 @@
 
   applyEffectsClass();
 
+  // ---------- Sound effects ----------
+  // Synthesized with the Web Audio API (no audio files to ship). A single
+  // shared AudioContext is created lazily on first use, inside a real click
+  // handler, so it satisfies browsers' autoplay-gesture requirement.
+  var audioCtx = null;
+
+  function getAudioCtx() {
+    if (audioCtx) return audioCtx;
+    try {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      audioCtx = Ctx ? new Ctx() : null;
+    } catch (e) {
+      audioCtx = null;
+    }
+    return audioCtx;
+  }
+
+  function playClick() {
+    if (!settings.effectsEnabled) return;
+    var ctx = getAudioCtx();
+    if (!ctx) return;
+    if (ctx.state === "suspended") ctx.resume();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = 720;
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.08);
+  }
+
+  function playBuzzer() {
+    if (!settings.effectsEnabled) return;
+    var ctx = getAudioCtx();
+    if (!ctx) return;
+    if (ctx.state === "suspended") ctx.resume();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = "sawtooth";
+    osc.frequency.value = 180;
+    gain.gain.setValueAtTime(0.001, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.45);
+  }
+
   // ---------- Confetti burst ----------
   // A small, dependency-free confetti effect for decisive win moments.
   // Pieces are absolutely-positioned spans animated with CSS, appended to
@@ -119,8 +171,69 @@
     }, 3400);
   }
 
+  // ---------- WOW pick toast ----------
+  // A brief, flashy banner for a standout moment mid-draft (landing a
+  // 90+ rated player) - distinct from the achievements toast so the two
+  // never compete for the same corner of the screen.
+  function wowPick(name, rating) {
+    if (!settings.effectsEnabled) return;
+    var toast = document.createElement("div");
+    toast.className = "wow-pick-toast";
+    toast.innerHTML =
+      '<div class="wow-pick-flare">🌟</div>' +
+      '<div class="wow-pick-text">WOW PICK!</div>' +
+      '<div class="wow-pick-player">' + name + ' <span class="wow-pick-rating">' + rating + "</span></div>";
+    document.body.appendChild(toast);
+    requestAnimationFrame(function () {
+      toast.classList.add("show");
+    });
+    setTimeout(function () {
+      toast.classList.remove("show");
+      setTimeout(function () {
+        if (toast.parentNode) toast.parentNode.removeChild(toast);
+      }, 400);
+    }, 1800);
+  }
+
+  // ---------- Count-up number animation ----------
+  // Animates an element's text from 0 up to a target number - used for
+  // "final rating reveal" moments. Skips straight to the final value when
+  // effects are disabled, matching the reduced-motion behavior elsewhere.
+  function countUp(el, target, opts) {
+    if (!el) return;
+    opts = opts || {};
+    var decimals = opts.decimals != null ? opts.decimals : 1;
+    var suffix = opts.suffix || "";
+    var formatted = target.toFixed(decimals) + suffix;
+
+    if (!settings.effectsEnabled) {
+      el.textContent = formatted;
+      return;
+    }
+
+    var duration = opts.duration || 1000;
+    var start = null;
+
+    function step(ts) {
+      if (start === null) start = ts;
+      var progress = Math.min((ts - start) / duration, 1);
+      var eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = (target * eased).toFixed(decimals) + suffix;
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        el.textContent = formatted;
+      }
+    }
+    requestAnimationFrame(step);
+  }
+
   window.Effects = {
     confetti: confetti,
+    wowPick: wowPick,
+    countUp: countUp,
+    playClick: playClick,
+    playBuzzer: playBuzzer,
     isEnabled: isEffectsEnabled,
     setEnabled: setEffectsEnabled,
   };

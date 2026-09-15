@@ -265,6 +265,10 @@
   }
 
   function selectMyPlayer(player, combo, half) {
+    window.Effects.playClick();
+    if (typeof player.rating === "number" && player.rating >= 90) {
+      window.Effects.wowPick(player.name, player.rating);
+    }
     state.pickedNames.add(normalizeName(player.name));
     state.needsByHalf[half][player.position]--;
     state.myRoster.push({
@@ -334,6 +338,7 @@
   }
 
   function showLineupScreen() {
+    window.Effects.playBuzzer();
     lineupSelection = null;
     renderLineupScreen();
     window.AppNav.showScreen("leagueLineup");
@@ -783,6 +788,7 @@
   }
 
   function renderLeagueTable(teams) {
+    window.Effects.playBuzzer();
     var myRank = -1;
     var mine = null;
     teams.forEach(function (t, i) {

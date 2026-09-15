@@ -341,6 +341,10 @@
   }
 
   function selectPlayer(player, combo, half) {
+    window.Effects.playClick();
+    if (typeof player.rating === "number" && player.rating >= 90) {
+      window.Effects.wowPick(player.name, player.rating);
+    }
     state.pickedNames.add(normalizeName(player.name));
     state.needsByHalf[half][player.position]--;
     if (state.budgetTotal > 0) state.budgetRemaining -= playerCost(player);
@@ -409,6 +413,7 @@
   }
 
   function showLineupScreen() {
+    window.Effects.playBuzzer();
     lineupSelection = null;
     renderLineupScreen();
     showScreen("singleLineup");
@@ -630,37 +635,43 @@
     var chemistry = chemistryBonus(state.squad);
     var systemFit = system ? systemFitScore(starters, bench, system, starPlayer) : 0;
     if (summaryEl) {
-      var html = "דירוג משוקלל של ההרכב (65% חמישייה פותחת, 35% ספסל): <strong>" + weighted.toFixed(1) + "</strong>";
+      var finalTotal = weighted + chemistry + systemFit;
+
+      var detailHtml = "דירוג משוקלל (65% חמישייה פותחת, 35% ספסל): <strong>" + weighted.toFixed(1) + "</strong>";
       if (system) {
-        html += "<br>שיטת המשחק: <strong>" + system.label + "</strong>" +
+        detailHtml += "<br>שיטת המשחק: <strong>" + system.label + "</strong>" +
           "<br>התאמה לשיטה: <strong>" + (systemFit >= 0 ? "+" : "") + systemFit.toFixed(1) + "</strong>";
       }
       if (chemistry > 0) {
-        html += "<br>בונוס כימיה (שחקנים מאותה קבוצה): <strong>+" + chemistry + "</strong>";
-      }
-      var finalTotal = weighted + chemistry + systemFit;
-      if (chemistry > 0 || system) {
-        html += "<br>דירוג סופי כולל הכל: <strong>" + finalTotal.toFixed(1) + "</strong>";
+        detailHtml += "<br>בונוס כימיה (שחקנים מאותה קבוצה): <strong>+" + chemistry + "</strong>";
       }
 
+      var afterHtml = "";
       var beforeList = loadTopSquads();
       if (window.Auth && window.Auth.isGuest()) {
-        html += "<br>🕶️ מצב אורח - ההרכב הזה לא יישמר בטבלת השיאים. הירשמו כדי לשמור שיאים אישיים!";
+        afterHtml = "🕶️ מצב אורח - ההרכב הזה לא יישמר בטבלת השיאים. הירשמו כדי לשמור שיאים אישיים!";
       } else {
         var rank = maybeAddToLeaderboard(finalTotal);
         renderBestDisplay();
         if (rank) {
-          html += "<br>🏆 נכנסתם לטבלת השיאים! מקום <strong>" + rank + "</strong> מתוך " + MAX_TOP_SQUADS;
+          afterHtml = "🏆 נכנסתם לטבלת השיאים! מקום <strong>" + rank + "</strong> מתוך " + MAX_TOP_SQUADS;
           if (rank === 1) {
-            html += " &nbsp;🎉 השיא האישי החדש שלכם!";
+            afterHtml += " &nbsp;🎉 השיא האישי החדש שלכם!";
             window.Effects.confetti();
           }
         } else if (beforeList.length > 0) {
-          html += "<br>שיא אישי נוכחי: <strong>" + beforeList[0].rating.toFixed(1) + "</strong>";
+          afterHtml = "שיא אישי נוכחי: <strong>" + beforeList[0].rating.toFixed(1) + "</strong>";
         }
       }
 
-      summaryEl.innerHTML = html;
+      summaryEl.innerHTML =
+        '<div class="final-rating-hero"><div class="value" id="squad-final-rating-value">0.0</div>' +
+        '<div class="label">דירוג סופי של ההרכב</div></div>' +
+        "<div>" + detailHtml + "</div>" +
+        (afterHtml ? '<div style="margin-top:8px;">' + afterHtml + "</div>" : "");
+
+      window.Effects.playBuzzer();
+      window.Effects.countUp(document.getElementById("squad-final-rating-value"), finalTotal, { decimals: 1 });
       state.lastFinalTotal = finalTotal;
     }
 

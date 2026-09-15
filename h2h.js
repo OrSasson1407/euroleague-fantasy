@@ -187,6 +187,10 @@
   }
 
   function makePick(player, combo, sideIndex) {
+    window.Effects.playClick();
+    if (typeof player.rating === "number" && player.rating >= 90) {
+      window.Effects.wowPick(player.name, player.rating);
+    }
     var side = state.sides[sideIndex];
     state.pickedNames.add(normalizeName(player.name));
     side.needs[player.position]--;
@@ -423,6 +427,7 @@
   }
 
   function finishSeries() {
+    window.Effects.playBuzzer();
     var seriesWinnerIndex = seriesWins[0] > seriesWins[1] ? 0 : 1;
     var loserIndex = seriesWinnerIndex === 0 ? 1 : 0;
 
@@ -511,6 +516,7 @@
   }
 
   function startSystemSelection() {
+    window.Effects.playBuzzer();
     state.sides[0].system = null;
     state.sides[1].system = state.mode === "computer"
       ? window.PlaySystems[Math.floor(Math.random() * window.PlaySystems.length)]

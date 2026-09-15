@@ -1217,6 +1217,81 @@ footer {
   color: var(--text-dim);
 }
 
+/* ---------- WOW pick toast ---------- */
+
+.wow-pick-toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%) scale(0.7);
+  opacity: 0;
+  z-index: 2500;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  border-radius: 14px;
+  padding: 12px 22px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+  transition: opacity .25s ease, transform .25s cubic-bezier(.34,1.56,.64,1);
+  pointer-events: none;
+}
+
+.wow-pick-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
+.wow-pick-flare {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.wow-pick-text {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.1rem;
+  color: #2a0a0a;
+  letter-spacing: 0.02em;
+}
+
+.wow-pick-player {
+  font-weight: 700;
+  color: #2a0a0a;
+  font-size: 0.85rem;
+  margin-top: 2px;
+}
+
+.wow-pick-rating {
+  background: rgba(255,255,255,0.4);
+  border-radius: 999px;
+  padding: 1px 8px;
+  margin-inline-start: 4px;
+}
+
+/* ---------- Final rating hero (count-up reveal) ---------- */
+
+.final-rating-hero {
+  text-align: center;
+  margin: 4px 0 14px;
+}
+
+.final-rating-hero .value {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 3rem;
+  line-height: 1;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-variant-numeric: tabular-nums;
+}
+
+.final-rating-hero .label {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  margin-top: 2px;
+}
+
 .league-mvp {
   color: var(--text-dim);
   text-align: center;
