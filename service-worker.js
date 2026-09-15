@@ -1,6 +1,6 @@
 "use strict";
 
-var CACHE_NAME = "euroleague-fantasy-v2";
+var CACHE_NAME = "euroleague-fantasy-v4";
 var CORE_ASSETS = [
   "./",
   "./index.html",
@@ -28,7 +28,17 @@ var CORE_ASSETS = [
 self.addEventListener("install", function (event) {
   event.waitUntil(
     caches.open(CACHE_NAME).then(function (cache) {
-      return cache.addAll(CORE_ASSETS);
+      // {cache: "reload"} bypasses the browser's own HTTP cache for each
+      // asset, so a fresh install never bakes stale bytes into the new
+      // Cache Storage bucket just because an old response was still valid.
+      var requests = CORE_ASSETS.map(function (url) {
+        return new Request(url, { cache: "reload" });
+      });
+      return Promise.all(requests.map(function (req) {
+        return fetch(req).then(function (response) {
+          return cache.put(req, response);
+        });
+      }));
     })
   );
   self.skipWaiting();

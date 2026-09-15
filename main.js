@@ -44,13 +44,11 @@
       var el = document.getElementById(idMap[key]);
       if (el) el.classList.toggle("active", key === name);
     });
-    var backBtn = document.getElementById("global-back-btn");
-    if (backBtn) backBtn.hidden = name === "home";
   }
 
   window.AppNav = { showScreen: showScreen };
 
-  document.getElementById("global-back-btn").addEventListener("click", function () {
+  document.getElementById("topbar-logo").addEventListener("click", function () {
     showScreen("home");
   });
 

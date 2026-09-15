@@ -90,13 +90,13 @@
 
     if (isRegistered()) {
       el.innerHTML =
-        '<span class="auth-chip registered">👤 ' + escapeHtml(getUsername()) + "</span>" +
+        '<span class="auth-chip registered" title="מחוברים כמשתמש רשום">' + escapeHtml(getUsername()) + "</span>" +
         '<button class="auth-chip-btn" id="btn-auth-signout">התנתקות</button>';
       var signoutBtn = document.getElementById("btn-auth-signout");
       if (signoutBtn) signoutBtn.addEventListener("click", signOut);
     } else if (isGuest()) {
       el.innerHTML =
-        '<span class="auth-chip guest">🕶️ מצב אורח - השיאים לא נשמרים</span>' +
+        '<span class="auth-chip guest" title="במצב אורח השיאים והשמירות לא נשמרים">🕶️ אורח</span>' +
         '<button class="auth-chip-btn" id="btn-auth-register-from-guest">הרשמה</button>';
       var regBtn = document.getElementById("btn-auth-register-from-guest");
       if (regBtn) regBtn.addEventListener("click", showGate);

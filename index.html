@@ -14,7 +14,17 @@
 </head>
 <body>
 
-<button id="global-back-btn" class="global-back-btn" title="חזרה לדף הבית" hidden>🏠</button>
+<div class="topbar" id="topbar">
+  <button class="topbar-logo" id="topbar-logo" aria-label="לדף הבית" title="לדף הבית">
+    <span class="topbar-logo-icon">🏀</span>
+    <span class="topbar-logo-text">יורוליג פנטזי</span>
+  </button>
+  <div class="topbar-actions">
+    <div class="auth-status-bar" id="auth-status-bar"></div>
+    <button class="topbar-icon-btn" id="btn-open-profile" aria-label="פרופיל" title="פרופיל">👤</button>
+    <button class="topbar-icon-btn" id="btn-open-settings" aria-label="הגדרות" title="הגדרות">⚙️</button>
+  </div>
+</div>
 
 <div id="auth-gate" class="auth-gate-overlay" hidden>
   <div class="auth-gate-box">
@@ -37,18 +47,12 @@
 </div>
 
 <div id="app">
-  <div class="auth-status-bar" id="auth-status-bar"></div>
-  <div class="app-toolbar" id="app-toolbar">
-    <button class="toolbar-btn" id="btn-open-profile">👤 פרופיל</button>
-    <button class="toolbar-btn" id="btn-open-settings">⚙️ הגדרות</button>
-  </div>
-  <header>
-    <h1>הרכב כל הזמנים - יורוליג</h1>
-    <p>בחרו מצב משחק</p>
-  </header>
-
   <section id="screen-home" class="screen active">
     <div class="center-box">
+      <header>
+        <h1>הרכב כל הזמנים - יורוליג</h1>
+        <p>בחרו מצב משחק</p>
+      </header>
       <div class="mode-cards">
         <button class="mode-card" id="btn-mode-single">
           <div class="mode-card-title">בניית סגל</div>

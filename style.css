@@ -59,16 +59,75 @@ header p {
   font-size: 0.95rem;
 }
 
-/* ---------- Auth (register / guest) ---------- */
+/* ---------- Topbar ---------- */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: var(--bg-card);
+  border-bottom: 3px solid var(--accent);
+  padding: 10px 16px;
+}
+
+.topbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  padding: 4px 0;
+  color: var(--text);
+}
+
+.topbar-logo:hover { filter: brightness(1.15); }
+.topbar-logo:active { transform: scale(0.98); }
+
+.topbar-logo-icon { font-size: 1.4rem; }
+
+.topbar-logo-text {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.05rem;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.topbar-icon-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 8px;
+  font-size: 1.05rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.topbar-icon-btn:hover {
+  border-color: var(--accent-2);
+  filter: none;
+}
 
 .auth-status-bar {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
-  margin-bottom: 10px;
-  min-height: 18px;
 }
 
 .auth-chip {
@@ -76,13 +135,15 @@ header p {
   padding: 4px 10px;
   border-radius: 999px;
   border: 1px solid var(--border);
-  background: var(--bg-card);
+  background: var(--bg);
   color: var(--text-dim);
+  white-space: nowrap;
 }
 
 .auth-chip.registered {
   color: var(--accent);
   border-color: var(--accent);
+  font-weight: 700;
 }
 
 .auth-chip.guest {
@@ -103,52 +164,8 @@ header p {
   border-color: var(--accent-2);
 }
 
-/* ---------- App toolbar (profile / settings) ---------- */
-
-.app-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
-}
-
-.toolbar-btn {
-  font-size: 0.8rem;
-  padding: 6px 14px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  color: var(--text-dim);
-  font-weight: 600;
-}
-
-.toolbar-btn:hover {
-  color: var(--text);
-  border-color: var(--accent-2);
-}
-
-/* ---------- Global back-to-home button ---------- */
-
-.global-back-btn {
-  position: fixed;
-  top: 14px;
-  left: 14px;
-  z-index: 500;
-  width: 42px;
-  height: 42px;
-  padding: 0;
-  border-radius: 50%;
-  font-size: 1.2rem;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  color: var(--text);
-  box-shadow: 0 4px 14px rgba(0,0,0,0.35);
-}
-
-.global-back-btn:hover {
-  border-color: var(--accent-2);
-  filter: none;
+@media (max-width: 420px) {
+  .topbar-logo-text { display: none; }
 }
 
 /* ---------- Profile screen ---------- */
