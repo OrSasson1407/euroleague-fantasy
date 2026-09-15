@@ -77,6 +77,7 @@ button {
 
 button:hover { filter: brightness(1.08); }
 button:active { transform: scale(0.97); }
+button:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(0.5); }
 
 button.secondary {
   background: transparent;
@@ -1574,4 +1575,16 @@ footer {
 
 .leaderboard-row-body .squad-grid {
   margin-top: 0;
+}
+
+/* ---------- Squad Builder trade offers ---------- */
+
+.trade-current-card {
+  border-color: var(--text-dim);
+  opacity: 0.85;
+}
+
+.trade-offer-card {
+  border-color: var(--accent-2);
+  box-shadow: 0 0 0 1px rgba(47,111,237,0.25);
 }

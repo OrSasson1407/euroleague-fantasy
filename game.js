@@ -413,13 +413,24 @@
     showScreen("singleLineup");
   }
 
+  var TRADE_OFFER_COUNT = 3;
+  var pendingTradeOffer = null; // { idx, offers: [{player, combo}, ...] } or null
+
   function renderTradeScreen() {
     document.getElementById("single-trade-count").textContent =
       "נשארו לכם " + state.tradesRemaining + " הזדמנויות מסחר";
     document.getElementById("single-trade-note").textContent = state.lastTradeMessage || "";
+    document.getElementById("single-trade-offer-actions").hidden = !pendingTradeOffer;
+    document.getElementById("btn-single-trade-continue").disabled = !!pendingTradeOffer;
 
     var grid = document.getElementById("single-trade-grid");
     grid.innerHTML = "";
+
+    if (pendingTradeOffer) {
+      renderTradeOffer(grid);
+      return;
+    }
+
     state.squad.forEach(function (entry, idx) {
       var card = document.createElement("div");
       card.className = "squad-player-card";
@@ -434,7 +445,7 @@
       btn.textContent = "🔄 נסה החלפה";
       btn.disabled = state.tradesRemaining <= 0;
       btn.addEventListener("click", function () {
-        attemptTrade(idx);
+        openTradeOffer(idx);
       });
       card.appendChild(btn);
 
@@ -442,19 +453,56 @@
     });
   }
 
-  function attemptTrade(idx) {
+  function renderTradeOffer(grid) {
+    var entry = state.squad[pendingTradeOffer.idx];
+
+    var current = document.createElement("div");
+    current.className = "squad-player-card trade-current-card";
+    current.innerHTML =
+      '<div class="meta">השחקן הנוכחי שלכם</div>' +
+      '<div class="name">' + entry.player +
+        (typeof entry.rating === "number" ? '<span class="rating-tag">' + entry.rating + "</span>" : "") + "</div>" +
+      '<div class="meta">' + entry.slotLabel + " &middot; " + POS_LABEL[entry.position] + " &middot; " +
+        entry.team + " " + formatSeason(entry.season) + "</div>";
+    grid.appendChild(current);
+
+    pendingTradeOffer.offers.forEach(function (offer) {
+      var card = document.createElement("div");
+      card.className = "squad-player-card trade-offer-card";
+      card.innerHTML =
+        '<div class="meta">הצעה להחלפה</div>' +
+        '<div class="name">' + offer.player.name +
+          (typeof offer.player.rating === "number" ? '<span class="rating-tag">' + offer.player.rating + "</span>" : "") + "</div>" +
+        '<div class="meta">' + offer.combo.team + " " + formatSeason(offer.combo.season) + "</div>";
+
+      var btn = document.createElement("button");
+      btn.className = "player-dual-btn";
+      btn.textContent = "✅ בצע החלפה";
+      btn.addEventListener("click", function () {
+        confirmTrade(offer);
+      });
+      card.appendChild(btn);
+
+      grid.appendChild(card);
+    });
+  }
+
+  function openTradeOffer(idx) {
     if (state.tradesRemaining <= 0) return;
     var entry = state.squad[idx];
     var pos = entry.position;
     var allowedBudget = state.budgetTotal > 0 ? state.budgetRemaining + playerCost(entry) : Infinity;
 
+    var seenNames = {};
     var candidates = [];
     getAllCombos().forEach(function (combo) {
       if (!comboInEra(combo)) return;
       combo.players.forEach(function (p) {
         if (p.position !== pos) return;
-        if (state.pickedNames.has(normalizeName(p.name))) return;
+        var norm = normalizeName(p.name);
+        if (state.pickedNames.has(norm) || seenNames[norm]) return;
         if (state.budgetTotal > 0 && playerCost(p) > allowedBudget) return;
+        seenNames[norm] = true;
         candidates.push({ player: p, combo: combo });
       });
     });
@@ -465,31 +513,54 @@
       return;
     }
 
-    var choice = candidates[Math.floor(Math.random() * candidates.length)];
+    var shuffled = candidates.slice();
+    for (var i = shuffled.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = shuffled[i];
+      shuffled[i] = shuffled[j];
+      shuffled[j] = tmp;
+    }
+
+    pendingTradeOffer = { idx: idx, offers: shuffled.slice(0, TRADE_OFFER_COUNT) };
+    state.lastTradeMessage = "";
+    renderTradeScreen();
+  }
+
+  function confirmTrade(offer) {
+    var entry = state.squad[pendingTradeOffer.idx];
+    var allowedBudget = state.budgetTotal > 0 ? state.budgetRemaining + playerCost(entry) : Infinity;
     var oldName = entry.player;
     var oldRating = entry.rating;
 
     state.pickedNames.delete(normalizeName(entry.player));
-    state.pickedNames.add(normalizeName(choice.player.name));
+    state.pickedNames.add(normalizeName(offer.player.name));
     if (state.budgetTotal > 0) {
-      state.budgetRemaining = allowedBudget - playerCost(choice.player);
+      state.budgetRemaining = allowedBudget - playerCost(offer.player);
     }
 
-    entry.player = choice.player.name;
-    entry.rating = choice.player.rating;
-    entry.offRating = choice.player.offRating;
-    entry.defRating = choice.player.defRating;
-    entry.archetype = choice.player.archetype;
-    entry.team = choice.combo.team;
-    entry.season = choice.combo.season;
+    entry.player = offer.player.name;
+    entry.rating = offer.player.rating;
+    entry.offRating = offer.player.offRating;
+    entry.defRating = offer.player.defRating;
+    entry.archetype = offer.player.archetype;
+    entry.team = offer.combo.team;
+    entry.season = offer.combo.season;
 
     state.tradesRemaining--;
     state.lastTradeMessage = "הוחלף: " + oldName + " (" + (typeof oldRating === "number" ? oldRating : "-") +
       ") ⬅ " + entry.player + " (" + (typeof entry.rating === "number" ? entry.rating : "-") + ")";
+    pendingTradeOffer = null;
+    renderTradeScreen();
+  }
+
+  function cancelTradeOffer() {
+    pendingTradeOffer = null;
+    state.lastTradeMessage = "";
     renderTradeScreen();
   }
 
   function showTradeScreen() {
+    pendingTradeOffer = null;
     state.lastTradeMessage = "";
     renderTradeScreen();
     showScreen("singleTrade");
@@ -727,6 +798,7 @@
     state.rerolls = MAX_REROLLS;
     state.tradesRemaining = TRADES_ALLOWED;
     state.lastTradeMessage = "";
+    pendingTradeOffer = null;
     state.needsByHalf = freshNeedsByHalf();
     state.budgetRemaining = state.budgetTotal;
     renderRound();
@@ -776,6 +848,7 @@
   });
   document.getElementById("btn-single-lineup-continue").addEventListener("click", showTradeScreen);
   document.getElementById("btn-single-trade-continue").addEventListener("click", renderFinal);
+  document.getElementById("btn-single-trade-cancel").addEventListener("click", cancelTradeOffer);
   document.getElementById("btn-single-leaderboard").addEventListener("click", showLeaderboardScreen);
 
   document.querySelectorAll("#era-filter-buttons .era-btn").forEach(function (btn) {
