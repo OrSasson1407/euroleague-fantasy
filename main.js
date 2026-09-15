@@ -29,6 +29,9 @@
     triviaQuestion: "screen-trivia-question",
     triviaFinal: "screen-trivia-final",
     badges: "screen-badges",
+    profile: "screen-profile",
+    settings: "screen-settings",
+    about: "screen-about",
     playerSearch: "screen-player-search",
     careerHome: "screen-career-home",
     careerCreate: "screen-career-create",
@@ -41,9 +44,15 @@
       var el = document.getElementById(idMap[key]);
       if (el) el.classList.toggle("active", key === name);
     });
+    var backBtn = document.getElementById("global-back-btn");
+    if (backBtn) backBtn.hidden = name === "home";
   }
 
   window.AppNav = { showScreen: showScreen };
+
+  document.getElementById("global-back-btn").addEventListener("click", function () {
+    showScreen("home");
+  });
 
   document.getElementById("btn-mode-single").addEventListener("click", function () {
     showScreen("start");
@@ -62,6 +71,24 @@
     showScreen("badges");
   });
   document.getElementById("btn-home-from-badges").addEventListener("click", function () {
+    showScreen("home");
+  });
+  document.getElementById("btn-open-profile").addEventListener("click", function () {
+    window.ProfileScreen.open();
+  });
+  document.getElementById("btn-home-from-profile").addEventListener("click", function () {
+    showScreen("home");
+  });
+  document.getElementById("btn-open-settings").addEventListener("click", function () {
+    window.SettingsScreen.open();
+  });
+  document.getElementById("btn-home-from-settings").addEventListener("click", function () {
+    showScreen("home");
+  });
+  document.getElementById("btn-footer-about").addEventListener("click", function () {
+    showScreen("about");
+  });
+  document.getElementById("btn-home-from-about").addEventListener("click", function () {
     showScreen("home");
   });
   document.getElementById("btn-mode-player-search").addEventListener("click", function () {

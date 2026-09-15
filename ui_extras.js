@@ -44,6 +44,44 @@
     initials: teamInitials,
   };
 
+  // ---------- Effects on/off preference ----------
+  // A plain device-level UI preference (not a personal record), so it's
+  // saved regardless of guest/registered mode and applies immediately by
+  // toggling a body class that CSS animations key off of.
+  var SETTINGS_KEY = "euroleague_settings_v1";
+
+  function loadSettings() {
+    try {
+      var raw = localStorage.getItem(SETTINGS_KEY);
+      var parsed = raw ? JSON.parse(raw) : {};
+      return { effectsEnabled: parsed.effectsEnabled !== false };
+    } catch (e) {
+      return { effectsEnabled: true };
+    }
+  }
+
+  var settings = loadSettings();
+
+  function applyEffectsClass() {
+    document.body.classList.toggle("effects-off", !settings.effectsEnabled);
+  }
+
+  function isEffectsEnabled() {
+    return settings.effectsEnabled;
+  }
+
+  function setEffectsEnabled(enabled) {
+    settings.effectsEnabled = !!enabled;
+    applyEffectsClass();
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    } catch (e) {
+      // ignore storage failures
+    }
+  }
+
+  applyEffectsClass();
+
   // ---------- Confetti burst ----------
   // A small, dependency-free confetti effect for decisive win moments.
   // Pieces are absolutely-positioned spans animated with CSS, appended to
@@ -51,6 +89,7 @@
   var CONFETTI_COLORS = ["#f4a825", "#2f6fed", "#37c977", "#ff5c5c", "#8338ec", "#06d6a0"];
 
   function confetti(count) {
+    if (!settings.effectsEnabled) return;
     var total = count || 60;
     var frag = document.createDocumentFragment();
     var pieces = [];
@@ -80,5 +119,9 @@
     }, 3400);
   }
 
-  window.Effects = { confetti: confetti };
+  window.Effects = {
+    confetti: confetti,
+    isEnabled: isEffectsEnabled,
+    setEnabled: setEffectsEnabled,
+  };
 })();
