@@ -10,6 +10,9 @@
   var selectedDraftMode = "turns"; // 'turns' | 'auction', set by the setup screen toggle
   var AUCTION_BUDGET = 25;
   var auction = null; // set up by startAuctionDraft(), used only in auction mode
+  var auctionEraMin = 0;
+  var auctionEraMax = 9999;
+  var auctionTeamFilter = null; // null = all clubs, or a specific club name
 
   function freshNeeds() {
     return { Guard: 2, Forward: 2, Center: 1 };
@@ -42,6 +45,27 @@
 
   function getAllCombos() {
     return window.EUROLEAGUE_DATA || [];
+  }
+
+  function uniqueClubs() {
+    var seen = {};
+    var list = [];
+    getAllCombos().forEach(function (c) {
+      if (!seen[c.team]) {
+        seen[c.team] = true;
+        list.push(c.team);
+      }
+    });
+    list.sort();
+    return list;
+  }
+
+  // Used only by the auction draft mode's era/team filters.
+  function comboMatchesAuctionFilters(combo) {
+    var year = parseInt(combo.season, 10);
+    if (year < auctionEraMin || year > auctionEraMax) return false;
+    if (auctionTeamFilter && combo.team !== auctionTeamFilter) return false;
+    return true;
   }
 
   function comboHasEligiblePlayer(combo, needs) {
@@ -600,6 +624,7 @@
     var seen = {};
     var candidates = [];
     getAllCombos().forEach(function (combo) {
+      if (!comboMatchesAuctionFilters(combo)) return;
       combo.players.forEach(function (p) {
         if (!p.position || wanted.indexOf(p.position) === -1) return;
         var norm = normalizeName(p.name);
@@ -810,6 +835,56 @@
       });
       btn.classList.add("selected");
       selectedDraftMode = btn.dataset.draftMode;
+      document.getElementById("h2h-auction-filters").hidden = selectedDraftMode !== "auction";
+    });
+  });
+
+  document.querySelectorAll("#h2h-auction-era-buttons .era-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll("#h2h-auction-era-buttons .era-btn").forEach(function (b) {
+        b.classList.remove("selected");
+      });
+      btn.classList.add("selected");
+      auctionEraMin = parseInt(btn.dataset.min, 10);
+      auctionEraMax = parseInt(btn.dataset.max, 10);
+    });
+  });
+
+  function renderAuctionTeamGrid() {
+    var grid = document.getElementById("h2h-auction-team-grid");
+    grid.innerHTML = "";
+    uniqueClubs().forEach(function (club) {
+      var btn = document.createElement("button");
+      btn.className = "team-select-btn" + (auctionTeamFilter === club ? " selected" : "");
+      btn.innerHTML = window.TeamBadge.html(club) + "<span>" + club + "</span>";
+      btn.addEventListener("click", function () {
+        auctionTeamFilter = club;
+        grid.querySelectorAll(".team-select-btn").forEach(function (b) {
+          b.classList.remove("selected");
+        });
+        btn.classList.add("selected");
+      });
+      grid.appendChild(btn);
+    });
+  }
+
+  document.querySelectorAll("#h2h-auction-pool-buttons .era-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll("#h2h-auction-pool-buttons .era-btn").forEach(function (b) {
+        b.classList.remove("selected");
+      });
+      btn.classList.add("selected");
+      var wantsTeam = btn.dataset.pool === "team";
+      var grid = document.getElementById("h2h-auction-team-grid");
+      if (wantsTeam) {
+        if (!grid.childElementCount) renderAuctionTeamGrid();
+        if (!auctionTeamFilter) auctionTeamFilter = uniqueClubs()[0];
+        renderAuctionTeamGrid();
+        grid.hidden = false;
+      } else {
+        auctionTeamFilter = null;
+        grid.hidden = true;
+      }
     });
   });
 

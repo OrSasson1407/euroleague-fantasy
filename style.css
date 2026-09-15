@@ -1495,6 +1495,11 @@ footer {
   transform: translateY(-2px);
 }
 
+.team-select-btn.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(214,40,40,0.2);
+}
+
 .system-select-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));

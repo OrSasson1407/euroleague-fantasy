@@ -393,6 +393,21 @@
           <button class="era-btn" data-draft-mode="auction">מכרז שחקנים ($25 לכל צד)</button>
         </div>
       </div>
+      <div class="era-filter" id="h2h-auction-filters" hidden>
+        <div class="era-filter-label">טווח עידן לשחקנים במכרז:</div>
+        <div class="era-filter-buttons" id="h2h-auction-era-buttons">
+          <button class="era-btn selected" data-min="0" data-max="9999">כל הזמנים</button>
+          <button class="era-btn" data-min="2000" data-max="2009">2000-2009</button>
+          <button class="era-btn" data-min="2010" data-max="2019">2010-2019</button>
+          <button class="era-btn" data-min="2020" data-max="2026">2020-2026</button>
+        </div>
+        <div class="era-filter-label" style="margin-top:14px;">מאגר שחקנים למכרז:</div>
+        <div class="era-filter-buttons" id="h2h-auction-pool-buttons">
+          <button class="era-btn selected" data-pool="all">כל הקבוצות</button>
+          <button class="era-btn" data-pool="team">קבוצה אחת בלבד</button>
+        </div>
+        <div class="team-select-grid" id="h2h-auction-team-grid" hidden></div>
+      </div>
       <div class="h2h-setup-buttons">
         <button id="btn-h2h-vs-friend">נגד חבר (באותו מחשב)</button>
         <button id="btn-h2h-vs-computer">נגד המחשב</button>
