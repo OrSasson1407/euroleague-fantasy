@@ -64,6 +64,7 @@
   // Adds the just-finished squad to the top-5 leaderboard if it qualifies.
   // Returns the new 1-based rank, or null if it didn't make the cut.
   function maybeAddToLeaderboard(finalTotal) {
+    if (window.Auth && !window.Auth.canSave()) return null; // guest mode - nothing persists
     var list = loadTopSquads();
     var rounded = Math.round(finalTotal * 10) / 10;
     var qualifies = list.length < MAX_TOP_SQUADS || rounded > list[list.length - 1].rating;
@@ -643,16 +644,20 @@
       }
 
       var beforeList = loadTopSquads();
-      var rank = maybeAddToLeaderboard(finalTotal);
-      renderBestDisplay();
-      if (rank) {
-        html += "<br>🏆 נכנסתם לטבלת השיאים! מקום <strong>" + rank + "</strong> מתוך " + MAX_TOP_SQUADS;
-        if (rank === 1) {
-          html += " &nbsp;🎉 השיא האישי החדש שלכם!";
-          window.Effects.confetti();
+      if (window.Auth && window.Auth.isGuest()) {
+        html += "<br>🕶️ מצב אורח - ההרכב הזה לא יישמר בטבלת השיאים. הירשמו כדי לשמור שיאים אישיים!";
+      } else {
+        var rank = maybeAddToLeaderboard(finalTotal);
+        renderBestDisplay();
+        if (rank) {
+          html += "<br>🏆 נכנסתם לטבלת השיאים! מקום <strong>" + rank + "</strong> מתוך " + MAX_TOP_SQUADS;
+          if (rank === 1) {
+            html += " &nbsp;🎉 השיא האישי החדש שלכם!";
+            window.Effects.confetti();
+          }
+        } else if (beforeList.length > 0) {
+          html += "<br>שיא אישי נוכחי: <strong>" + beforeList[0].rating.toFixed(1) + "</strong>";
         }
-      } else if (beforeList.length > 0) {
-        html += "<br>שיא אישי נוכחי: <strong>" + beforeList[0].rating.toFixed(1) + "</strong>";
       }
 
       summaryEl.innerHTML = html;

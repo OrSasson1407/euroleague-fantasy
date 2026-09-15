@@ -7,7 +7,29 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+<div id="auth-gate" class="auth-gate-overlay" hidden>
+  <div class="auth-gate-box">
+    <h2>ברוכים הבאים!</h2>
+    <p class="auth-gate-desc">
+      אפשר לשחק כאורח בלי הרשמה - אבל שימו לב: <strong>במצב אורח השיאים והשמירות לא נשמרים</strong> בשום משחקון (טבלת השיאים בבניית סגל, קריירה, באנרים).
+      הרשמה עם שם משתמש שומרת את כל אלה, ותפתח בעתיד גם אפשרויות נוספות.
+    </p>
+    <div class="auth-gate-section">
+      <div class="auth-gate-label">הרשמה</div>
+      <div class="auth-register-row">
+        <input type="text" id="auth-username-input" placeholder="שם משתמש..." maxlength="24">
+        <button id="btn-auth-register-submit">הרשמה ושמירת שיאים</button>
+      </div>
+      <p class="auth-username-error" id="auth-username-error" hidden></p>
+    </div>
+    <div class="auth-gate-divider">או</div>
+    <button class="secondary" id="btn-auth-guest">היכנסו כאורח (בלי שמירה)</button>
+  </div>
+</div>
+
 <div id="app">
+  <div class="auth-status-bar" id="auth-status-bar"></div>
   <header>
     <h1>הרכב כל הזמנים - יורוליג</h1>
     <p>בחרו מצב משחק</p>
@@ -596,6 +618,7 @@
   <footer>גרסה 1 &middot; נתוני סגלים היסטוריים לצורך משחק בלבד</footer>
 </div>
 
+<script src="auth.js"></script>
 <script src="euroleague_data.js"></script>
 <script src="ratings_enrich.js"></script>
 <script src="play_systems.js"></script>

@@ -49,6 +49,148 @@ header p {
   font-size: 0.95rem;
 }
 
+/* ---------- Auth (register / guest) ---------- */
+
+.auth-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  min-height: 18px;
+}
+
+.auth-chip {
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-dim);
+}
+
+.auth-chip.registered {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.auth-chip.guest {
+  color: var(--text-dim);
+}
+
+.auth-chip-btn {
+  font-size: 0.75rem;
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.auth-chip-btn:hover {
+  color: var(--text);
+  border-color: var(--accent-2);
+}
+
+.auth-gate-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5,8,14,0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  padding: 16px;
+}
+
+.auth-gate-overlay[hidden] {
+  display: none;
+}
+
+.auth-gate-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 24px;
+  max-width: 440px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+}
+
+.auth-gate-box h2 {
+  margin: 0 0 12px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.auth-gate-desc {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  margin: 0 0 20px;
+}
+
+.auth-gate-section {
+  text-align: right;
+}
+
+.auth-gate-label {
+  font-weight: 700;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  margin-bottom: 8px;
+}
+
+.auth-register-row {
+  display: flex;
+  gap: 8px;
+}
+
+.auth-register-row input {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.auth-register-row button {
+  flex: 0 0 auto;
+  padding: 10px 16px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.auth-username-error {
+  color: var(--danger);
+  font-size: 0.78rem;
+  margin: 8px 0 0;
+}
+
+.auth-gate-divider {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  margin: 18px 0;
+}
+
+#btn-auth-guest {
+  width: 100%;
+}
+
+@media (max-width: 420px) {
+  .auth-register-row {
+    flex-direction: column;
+  }
+}
+
 .screen { display: none; }
 .screen.active { display: block; animation: screen-in .35s ease both; }
 

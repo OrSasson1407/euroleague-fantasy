@@ -55,6 +55,7 @@
   var data = load();
 
   function save() {
+    if (window.Auth && !window.Auth.canSave()) return; // guest mode - nothing persists
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch (e) {

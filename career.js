@@ -380,6 +380,7 @@
   }
 
   function saveCareer() {
+    if (window.Auth && !window.Auth.canSave()) return; // guest mode - nothing persists
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(career));
     } catch (e) {
@@ -405,6 +406,7 @@
   }
 
   function saveLastCareer(summary) {
+    if (window.Auth && !window.Auth.canSave()) return; // guest mode - nothing persists
     try {
       localStorage.setItem(LAST_KEY, JSON.stringify(summary));
     } catch (e) {
