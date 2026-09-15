@@ -181,7 +181,7 @@
       chip.innerHTML =
         '<span class="h2h-slot-type">' + slot.label + "</span>" +
         (slot.pick ? '<span class="h2h-slot-player">' + slot.pick.player +
-          (typeof slot.pick.rating === "number" ? '<span class="rating-tag">' + slot.pick.rating + "</span>" : "") +
+          window.RatingTag.html(slot.pick.rating) +
           "</span>" : "");
       container.appendChild(chip);
     });
@@ -228,7 +228,7 @@
       info.className = "player-dual-info";
       info.innerHTML = player.name +
         (player.position ? '<span class="pos-tag">' + player.position + "</span>" : "") +
-        (typeof player.rating === "number" ? '<span class="rating-tag">' + player.rating + "</span>" : "") +
+        window.RatingTag.html(player.rating) +
         (typeof player.offRating === "number" ? '<span class="off-tag">התק׳ ' + player.offRating + "</span>" : "") +
         (typeof player.defRating === "number" ? '<span class="def-tag">הג׳ ' + player.defRating + "</span>" : "") +
         (player.archetype ? '<span class="archetype-tag">' + player.archetype.label + "</span>" : "") +
@@ -303,7 +303,7 @@
       chip.innerHTML =
         '<span class="h2h-slot-type">' + slot.label + "</span>" +
         (slot.pick ? '<span class="h2h-slot-player">' + slot.pick.player +
-          (typeof slot.pick.rating === "number" ? '<span class="rating-tag">' + slot.pick.rating + "</span>" : "") +
+          window.RatingTag.html(slot.pick.rating) +
           "</span>" : "");
       if (slot.pick) {
         chip.addEventListener("click", function () {
@@ -693,7 +693,7 @@
       chip.innerHTML =
         '<span class="h2h-slot-type">' + (entry.half === 1 ? "פותחת" : "ספסל") + " · " + POS_LABEL[entry.position] + "</span>" +
         '<span class="h2h-slot-player">' + entry.player +
-          (typeof entry.rating === "number" ? '<span class="rating-tag">' + entry.rating + "</span>" : "") +
+          window.RatingTag.html(entry.rating) +
           "</span>";
       chip.addEventListener("click", function () {
         tradeSelection = entry;
@@ -724,7 +724,7 @@
       btn.className = "player-btn";
       btn.innerHTML = entry.player.name +
         '<span class="pos-tag">' + entry.player.position + "</span>" +
-        (typeof entry.player.rating === "number" ? '<span class="rating-tag">' + entry.player.rating + "</span>" : "") +
+        window.RatingTag.html(entry.player.rating) +
         '<span class="taken-tag">' + entry.combo.team + " " + formatSeason(entry.combo.season) + "</span>";
       btn.addEventListener("click", function () {
         completeTrade(entry.player, entry.combo);

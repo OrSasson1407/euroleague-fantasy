@@ -1406,6 +1406,133 @@ footer {
   margin-top: 2px;
 }
 
+/* ---------- Diagonal wipe screen transition ---------- */
+
+.screen-wipe {
+  position: fixed;
+  inset: 0;
+  z-index: 2600;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.screen-wipe-bar {
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  width: 70%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  transform: translateX(160%) skewX(-12deg);
+  animation: wipe-sweep .5s ease-in-out forwards;
+}
+
+@keyframes wipe-sweep {
+  0% { transform: translateX(160%) skewX(-12deg); }
+  50% { transform: translateX(0%) skewX(-12deg); }
+  100% { transform: translateX(-160%) skewX(-12deg); }
+}
+
+body.effects-off .screen-wipe { display: none; }
+
+/* ---------- Trade flip card ---------- */
+
+.trade-flip-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5,8,14,0.6);
+  pointer-events: none;
+}
+
+.trade-flip-card {
+  width: 220px;
+  height: 140px;
+  perspective: 800px;
+}
+
+.trade-flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform .6s cubic-bezier(.4,.2,.2,1);
+  transform-style: preserve-3d;
+}
+
+.trade-flip-inner.flipped {
+  transform: rotateY(180deg);
+}
+
+.trade-flip-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: 14px;
+  background: var(--bg-card);
+  border: 2px solid var(--accent-2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  text-align: center;
+}
+
+.trade-flip-back {
+  transform: rotateY(180deg);
+  border-color: var(--accent);
+}
+
+.trade-flip-name {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+/* ---------- Home screen ambient background ---------- */
+
+#screen-home {
+  position: relative;
+}
+
+#screen-home::before {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  background: repeating-linear-gradient(
+    115deg,
+    transparent 0px,
+    transparent 60px,
+    rgba(214,40,40,0.05) 60px,
+    rgba(214,40,40,0.05) 62px,
+    transparent 62px,
+    transparent 140px,
+    rgba(255,183,3,0.04) 140px,
+    rgba(255,183,3,0.04) 142px
+  );
+  animation: home-bg-drift 18s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+#screen-home > * {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes home-bg-drift {
+  from { transform: translate(0, 0); }
+  to { transform: translate(-100px, -60px); }
+}
+
+body.effects-off #screen-home::before {
+  animation: none;
+}
+
 .league-mvp {
   color: var(--text-dim);
   text-align: center;
@@ -1871,6 +1998,16 @@ footer {
   vertical-align: middle;
   background: rgba(214,40,40,0.18);
   color: var(--accent);
+}
+
+.rating-tag.rating-tag-good {
+  background: rgba(255,140,66,0.2);
+  color: #FF8C42;
+}
+
+.rating-tag.rating-tag-elite {
+  background: rgba(255,183,3,0.22);
+  color: var(--accent-2);
 }
 
 .off-tag, .def-tag {

@@ -59,7 +59,7 @@
         '<div class="player-appearance-row' + (a === entry.bestAppearance ? " peak" : "") + '">' +
         "<span>" + a.team + " &middot; עונת " + formatSeason(a.season) + "</span>" +
         "<span>" + (a.position || "-") + "</span>" +
-        '<span class="rating-tag">' + (typeof a.rating === "number" ? a.rating : "-") + "</span>" +
+        (typeof a.rating === "number" ? window.RatingTag.html(a.rating) : '<span class="rating-tag">-</span>') +
         (typeof a.offRating === "number" ? '<span class="off-tag">התק׳ ' + a.offRating + "</span>" : "") +
         (typeof a.defRating === "number" ? '<span class="def-tag">הג׳ ' + a.defRating + "</span>" : "") +
         (a.archetype ? '<span class="archetype-tag">' + a.archetype.label + "</span>" : "") +

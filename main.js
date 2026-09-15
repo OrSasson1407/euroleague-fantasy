@@ -69,8 +69,9 @@
       var el = document.getElementById(idMap[key]);
       if (el) el.classList.toggle("active", key === name);
     });
-    if (name !== lastScreen && SCREEN_INFO[name] && window.Effects) {
-      window.Effects.showInfoToast(SCREEN_INFO[name]);
+    if (name !== lastScreen && window.Effects) {
+      window.Effects.wipeTransition();
+      if (SCREEN_INFO[name]) window.Effects.showInfoToast(SCREEN_INFO[name]);
     }
     lastScreen = name;
   }

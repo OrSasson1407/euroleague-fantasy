@@ -149,7 +149,7 @@
           card.className = "squad-player-card";
           card.innerHTML =
             '<div class="name">' + e.player +
-              (typeof e.rating === "number" ? '<span class="rating-tag">' + e.rating + "</span>" : "") + "</div>" +
+              window.RatingTag.html(e.rating) + "</div>" +
             '<div class="meta">' + e.slotLabel + " &middot; " + e.team + " " + formatSeason(e.season) + "</div>";
           grid.appendChild(card);
         });
@@ -303,7 +303,7 @@
       info.className = "player-dual-info";
       info.innerHTML = player.name +
         (player.position ? '<span class="pos-tag">' + player.position + "</span>" : "") +
-        (typeof player.rating === "number" ? '<span class="rating-tag">' + player.rating + "</span>" : "") +
+        window.RatingTag.html(player.rating) +
         '<span class="cost-tag">' + formatSalary(playerCost(player)) + "</span>" +
         (taken ? '<span class="taken-tag">כבר נבחר</span>' :
           (tooExpensive ? '<span class="taken-tag">יקר מדי</span>' :
@@ -382,7 +382,7 @@
       chip.innerHTML =
         '<span class="h2h-slot-type">' + slot.label + "</span>" +
         (slot.pick ? '<span class="h2h-slot-player">' + slot.pick.player +
-          (typeof slot.pick.rating === "number" ? '<span class="rating-tag">' + slot.pick.rating + "</span>" : "") +
+          window.RatingTag.html(slot.pick.rating) +
           "</span>" : "");
       if (slot.pick) {
         chip.addEventListener("click", function () {
@@ -446,7 +446,7 @@
       card.className = "squad-player-card";
       card.innerHTML =
         '<div class="name">' + entry.player +
-          (typeof entry.rating === "number" ? '<span class="rating-tag">' + entry.rating + "</span>" : "") + "</div>" +
+          window.RatingTag.html(entry.rating) + "</div>" +
         '<div class="meta">' + entry.slotLabel + " &middot; " + POS_LABEL[entry.position] + " &middot; " +
           entry.team + " " + formatSeason(entry.season) + "</div>";
 
@@ -471,7 +471,7 @@
     current.innerHTML =
       '<div class="meta">השחקן הנוכחי שלכם</div>' +
       '<div class="name">' + entry.player +
-        (typeof entry.rating === "number" ? '<span class="rating-tag">' + entry.rating + "</span>" : "") + "</div>" +
+        window.RatingTag.html(entry.rating) + "</div>" +
       '<div class="meta">' + entry.slotLabel + " &middot; " + POS_LABEL[entry.position] + " &middot; " +
         entry.team + " " + formatSeason(entry.season) + "</div>";
     grid.appendChild(current);
@@ -482,7 +482,7 @@
       card.innerHTML =
         '<div class="meta">הצעה להחלפה</div>' +
         '<div class="name">' + offer.player.name +
-          (typeof offer.player.rating === "number" ? '<span class="rating-tag">' + offer.player.rating + "</span>" : "") + "</div>" +
+          window.RatingTag.html(offer.player.rating) + "</div>" +
         '<div class="meta">' + offer.combo.team + " " + formatSeason(offer.combo.season) + "</div>";
 
       var btn = document.createElement("button");
@@ -560,7 +560,7 @@
     state.lastTradeMessage = "הוחלף: " + oldName + " (" + (typeof oldRating === "number" ? oldRating : "-") +
       ") ⬅ " + entry.player + " (" + (typeof entry.rating === "number" ? entry.rating : "-") + ")";
     pendingTradeOffer = null;
-    renderTradeScreen();
+    window.Effects.flipCard(oldName, oldRating, entry.player, entry.rating, renderTradeScreen);
   }
 
   function cancelTradeOffer() {

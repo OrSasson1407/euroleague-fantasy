@@ -44,6 +44,26 @@
     initials: teamInitials,
   };
 
+  // ---------- Rating tag, colored by tier ----------
+  // 85+ gets a gold tier with a permanent flame, 75-84 a warm orange tier,
+  // everything else the plain default (red-tinted) tag. Centralizing this
+  // means every screen that shows a player's rating renders it consistently.
+  function ratingTagHtml(rating, sizeClass) {
+    if (typeof rating !== "number") return "";
+    var cls = "rating-tag";
+    var label = String(rating);
+    if (rating >= 85) {
+      cls += " rating-tag-elite";
+      label = "🔥 " + rating;
+    } else if (rating >= 75) {
+      cls += " rating-tag-good";
+    }
+    if (sizeClass) cls += " " + sizeClass;
+    return '<span class="' + cls + '">' + label + "</span>";
+  }
+
+  window.RatingTag = { html: ratingTagHtml };
+
   // ---------- Effects on/off preference ----------
   // A plain device-level UI preference (not a personal record), so it's
   // saved regardless of guest/registered mode and applies immediately by
@@ -285,6 +305,57 @@
     requestAnimationFrame(step);
   }
 
+  // ---------- Diagonal wipe transition ----------
+  // A quick broadcast-style diagonal "cut" that sweeps across the whole
+  // viewport - fired centrally whenever the active screen genuinely
+  // changes, masking the instant DOM swap underneath.
+  function wipeTransition() {
+    if (!settings.effectsEnabled) return;
+    var overlay = document.createElement("div");
+    overlay.className = "screen-wipe";
+    overlay.innerHTML = '<div class="screen-wipe-bar"></div>';
+    document.body.appendChild(overlay);
+    var bar = overlay.querySelector(".screen-wipe-bar");
+    bar.addEventListener("animationend", function () {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    });
+  }
+
+  // ---------- Trade flip card ----------
+  // A centered 3D flip from the old player to the new one, used by squad
+  // builder's trade screen. Calls onDone once the animation (or, with
+  // effects off, immediately) finishes, so the caller can re-render.
+  function flipCard(oldLabel, oldRating, newLabel, newRating, onDone) {
+    if (!settings.effectsEnabled) {
+      if (onDone) onDone();
+      return;
+    }
+    var overlay = document.createElement("div");
+    overlay.className = "trade-flip-overlay";
+    overlay.innerHTML =
+      '<div class="trade-flip-card">' +
+        '<div class="trade-flip-inner">' +
+          '<div class="trade-flip-face trade-flip-front">' +
+            '<div class="trade-flip-name">' + oldLabel + "</div>" +
+            ratingTagHtml(oldRating) +
+          "</div>" +
+          '<div class="trade-flip-face trade-flip-back">' +
+            '<div class="trade-flip-name">' + newLabel + "</div>" +
+            ratingTagHtml(newRating) +
+          "</div>" +
+        "</div>" +
+      "</div>";
+    document.body.appendChild(overlay);
+    var inner = overlay.querySelector(".trade-flip-inner");
+    setTimeout(function () {
+      inner.classList.add("flipped");
+    }, 250);
+    setTimeout(function () {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      if (onDone) onDone();
+    }, 1300);
+  }
+
   window.Effects = {
     confetti: confetti,
     wowPick: wowPick,
@@ -292,6 +363,8 @@
     playClick: playClick,
     playBuzzer: playBuzzer,
     showInfoToast: showInfoToast,
+    wipeTransition: wipeTransition,
+    flipCard: flipCard,
     isEnabled: isEffectsEnabled,
     setEnabled: setEffectsEnabled,
   };

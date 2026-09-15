@@ -122,7 +122,7 @@
       chip.innerHTML =
         '<span class="h2h-slot-type">' + slot.label + "</span>" +
         (slot.pick ? '<span class="h2h-slot-player">' + slot.pick.player +
-          (typeof slot.pick.rating === "number" ? '<span class="rating-tag">' + slot.pick.rating + "</span>" : "") +
+          window.RatingTag.html(slot.pick.rating) +
           "</span>" : "");
       container.appendChild(chip);
     });
@@ -176,7 +176,7 @@
       btn.disabled = disabled;
       btn.innerHTML = player.name +
         (player.position ? '<span class="pos-tag">' + player.position + "</span>" : "") +
-        (typeof player.rating === "number" ? '<span class="rating-tag">' + player.rating + "</span>" : "") +
+        window.RatingTag.html(player.rating) +
         (taken ? '<span class="taken-tag">כבר נבחר</span>' : (slotFull ? '<span class="taken-tag">המשבצת מלאה</span>' : ""));
       if (!disabled) {
         btn.addEventListener("click", function () {
@@ -442,7 +442,7 @@
       card.innerHTML =
         '<div class="name">' + pick.player +
           (pick.position ? '<span class="pos-tag">' + pick.position + "</span>" : "") +
-          (typeof pick.rating === "number" ? '<span class="rating-tag">' + pick.rating + "</span>" : "") + "</div>" +
+          window.RatingTag.html(pick.rating) + "</div>" +
         '<div class="meta">' + pick.slotLabel + " &middot; " + pick.team + " " + formatSeason(pick.season) + "</div>" +
         '<div class="meta">' +
           (typeof pick.offRating === "number" ? '<span class="off-tag">התק׳ ' + pick.offRating + "</span>" : "") +
@@ -637,7 +637,7 @@
       chip.innerHTML =
         '<span class="h2h-slot-type">' + slot.label + "</span>" +
         (slot.pick ? '<span class="h2h-slot-player">' + slot.pick.player +
-          '<span class="rating-tag">' + slot.pick.rating + "</span>" +
+          window.RatingTag.html(slot.pick.rating) +
           '<span class="cost-tag">$' + slot.pick.price + "</span>" +
           "</span>" : "");
       container.appendChild(chip);
@@ -659,7 +659,7 @@
       document.getElementById("h2h-auction-player-name").innerHTML =
         cp.player.name +
         (cp.player.position ? '<span class="pos-tag">' + cp.player.position + "</span>" : "") +
-        (typeof cp.player.rating === "number" ? '<span class="rating-tag">' + cp.player.rating + "</span>" : "");
+        window.RatingTag.html(cp.player.rating);
       document.getElementById("h2h-auction-player-meta").textContent =
         cp.combo.team + " &middot; עונת " + formatSeason(cp.combo.season);
     }
@@ -713,7 +713,7 @@
       card.className = "squad-player-card";
       card.innerHTML =
         '<div class="name">' + pick.player +
-          (typeof pick.rating === "number" ? '<span class="rating-tag">' + pick.rating + "</span>" : "") +
+          window.RatingTag.html(pick.rating) +
           '<span class="cost-tag">$' + pick.price + "</span></div>" +
         '<div class="meta">' + pick.slotLabel + " &middot; " + pick.team + " " + formatSeason(pick.season) + "</div>";
       grid.appendChild(card);

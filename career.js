@@ -1344,7 +1344,7 @@
         return (
           '<div class="player-appearance-row">' +
           "<span>גיל " + r.age + " &middot; " + r.team + " (אקדמיה)</span>" +
-          '<span class="rating-tag">' + r.rating + "</span>" +
+          window.RatingTag.html(r.rating) +
           (r.breakout ? '<span class="archetype-tag">פריצת דרך</span>' : "") +
           "</div>"
         );
@@ -1353,7 +1353,7 @@
         '<div class="player-appearance-row' + (r.champion ? " peak" : "") + '">' +
         "<span>גיל " + r.age + " &middot; " + r.team + "</span>" +
         "<span>" + (r.starter ? "פותח" : "ספסל") + "</span>" +
-        '<span class="rating-tag">' + r.rating + "</span>" +
+        window.RatingTag.html(r.rating) +
         "<span>" + r.wins + "-" + r.losses + "</span>" +
         "<span>" + r.ppg + " נק'</span>" +
         (r.champion ? '<span class="archetype-tag">🏆 אלופים</span>' : "") +
