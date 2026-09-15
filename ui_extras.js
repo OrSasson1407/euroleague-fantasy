@@ -215,6 +215,36 @@
     }, 1800);
   }
 
+  // ---------- Dismissible info toast ----------
+  // Explains a screen's rules as a toast the user must actively dismiss,
+  // instead of a paragraph that permanently sits on the page. Always shown
+  // regardless of the effects on/off setting - it's informational content,
+  // not a decorative flourish. Only one is ever on screen at a time.
+  function showInfoToast(html) {
+    var existing = document.querySelector(".info-toast");
+    if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+
+    var toast = document.createElement("div");
+    toast.className = "info-toast";
+    toast.setAttribute("role", "status");
+    toast.innerHTML =
+      '<div class="info-toast-text">' + html + "</div>" +
+      '<button class="info-toast-dismiss">הבנתי</button>';
+    document.body.appendChild(toast);
+    requestAnimationFrame(function () {
+      toast.classList.add("show");
+    });
+
+    function dismiss() {
+      toast.classList.remove("show");
+      setTimeout(function () {
+        if (toast.parentNode) toast.parentNode.removeChild(toast);
+      }, 300);
+    }
+
+    toast.querySelector(".info-toast-dismiss").addEventListener("click", dismiss);
+  }
+
   // ---------- Count-up number animation ----------
   // Animates an element's text from 0 up to a target number - used for
   // "final rating reveal" moments. Skips straight to the final value when
@@ -254,6 +284,7 @@
     countUp: countUp,
     playClick: playClick,
     playBuzzer: playBuzzer,
+    showInfoToast: showInfoToast,
     isEnabled: isEffectsEnabled,
     setEnabled: setEffectsEnabled,
   };

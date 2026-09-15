@@ -1323,6 +1323,49 @@ footer {
   margin-inline-start: 4px;
 }
 
+/* ---------- Dismissible info toast ---------- */
+
+.info-toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  opacity: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+  background: var(--bg-card);
+  border: 1px solid var(--accent-2);
+  border-radius: 14px;
+  padding: 14px 18px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  max-width: min(520px, calc(100vw - 32px));
+  transition: opacity .3s ease, transform .3s ease;
+}
+
+.info-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.info-toast-text {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  text-align: right;
+}
+
+.info-toast-dismiss {
+  flex: 0 0 auto;
+  background: var(--accent-2);
+  color: #2a1a00;
+  font-size: 0.8rem;
+  padding: 8px 18px;
+}
+
 /* ---------- Final rating hero (count-up reveal) ---------- */
 
 .final-rating-hero {
