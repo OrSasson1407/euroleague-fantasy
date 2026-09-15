@@ -7,6 +7,9 @@
   var MAX_REROLLS = 2;
   var HOME_BONUS = 3; // score bonus for the "home" side in a given game
   var selectedGamesToWin = 2; // set by the Bo3/Bo5 toggle on the setup screen
+  var selectedDraftMode = "turns"; // 'turns' | 'auction', set by the setup screen toggle
+  var AUCTION_BUDGET = 25;
+  var auction = null; // set up by startAuctionDraft(), used only in auction mode
 
   function freshNeeds() {
     return { Guard: 2, Forward: 2, Center: 1 };
@@ -532,8 +535,14 @@
   }
 
   function startH2H(mode) {
-    state.mode = mode;
     state.gamesToWin = selectedGamesToWin;
+
+    if (selectedDraftMode === "auction") {
+      startAuctionDraft(mode);
+      return;
+    }
+
+    state.mode = mode;
     state.usedComboIndexes = [];
     state.pickedNames = new Set();
     state.turn = 0;
@@ -542,6 +551,231 @@
       { label: mode === "computer" ? "המחשב" : "שחקן 2", picks: [], rerolls: MAX_REROLLS, needs: freshNeeds(), system: null },
     ];
     renderTurn();
+  }
+
+  // ---------- Auction draft mode ----------
+  // An alternate way to fill the same 5-man roster (2 Guard / 2 Forward /
+  // 1 Center): each side has a $25 budget, and players go up for auction
+  // one at a time. Whoever's turn it is to start this round is asked first
+  // whether they want the shown player; agreeing raises the price by $1 and
+  // passes the question to the other side, and so on, until one side
+  // declines - the player then goes to whoever last agreed, at the price
+  // they agreed to. If the very first side asked declines and the other
+  // side declines too (at the still-unraised price), nobody gets the
+  // player and the draft moves on. A side that already filled a position,
+  // or that hasn't been asked yet at all, is skipped automatically without
+  // spending a real turn. Once both rosters are full, the picks feed into
+  // the exact same system-selection / series-simulation flow the
+  // turn-based mode uses.
+
+  function freshAuctionSide(label) {
+    return { label: label, budget: AUCTION_BUDGET, needs: freshNeeds(), picks: [] };
+  }
+
+  function auctionSlotsRemaining(sideIndex) {
+    var needs = auction.sides[sideIndex].needs;
+    return needs.Guard + needs.Forward + needs.Center;
+  }
+
+  function auctionSideDone(sideIndex) {
+    return auctionSlotsRemaining(sideIndex) === 0;
+  }
+
+  // A simple willingness-to-pay heuristic for the computer opponent: scales
+  // roughly $3-$18 across the real rating range, so it competes harder for
+  // stars without ever being a perfect, unbeatable bidder.
+  function computerWantsBid(player, price) {
+    var rating = typeof player.rating === "number" ? player.rating : 65;
+    var value = 3 + ((rating - 60) / (99 - 60)) * 15;
+    return price <= value;
+  }
+
+  function pickAuctionCandidate() {
+    var wanted = [];
+    ["Guard", "Forward", "Center"].forEach(function (pos) {
+      if (auction.sides[0].needs[pos] > 0 || auction.sides[1].needs[pos] > 0) wanted.push(pos);
+    });
+    if (wanted.length === 0) return null;
+
+    var seen = {};
+    var candidates = [];
+    getAllCombos().forEach(function (combo) {
+      combo.players.forEach(function (p) {
+        if (!p.position || wanted.indexOf(p.position) === -1) return;
+        var norm = normalizeName(p.name);
+        if (state.pickedNames.has(norm) || seen[norm]) return;
+        seen[norm] = true;
+        candidates.push({ player: p, combo: combo });
+      });
+    });
+    if (candidates.length === 0) return null;
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  }
+
+  function renderAuctionSlots(sideIndex) {
+    var container = document.getElementById("h2h-auction-slots-" + (sideIndex + 1));
+    container.innerHTML = "";
+    buildSlotDisplay(auction.sides[sideIndex].picks).forEach(function (slot) {
+      var chip = document.createElement("div");
+      chip.className = "h2h-slot-chip" + (slot.pick ? " filled" : "");
+      chip.innerHTML =
+        '<span class="h2h-slot-type">' + slot.label + "</span>" +
+        (slot.pick ? '<span class="h2h-slot-player">' + slot.pick.player +
+          '<span class="rating-tag">' + slot.pick.rating + "</span>" +
+          '<span class="cost-tag">$' + slot.pick.price + "</span>" +
+          "</span>" : "");
+      container.appendChild(chip);
+    });
+  }
+
+  function renderAuctionScreen() {
+    document.getElementById("h2h-auction-label-1").textContent = auction.sides[0].label;
+    document.getElementById("h2h-auction-label-2").textContent = auction.sides[1].label;
+    document.getElementById("h2h-auction-budget-1").textContent = "תקציב: $" + auction.sides[0].budget;
+    document.getElementById("h2h-auction-budget-2").textContent = "תקציב: $" + auction.sides[1].budget;
+    renderAuctionSlots(0);
+    renderAuctionSlots(1);
+    document.getElementById("h2h-auction-panel-1").classList.toggle("active-turn", auction.askSide === 0);
+    document.getElementById("h2h-auction-panel-2").classList.toggle("active-turn", auction.askSide === 1);
+
+    var cp = auction.currentPlayer;
+    if (cp) {
+      document.getElementById("h2h-auction-player-name").innerHTML =
+        cp.player.name +
+        (cp.player.position ? '<span class="pos-tag">' + cp.player.position + "</span>" : "") +
+        (typeof cp.player.rating === "number" ? '<span class="rating-tag">' + cp.player.rating + "</span>" : "");
+      document.getElementById("h2h-auction-player-meta").textContent =
+        cp.combo.team + " &middot; עונת " + formatSeason(cp.combo.season);
+    }
+
+    var askLabel = auction.askSide != null ? auction.sides[auction.askSide].label : "";
+    document.getElementById("h2h-auction-status").innerHTML =
+      "מחיר להצעה: <strong>$" + auction.nextBid + "</strong><br>תורו של <strong>" + askLabel + "</strong>";
+
+    var isComputerAsk = auction.mode === "computer" && auction.askSide === 1;
+    document.getElementById("h2h-auction-actions").style.display = isComputerAsk ? "none" : "";
+    document.getElementById("btn-h2h-auction-agree").textContent = "✅ מוכן לשלם $" + auction.nextBid;
+
+    window.AppNav.showScreen("h2hAuction");
+  }
+
+  function startAuctionDraft(mode) {
+    auction = {
+      mode: mode,
+      sides: [
+        freshAuctionSide("שחקן 1"),
+        freshAuctionSide(mode === "computer" ? "המחשב" : "שחקן 2"),
+      ],
+      roundStarter: 0,
+      currentPlayer: null,
+      nextBid: 1,
+      winner: null,
+      askSide: null,
+      refusedAtBase: 0,
+    };
+    state.mode = mode;
+    state.pickedNames = new Set();
+    advanceAuction();
+  }
+
+  function finishAuctionDraft() {
+    // Hand off to the exact same system-selection / series flow the
+    // turn-based mode uses, by populating state.sides in the same shape.
+    state.sides = [
+      { label: auction.sides[0].label, picks: auction.sides[0].picks, rerolls: 0, needs: freshNeeds(), system: null },
+      { label: auction.sides[1].label, picks: auction.sides[1].picks, rerolls: 0, needs: freshNeeds(), system: null },
+    ];
+    startSystemSelection();
+  }
+
+  function advanceAuction() {
+    var candidate = pickAuctionCandidate();
+    if (!candidate) {
+      finishAuctionDraft();
+      return;
+    }
+    auction.currentPlayer = candidate;
+    auction.nextBid = 1;
+    auction.winner = null;
+    auction.refusedAtBase = 0;
+
+    var starter = auction.roundStarter;
+    var other = 1 - starter;
+    var starterEligible = !auctionSideDone(starter) && auction.sides[starter].needs[candidate.player.position] > 0;
+    askSide(starterEligible ? starter : other);
+  }
+
+  function askSide(sideIndex) {
+    auction.askSide = sideIndex;
+    var cp = auction.currentPlayer;
+    var side = auction.sides[sideIndex];
+    var needsPosition = side.needs[cp.player.position] > 0;
+    var remaining = auctionSlotsRemaining(sideIndex);
+    var canAfford = side.budget - auction.nextBid >= remaining - 1;
+
+    renderAuctionScreen();
+
+    if (!needsPosition || !canAfford) {
+      resolveDecision(sideIndex, false);
+      return;
+    }
+
+    if (auction.mode === "computer" && sideIndex === 1) {
+      var cpSnapshot = cp;
+      var bidSnapshot = auction.nextBid;
+      setTimeout(function () {
+        if (!auction || auction.currentPlayer !== cpSnapshot || auction.askSide !== sideIndex) return;
+        resolveDecision(sideIndex, computerWantsBid(cpSnapshot.player, bidSnapshot));
+      }, 650);
+    }
+    // Otherwise: wait for the human's click on the agree/refuse buttons.
+  }
+
+  function resolveDecision(sideIndex, agreed) {
+    var otherSide = 1 - sideIndex;
+    if (agreed) {
+      auction.winner = sideIndex;
+      auction.nextBid++;
+      askSide(otherSide);
+      return;
+    }
+    if (auction.winner !== null) {
+      finalizeSale(auction.winner, auction.nextBid - 1);
+      return;
+    }
+    auction.refusedAtBase++;
+    if (auction.refusedAtBase >= 2) {
+      auction.roundStarter = 1 - auction.roundStarter;
+      advanceAuction();
+      return;
+    }
+    askSide(otherSide);
+  }
+
+  function finalizeSale(sideIndex, price) {
+    var cp = auction.currentPlayer;
+    var side = auction.sides[sideIndex];
+    window.Effects.playClick();
+    if (typeof cp.player.rating === "number" && cp.player.rating >= 90) {
+      window.Effects.wowPick(cp.player.name, cp.player.rating);
+    }
+    side.budget -= price;
+    side.needs[cp.player.position]--;
+    side.picks.push({
+      player: cp.player.name,
+      position: cp.player.position,
+      rating: cp.player.rating,
+      offRating: cp.player.offRating,
+      defRating: cp.player.defRating,
+      archetype: cp.player.archetype,
+      team: cp.combo.team,
+      season: cp.combo.season,
+      slotLabel: POS_LABEL[cp.player.position],
+      price: price,
+    });
+    state.pickedNames.add(normalizeName(cp.player.name));
+    auction.roundStarter = 1 - auction.roundStarter;
+    advanceAuction();
   }
 
   document.getElementById("btn-h2h-vs-friend").addEventListener("click", function () {
@@ -567,5 +801,26 @@
       btn.classList.add("selected");
       selectedGamesToWin = parseInt(btn.dataset.gamesToWin, 10);
     });
+  });
+
+  document.querySelectorAll("#h2h-draftmode-buttons .era-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll("#h2h-draftmode-buttons .era-btn").forEach(function (b) {
+        b.classList.remove("selected");
+      });
+      btn.classList.add("selected");
+      selectedDraftMode = btn.dataset.draftMode;
+    });
+  });
+
+  document.getElementById("btn-h2h-auction-agree").addEventListener("click", function () {
+    if (!auction || auction.askSide === null) return;
+    if (auction.mode === "computer" && auction.askSide === 1) return;
+    resolveDecision(auction.askSide, true);
+  });
+  document.getElementById("btn-h2h-auction-refuse").addEventListener("click", function () {
+    if (!auction || auction.askSide === null) return;
+    if (auction.mode === "computer" && auction.askSide === 1) return;
+    resolveDecision(auction.askSide, false);
   });
 })();

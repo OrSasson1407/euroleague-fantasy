@@ -386,6 +386,13 @@
           <button class="era-btn" data-games-to-win="3">Bo5 (עד 3 ניצחונות)</button>
         </div>
       </div>
+      <div class="era-filter">
+        <div class="era-filter-label">שיטת בחירת שחקנים:</div>
+        <div class="era-filter-buttons" id="h2h-draftmode-buttons">
+          <button class="era-btn selected" data-draft-mode="turns">בחירה בתורות</button>
+          <button class="era-btn" data-draft-mode="auction">מכרז שחקנים ($25 לכל צד)</button>
+        </div>
+      </div>
       <div class="h2h-setup-buttons">
         <button id="btn-h2h-vs-friend">נגד חבר (באותו מחשב)</button>
         <button id="btn-h2h-vs-computer">נגד המחשב</button>
@@ -412,6 +419,33 @@
       <button class="secondary reroll-btn" id="btn-h2h-reroll">🔄 הגרלה מחדש (<span id="h2h-reroll-count">2</span>)</button>
     </div>
     <div class="players-grid" id="h2h-players-grid"></div>
+  </section>
+
+  <section id="screen-h2h-auction" class="screen">
+    <div class="h2h-status">
+      <div class="h2h-player-panel" id="h2h-auction-panel-1">
+        <div class="h2h-player-name" id="h2h-auction-label-1">שחקן 1</div>
+        <div class="round-meta" id="h2h-auction-budget-1"></div>
+        <div class="h2h-slots" id="h2h-auction-slots-1"></div>
+      </div>
+      <div class="h2h-turn-indicator" id="h2h-auction-status"></div>
+      <div class="h2h-player-panel" id="h2h-auction-panel-2">
+        <div class="h2h-player-name" id="h2h-auction-label-2">שחקן 2</div>
+        <div class="round-meta" id="h2h-auction-budget-2"></div>
+        <div class="h2h-slots" id="h2h-auction-slots-2"></div>
+      </div>
+    </div>
+    <div class="team-card">
+      <div class="team-name" id="h2h-auction-player-name"></div>
+      <div class="team-season" id="h2h-auction-player-meta"></div>
+    </div>
+    <div class="center-box" style="padding-top:0;">
+      <div class="h2h-setup-buttons" id="h2h-auction-actions">
+        <button id="btn-h2h-auction-agree">✅ מוכן לשלם</button>
+        <button class="secondary" id="btn-h2h-auction-refuse">❌ ותרו</button>
+      </div>
+      <div style="margin-top:16px;"><button class="secondary" id="btn-home-from-h2hauction">חזרה לדף הבית</button></div>
+    </div>
   </section>
 
   <section id="screen-h2h-system" class="screen">
