@@ -1,14 +1,16 @@
 :root {
-  --bg: #0f1420;
-  --bg-card: #1a2233;
-  --bg-card-hover: #232f47;
-  --accent: #f4a825;
-  --accent-2: #2f6fed;
-  --text: #eef1f7;
-  --text-dim: #93a0b8;
-  --border: #2b3450;
+  --bg: #0B0B0D;
+  --bg-card: #17181C;
+  --bg-card-hover: #1F2126;
+  --accent: #D62828;
+  --accent-2: #FFB703;
+  --text: #F5F3EF;
+  --text-dim: #9AA3AE;
+  --border: #2A2C31;
   --danger: #ff5c5c;
   --success: #37c977;
+  --font-display: "Rubik", "Segoe UI", Arial, sans-serif;
+  --font-body: "Assistant", "Segoe UI", Arial, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -18,7 +20,7 @@ html, body {
   padding: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: "Segoe UI", Arial, sans-serif;
+  font-family: var(--font-body);
   direction: rtl;
   min-height: 100vh;
 }
@@ -29,13 +31,21 @@ html, body {
   padding: 24px 16px 60px;
 }
 
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 900;
+}
+
 header {
   text-align: center;
   margin-bottom: 24px;
 }
 
 header h1 {
-  font-size: 2rem;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 2.1rem;
+  letter-spacing: -0.01em;
   margin: 0 0 6px;
   background: linear-gradient(90deg, var(--accent), var(--accent-2));
   -webkit-background-clip: text;
@@ -356,15 +366,15 @@ body.effects-off *::after {
 }
 
 button {
-  font-family: inherit;
+  font-family: var(--font-display);
   cursor: pointer;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 1rem;
   padding: 14px 28px;
   background: var(--accent);
-  color: #1a1400;
-  font-weight: 700;
+  color: #FFF3E9;
+  font-weight: 800;
   transition: transform .1s ease, filter .15s ease;
 }
 
@@ -408,7 +418,7 @@ button.secondary {
 .progress-dot.current {
   border-color: var(--accent);
   color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(244,168,37,0.15);
+  box-shadow: 0 0 0 3px rgba(214,40,40,0.15);
 }
 
 .round-meta {
@@ -427,21 +437,23 @@ button.secondary {
   margin-inline-start: 6px;
 }
 
-.slot-label.starter { background: rgba(47,111,237,0.18); color: #7fa8f7; }
-.slot-label.bench { background: rgba(244,168,37,0.18); color: var(--accent); }
+.slot-label.starter { background: rgba(255,183,3,0.18); color: #ffcf6b; }
+.slot-label.bench { background: rgba(214,40,40,0.18); color: var(--accent); }
 
 .team-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-inline-start: 4px solid var(--accent);
+  border-radius: 8px;
   padding: 24px;
   margin-bottom: 20px;
   text-align: center;
 }
 
 .team-card .team-name {
+  font-family: var(--font-display);
   font-size: 1.6rem;
-  font-weight: 800;
+  font-weight: 900;
 }
 
 .team-card .team-season {
@@ -489,7 +501,8 @@ button.secondary {
 .player-dual-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-inline-start: 4px solid var(--accent);
+  border-radius: 8px;
   padding: 14px 10px;
   text-align: center;
   transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
@@ -541,6 +554,8 @@ button.secondary {
 }
 
 .squad-section h2 {
+  font-family: var(--font-display);
+  font-weight: 900;
   font-size: 1.1rem;
   color: var(--text-dim);
   border-bottom: 1px solid var(--border);
@@ -557,7 +572,8 @@ button.secondary {
 .squad-player-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-inline-start: 4px solid var(--accent);
+  border-radius: 8px;
   padding: 14px 10px;
   text-align: center;
   transition: transform .15s ease, border-color .15s ease;
@@ -566,9 +582,11 @@ button.secondary {
 .squad-player-card:hover {
   transform: translateY(-3px);
   border-color: var(--accent-2);
+  border-inline-start-color: var(--accent-2);
 }
 
 .squad-player-card .name {
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: 0.95rem;
 }
@@ -618,7 +636,7 @@ button.secondary {
 }
 
 .era-btn.selected {
-  background: rgba(244,168,37,0.18);
+  background: rgba(214,40,40,0.18);
   border-color: var(--accent);
   color: var(--accent);
 }
@@ -714,7 +732,8 @@ footer {
   max-width: 320px;
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-top: 3px solid var(--accent);
+  border-radius: 8px;
   padding: 28px 20px;
   text-align: center;
   color: var(--text);
@@ -724,11 +743,13 @@ footer {
 .mode-card:hover {
   background: var(--bg-card-hover);
   border-color: var(--accent-2);
+  border-top-color: var(--accent-2);
 }
 
 .mode-card-title {
+  font-family: var(--font-display);
   font-size: 1.3rem;
-  font-weight: 800;
+  font-weight: 900;
   margin-bottom: 10px;
   color: var(--accent);
 }
@@ -767,7 +788,7 @@ footer {
 
 .h2h-player-panel.active-turn {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(244,168,37,0.15);
+  box-shadow: 0 0 0 3px rgba(214,40,40,0.15);
 }
 
 .h2h-player-name {
@@ -816,7 +837,7 @@ footer {
 
 .h2h-slot-chip.selected-swap {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(244,168,37,0.25);
+  box-shadow: 0 0 0 2px rgba(214,40,40,0.25);
 }
 
 .h2h-turn-indicator {
@@ -1060,7 +1081,7 @@ footer {
 .career-milestone-banner {
   max-width: 520px;
   margin: 0 auto 16px;
-  background: linear-gradient(135deg, rgba(244,168,37,0.18), rgba(47,111,237,0.12));
+  background: linear-gradient(135deg, rgba(214,40,40,0.18), rgba(255,183,3,0.12));
   border: 1px solid var(--accent);
   border-radius: 14px;
   padding: 16px 20px;
@@ -1102,7 +1123,7 @@ footer {
 .badge-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 8px;
   padding: 16px 12px;
   text-align: center;
   transition: transform .15s ease, border-color .15s ease;
@@ -1114,7 +1135,7 @@ footer {
 
 .badge-card.unlocked {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(244,168,37,0.15);
+  box-shadow: 0 0 0 2px rgba(214,40,40,0.15);
 }
 
 .badge-icon {
@@ -1123,6 +1144,7 @@ footer {
 }
 
 .badge-title {
+  font-family: var(--font-display);
   font-weight: 800;
   margin-bottom: 4px;
 }
@@ -1167,6 +1189,7 @@ footer {
 }
 
 .achievement-toast-title {
+  font-family: var(--font-display);
   font-weight: 800;
   color: var(--accent);
   font-size: 0.9rem;
@@ -1250,7 +1273,7 @@ footer {
   background: var(--bg-card);
   border: 1px solid var(--border);
   color: var(--text);
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 14px 10px;
   font-weight: 600;
   font-size: 0.9rem;
@@ -1278,7 +1301,7 @@ footer {
 .system-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 8px;
   padding: 16px 14px;
   text-align: right;
   transition: border-color .15s ease, box-shadow .15s ease;
@@ -1296,10 +1319,11 @@ footer {
 
 .system-card.selected {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(244,168,37,0.2);
+  box-shadow: 0 0 0 2px rgba(214,40,40,0.2);
 }
 
 .system-name {
+  font-family: var(--font-display);
   font-weight: 800;
   color: var(--accent);
   margin-bottom: 6px;
@@ -1352,7 +1376,7 @@ footer {
 }
 
 .league-table tr.my-team-row td {
-  background: rgba(244,168,37,0.12);
+  background: rgba(214,40,40,0.12);
   color: var(--accent);
   font-weight: 800;
 }
@@ -1622,8 +1646,8 @@ footer {
   font-size: 0.65rem;
   font-weight: 700;
   vertical-align: middle;
-  background: rgba(47,111,237,0.18);
-  color: #7fa8f7;
+  background: rgba(255,183,3,0.18);
+  color: #ffcf6b;
 }
 
 .rating-tag {
@@ -1634,7 +1658,7 @@ footer {
   font-size: 0.65rem;
   font-weight: 800;
   vertical-align: middle;
-  background: rgba(244,168,37,0.18);
+  background: rgba(214,40,40,0.18);
   color: var(--accent);
 }
 
@@ -1654,7 +1678,7 @@ footer {
 }
 
 .def-tag {
-  background: rgba(47,111,237,0.18);
+  background: rgba(255,183,3,0.18);
   color: var(--accent-2);
 }
 
@@ -1678,7 +1702,7 @@ footer {
   font-size: 0.62rem;
   font-weight: 800;
   vertical-align: middle;
-  background: rgba(244,168,37,0.16);
+  background: rgba(214,40,40,0.16);
   color: var(--accent);
 }
 
@@ -1879,5 +1903,5 @@ footer {
 
 .trade-offer-card {
   border-color: var(--accent-2);
-  box-shadow: 0 0 0 1px rgba(47,111,237,0.25);
+  box-shadow: 0 0 0 1px rgba(255,183,3,0.25);
 }

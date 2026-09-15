@@ -86,7 +86,7 @@
   // A small, dependency-free confetti effect for decisive win moments.
   // Pieces are absolutely-positioned spans animated with CSS, appended to
   // <body> and removed automatically once their animation finishes.
-  var CONFETTI_COLORS = ["#f4a825", "#2f6fed", "#37c977", "#ff5c5c", "#8338ec", "#06d6a0"];
+  var CONFETTI_COLORS = ["#D62828", "#FFB703", "#F5F3EF", "#37c977", "#ff5c5c", "#9AA3AE"];
 
   function confetti(count) {
     if (!settings.effectsEnabled) return;
