@@ -6,9 +6,11 @@
     start: "screen-start",
     round: "screen-round",
     singleLineup: "screen-single-lineup",
+    singleTrade: "screen-single-trade",
     final: "screen-final",
     singleShare: "screen-single-share",
     singleExhibition: "screen-single-exhibition",
+    singleLeaderboard: "screen-single-leaderboard",
     h2hSetup: "screen-h2h-setup",
     h2hDraft: "screen-h2h-draft",
     h2hSystem: "screen-h2h-system",
@@ -141,6 +143,12 @@
     showScreen("home");
   });
   document.getElementById("btn-home-from-single-lineup").addEventListener("click", function () {
+    showScreen("home");
+  });
+  document.getElementById("btn-home-from-single-trade").addEventListener("click", function () {
+    showScreen("home");
+  });
+  document.getElementById("btn-home-from-single-leaderboard").addEventListener("click", function () {
     showScreen("home");
   });
   document.getElementById("btn-home-from-final").addEventListener("click", function () {

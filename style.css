@@ -1521,3 +1521,57 @@ footer {
   0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
   100% { transform: translate(var(--confetti-drift, 0), 100vh) rotate(var(--confetti-rotate, 180deg)); opacity: 0.2; }
 }
+
+/* ---------- Squad Builder leaderboard ---------- */
+
+.leaderboard-row {
+  max-width: 700px;
+  margin: 0 auto 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.leaderboard-row-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  text-align: right;
+  font-weight: 600;
+}
+
+.leaderboard-row-header:hover {
+  background: var(--bg-card-hover);
+}
+
+.leaderboard-rank {
+  font-weight: 800;
+  color: var(--accent);
+  flex: 0 0 auto;
+}
+
+.leaderboard-rating {
+  font-size: 1.1rem;
+  font-weight: 800;
+  flex: 0 0 auto;
+}
+
+.leaderboard-meta {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.leaderboard-row-body {
+  padding: 0 14px 14px;
+}
+
+.leaderboard-row-body .squad-grid {
+  margin-top: 0;
+}

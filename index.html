@@ -160,7 +160,7 @@
         בכל סיבוב תוגרל קבוצה ועונה אקראית. תראו את כל שחקני הסגל של אותה עונה, ולכל שחקן זמין תבחרו בעצמכם אם הוא משתבץ לחמישייה הפותחת או לספסל.
         שחקן שכבר נבחר (מכל עונה שלו) לא יהיה זמין לבחירה נוספת.
         החמישייה הפותחת והספסל כל אחד מורכב מ-2 מגנים, 2 חלוצים וסנטר - כל שחקן משתבץ לפי העמדה האמיתית שלו בלבד.
-        בסיום הדראפט תוכלו גם להחליף שחקנים בין החמישייה לספסל (רק באותה עמדה).
+        בסיום הדראפט תוכלו גם להחליף שחקנים בין החמישייה לספסל (רק באותה עמדה), ואז יהיו לכם עד 2 הזדמנויות "מסחר" להחליף שחקן בהרכב בשחקן חדש באותה עמדה.
       </p>
       <div class="era-filter">
         <div class="era-filter-label">טווח עידן להרכב:</div>
@@ -184,7 +184,10 @@
       </div>
       <p class="career-last-summary" id="single-best-display" hidden></p>
       <button id="btn-start">התחלת משחק</button>
-      <div style="margin-top:16px;"><button class="secondary" id="btn-home-from-start">חזרה לדף הבית</button></div>
+      <div style="margin-top:16px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+        <button class="secondary" id="btn-single-leaderboard">🏆 טבלת השיאים</button>
+        <button class="secondary" id="btn-home-from-start">חזרה לדף הבית</button>
+      </div>
     </div>
   </section>
 
@@ -227,8 +230,24 @@
       </div>
     </div>
     <div class="final-actions">
-      <button id="btn-single-lineup-continue">המשך &raquo;</button>
+      <button id="btn-single-lineup-continue">המשך למסחר &raquo;</button>
       <button class="secondary" id="btn-home-from-single-lineup">לדף הבית</button>
+    </div>
+  </section>
+
+  <section id="screen-single-trade" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 style="margin-top:0;">מסחר אחרון</h2>
+      <p style="color:var(--text-dim); max-width:560px; margin:0 auto 12px;">
+        לפני הסיכום הסופי - אפשר לנסות "להחליף" שחקנים בהרכב בשחקן אקראי אחר באותה עמדה. ניסיון החלפה לא מבטיח שדרוג, אז שקלו טוב לפני שאתם מהמרים על החלפה.
+      </p>
+      <p class="career-last-summary" id="single-trade-count"></p>
+      <p class="career-last-summary" id="single-trade-note"></p>
+    </div>
+    <div class="squad-grid" id="single-trade-grid"></div>
+    <div class="final-actions">
+      <button id="btn-single-trade-continue">המשך לסיכום &raquo;</button>
+      <button class="secondary" id="btn-home-from-single-trade">לדף הבית</button>
     </div>
   </section>
 
@@ -269,6 +288,19 @@
     <div id="single-exhibition-content"></div>
     <div class="final-actions">
       <button class="secondary" id="btn-single-exhibition-back">חזרה &raquo;</button>
+    </div>
+  </section>
+
+  <section id="screen-single-leaderboard" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 style="margin-top:0;">🏆 טבלת השיאים</h2>
+      <p style="color:var(--text-dim); max-width:560px; margin:0 auto 12px;">
+        חמשת ההרכבים עם הדירוג הסופי הגבוה ביותר ששמרתם. לחצו על הרכב כדי לראות את כל השחקנים בו.
+      </p>
+    </div>
+    <div id="single-leaderboard-list"></div>
+    <div class="final-actions">
+      <button class="secondary" id="btn-home-from-single-leaderboard">לדף הבית</button>
     </div>
   </section>
 

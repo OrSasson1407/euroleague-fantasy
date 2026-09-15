@@ -3,6 +3,7 @@
 
   var TOTAL_ROUNDS = 10;
   var MAX_REROLLS = 2;
+  var TRADES_ALLOWED = 2;
   var SLOT_TEMPLATE = ["Guard", "Guard", "Forward", "Forward", "Center"];
   var POS_LABEL = { Guard: "מגן", Forward: "חלוץ", Center: "סנטר" };
 
@@ -12,6 +13,8 @@
     squad: [], // { player, position, rating, team, season, slot, slotLabel }
     currentCombo: null,
     rerolls: MAX_REROLLS,
+    tradesRemaining: TRADES_ALLOWED,
+    lastTradeMessage: "",
     needsByHalf: null, // { starter: {Guard,Forward,Center}, bench: {...} } - remaining open slots per half
     eraMin: 0,
     eraMax: 9999,
@@ -20,7 +23,8 @@
     budgetRemaining: 0,
   };
 
-  var BEST_KEY = "single_best_v1";
+  var TOP_SQUADS_KEY = "single_top_squads_v1";
+  var MAX_TOP_SQUADS = 5;
   var lineupSelection = null; // the squad entry currently picked for a starter/bench swap, or null
 
   function freshNeeds() {
@@ -39,32 +43,126 @@
     window.AppNav.showScreen(name);
   }
 
-  function loadBest() {
+  function loadTopSquads() {
     try {
-      var raw = localStorage.getItem(BEST_KEY);
-      return raw ? JSON.parse(raw) : null;
+      var raw = localStorage.getItem(TOP_SQUADS_KEY);
+      var list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
     } catch (e) {
-      return null;
+      return [];
     }
   }
 
-  function saveBest(value) {
+  function saveTopSquads(list) {
     try {
-      localStorage.setItem(BEST_KEY, JSON.stringify({ value: value }));
+      localStorage.setItem(TOP_SQUADS_KEY, JSON.stringify(list));
     } catch (e) {
       // ignore storage failures
     }
   }
 
+  // Adds the just-finished squad to the top-5 leaderboard if it qualifies.
+  // Returns the new 1-based rank, or null if it didn't make the cut.
+  function maybeAddToLeaderboard(finalTotal) {
+    var list = loadTopSquads();
+    var rounded = Math.round(finalTotal * 10) / 10;
+    var qualifies = list.length < MAX_TOP_SQUADS || rounded > list[list.length - 1].rating;
+    if (!qualifies) return null;
+
+    var entry = {
+      id: Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+      rating: rounded,
+      date: new Date().toISOString(),
+      budgetMode: state.budgetTotal > 0,
+      systemLabel: state.selectedSystem ? state.selectedSystem.label : null,
+      squad: state.squad.map(function (e) {
+        return {
+          player: e.player, position: e.position, rating: e.rating,
+          offRating: e.offRating, defRating: e.defRating, archetype: e.archetype,
+          team: e.team, season: e.season, slot: e.slot, slotLabel: e.slotLabel,
+        };
+      }),
+    };
+    list.push(entry);
+    list.sort(function (a, b) { return b.rating - a.rating; });
+    list = list.slice(0, MAX_TOP_SQUADS);
+    saveTopSquads(list);
+
+    var rank = null;
+    list.forEach(function (e, i) {
+      if (e.id === entry.id) rank = i + 1;
+    });
+    return rank;
+  }
+
   function renderBestDisplay() {
     var el = document.getElementById("single-best-display");
-    var best = loadBest();
-    if (best && typeof best.value === "number") {
+    var list = loadTopSquads();
+    if (list.length > 0) {
       el.hidden = false;
-      el.textContent = "שיא אישי: " + best.value.toFixed(1);
+      el.textContent = "שיא אישי: " + list[0].rating.toFixed(1);
     } else {
       el.hidden = true;
     }
+  }
+
+  function renderLeaderboardScreen() {
+    var container = document.getElementById("single-leaderboard-list");
+    container.innerHTML = "";
+    var list = loadTopSquads();
+    if (list.length === 0) {
+      container.innerHTML =
+        '<p style="text-align:center;color:var(--text-dim);">עדיין אין הרכבים שמורים בטבלת השיאים. השלימו בנייה כדי להתחיל!</p>';
+      return;
+    }
+    list.forEach(function (entry, i) {
+      var row = document.createElement("div");
+      row.className = "leaderboard-row";
+      var dateStr = new Date(entry.date).toLocaleDateString("he-IL");
+
+      var header = document.createElement("button");
+      header.className = "leaderboard-row-header";
+      header.innerHTML =
+        '<span class="leaderboard-rank">#' + (i + 1) + "</span>" +
+        '<span class="leaderboard-rating">' + entry.rating.toFixed(1) + "</span>" +
+        '<span class="leaderboard-meta">' + dateStr +
+          (entry.budgetMode ? " &middot; מצב תקציב" : "") +
+          (entry.systemLabel ? " &middot; " + entry.systemLabel : "") +
+        "</span>";
+      row.appendChild(header);
+
+      var body = document.createElement("div");
+      body.className = "leaderboard-row-body";
+      body.hidden = true;
+      row.appendChild(body);
+
+      header.addEventListener("click", function () {
+        var willShow = body.hidden;
+        container.querySelectorAll(".leaderboard-row-body").forEach(function (b) { b.hidden = true; });
+        if (!willShow) return;
+        body.innerHTML = "";
+        var grid = document.createElement("div");
+        grid.className = "squad-grid";
+        entry.squad.forEach(function (e) {
+          var card = document.createElement("div");
+          card.className = "squad-player-card";
+          card.innerHTML =
+            '<div class="name">' + e.player +
+              (typeof e.rating === "number" ? '<span class="rating-tag">' + e.rating + "</span>" : "") + "</div>" +
+            '<div class="meta">' + e.slotLabel + " &middot; " + e.team + " " + formatSeason(e.season) + "</div>";
+          grid.appendChild(card);
+        });
+        body.appendChild(grid);
+        body.hidden = false;
+      });
+
+      container.appendChild(row);
+    });
+  }
+
+  function showLeaderboardScreen() {
+    renderLeaderboardScreen();
+    showScreen("singleLeaderboard");
   }
 
   function normalizeName(name) {
@@ -315,6 +413,88 @@
     showScreen("singleLineup");
   }
 
+  function renderTradeScreen() {
+    document.getElementById("single-trade-count").textContent =
+      "נשארו לכם " + state.tradesRemaining + " הזדמנויות מסחר";
+    document.getElementById("single-trade-note").textContent = state.lastTradeMessage || "";
+
+    var grid = document.getElementById("single-trade-grid");
+    grid.innerHTML = "";
+    state.squad.forEach(function (entry, idx) {
+      var card = document.createElement("div");
+      card.className = "squad-player-card";
+      card.innerHTML =
+        '<div class="name">' + entry.player +
+          (typeof entry.rating === "number" ? '<span class="rating-tag">' + entry.rating + "</span>" : "") + "</div>" +
+        '<div class="meta">' + entry.slotLabel + " &middot; " + POS_LABEL[entry.position] + " &middot; " +
+          entry.team + " " + formatSeason(entry.season) + "</div>";
+
+      var btn = document.createElement("button");
+      btn.className = "player-dual-btn";
+      btn.textContent = "🔄 נסה החלפה";
+      btn.disabled = state.tradesRemaining <= 0;
+      btn.addEventListener("click", function () {
+        attemptTrade(idx);
+      });
+      card.appendChild(btn);
+
+      grid.appendChild(card);
+    });
+  }
+
+  function attemptTrade(idx) {
+    if (state.tradesRemaining <= 0) return;
+    var entry = state.squad[idx];
+    var pos = entry.position;
+    var allowedBudget = state.budgetTotal > 0 ? state.budgetRemaining + playerCost(entry) : Infinity;
+
+    var candidates = [];
+    getAllCombos().forEach(function (combo) {
+      if (!comboInEra(combo)) return;
+      combo.players.forEach(function (p) {
+        if (p.position !== pos) return;
+        if (state.pickedNames.has(normalizeName(p.name))) return;
+        if (state.budgetTotal > 0 && playerCost(p) > allowedBudget) return;
+        candidates.push({ player: p, combo: combo });
+      });
+    });
+
+    if (candidates.length === 0) {
+      state.lastTradeMessage = "לא נמצא שחקן זמין להחלפה בעמדה הזו כרגע.";
+      renderTradeScreen();
+      return;
+    }
+
+    var choice = candidates[Math.floor(Math.random() * candidates.length)];
+    var oldName = entry.player;
+    var oldRating = entry.rating;
+
+    state.pickedNames.delete(normalizeName(entry.player));
+    state.pickedNames.add(normalizeName(choice.player.name));
+    if (state.budgetTotal > 0) {
+      state.budgetRemaining = allowedBudget - playerCost(choice.player);
+    }
+
+    entry.player = choice.player.name;
+    entry.rating = choice.player.rating;
+    entry.offRating = choice.player.offRating;
+    entry.defRating = choice.player.defRating;
+    entry.archetype = choice.player.archetype;
+    entry.team = choice.combo.team;
+    entry.season = choice.combo.season;
+
+    state.tradesRemaining--;
+    state.lastTradeMessage = "הוחלף: " + oldName + " (" + (typeof oldRating === "number" ? oldRating : "-") +
+      ") ⬅ " + entry.player + " (" + (typeof entry.rating === "number" ? entry.rating : "-") + ")";
+    renderTradeScreen();
+  }
+
+  function showTradeScreen() {
+    state.lastTradeMessage = "";
+    renderTradeScreen();
+    showScreen("singleTrade");
+  }
+
   function playerRating(entry) {
     return typeof entry.rating === "number" ? entry.rating : 65;
   }
@@ -391,15 +571,18 @@
         html += "<br>דירוג סופי כולל הכל: <strong>" + finalTotal.toFixed(1) + "</strong>";
       }
 
-      var previousBest = loadBest();
-      var isNewBest = !previousBest || finalTotal > previousBest.value;
-      if (isNewBest) {
-        saveBest(finalTotal);
-        renderBestDisplay();
+      var beforeList = loadTopSquads();
+      var rank = maybeAddToLeaderboard(finalTotal);
+      renderBestDisplay();
+      if (rank) {
+        html += "<br>🏆 נכנסתם לטבלת השיאים! מקום <strong>" + rank + "</strong> מתוך " + MAX_TOP_SQUADS;
+        if (rank === 1) {
+          html += " &nbsp;🎉 השיא האישי החדש שלכם!";
+          window.Effects.confetti();
+        }
+      } else if (beforeList.length > 0) {
+        html += "<br>שיא אישי נוכחי: <strong>" + beforeList[0].rating.toFixed(1) + "</strong>";
       }
-      var bestValue = isNewBest ? finalTotal : previousBest.value;
-      html += "<br>שיא אישי: <strong>" + bestValue.toFixed(1) + "</strong>" + (isNewBest && previousBest ? " &nbsp;🎉 שיא חדש!" : "");
-      if (isNewBest && previousBest) window.Effects.confetti();
 
       summaryEl.innerHTML = html;
       state.lastFinalTotal = finalTotal;
@@ -542,6 +725,8 @@
     state.pickedNames = new Set();
     state.squad = [];
     state.rerolls = MAX_REROLLS;
+    state.tradesRemaining = TRADES_ALLOWED;
+    state.lastTradeMessage = "";
     state.needsByHalf = freshNeedsByHalf();
     state.budgetRemaining = state.budgetTotal;
     renderRound();
@@ -589,7 +774,9 @@
   document.getElementById("btn-single-exhibition-back").addEventListener("click", function () {
     showScreen("final");
   });
-  document.getElementById("btn-single-lineup-continue").addEventListener("click", renderFinal);
+  document.getElementById("btn-single-lineup-continue").addEventListener("click", showTradeScreen);
+  document.getElementById("btn-single-trade-continue").addEventListener("click", renderFinal);
+  document.getElementById("btn-single-leaderboard").addEventListener("click", showLeaderboardScreen);
 
   document.querySelectorAll("#era-filter-buttons .era-btn").forEach(function (btn) {
     btn.addEventListener("click", function () {
