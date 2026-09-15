@@ -390,11 +390,17 @@
         <div class="era-filter-label">שיטת בחירת שחקנים:</div>
         <div class="era-filter-buttons" id="h2h-draftmode-buttons">
           <button class="era-btn selected" data-draft-mode="turns">בחירה בתורות</button>
-          <button class="era-btn" data-draft-mode="auction">מכרז שחקנים ($25 לכל צד)</button>
+          <button class="era-btn" data-draft-mode="auction">מכרז שחקנים</button>
         </div>
       </div>
       <div class="era-filter" id="h2h-auction-filters" hidden>
-        <div class="era-filter-label">טווח עידן לשחקנים במכרז:</div>
+        <div class="era-filter-label">תקציב למכרז:</div>
+        <div class="era-filter-buttons" id="h2h-auction-budget-buttons">
+          <button class="era-btn" data-budget="15">$15 - הדוק</button>
+          <button class="era-btn selected" data-budget="25">$25 - רגיל</button>
+          <button class="era-btn" data-budget="40">$40 - נדיב</button>
+        </div>
+        <div class="era-filter-label" style="margin-top:14px;">טווח עידן לשחקנים במכרז:</div>
         <div class="era-filter-buttons" id="h2h-auction-era-buttons">
           <button class="era-btn selected" data-min="0" data-max="9999">כל הזמנים</button>
           <button class="era-btn" data-min="2000" data-max="2009">2000-2009</button>
@@ -460,6 +466,26 @@
         <button class="secondary" id="btn-h2h-auction-refuse">❌ ותרו</button>
       </div>
       <div style="margin-top:16px;"><button class="secondary" id="btn-home-from-h2hauction">חזרה לדף הבית</button></div>
+    </div>
+  </section>
+
+  <section id="screen-h2h-auction-summary" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 style="margin-top:0;">תוצאות המכרז</h2>
+    </div>
+    <div class="h2h-final-rosters">
+      <div class="h2h-final-team">
+        <h3 id="h2h-auction-summary-team1-name"></h3>
+        <div class="squad-grid" id="h2h-auction-summary-team1-grid"></div>
+      </div>
+      <div class="h2h-final-team">
+        <h3 id="h2h-auction-summary-team2-name"></h3>
+        <div class="squad-grid" id="h2h-auction-summary-team2-grid"></div>
+      </div>
+    </div>
+    <div class="final-actions">
+      <button id="btn-h2h-auction-summary-continue">המשך לבחירת שיטה &raquo;</button>
+      <button class="secondary" id="btn-home-from-h2hauctionsummary">לדף הבית</button>
     </div>
   </section>
 

@@ -8,7 +8,7 @@
   var HOME_BONUS = 3; // score bonus for the "home" side in a given game
   var selectedGamesToWin = 2; // set by the Bo3/Bo5 toggle on the setup screen
   var selectedDraftMode = "turns"; // 'turns' | 'auction', set by the setup screen toggle
-  var AUCTION_BUDGET = 25;
+  var selectedAuctionBudget = 25; // set by the setup screen's budget toggle
   var auction = null; // set up by startAuctionDraft(), used only in auction mode
   var auctionEraMin = 0;
   var auctionEraMax = 9999;
@@ -593,7 +593,7 @@
   // turn-based mode uses.
 
   function freshAuctionSide(label) {
-    return { label: label, budget: AUCTION_BUDGET, needs: freshNeeds(), picks: [] };
+    return { label: label, budget: selectedAuctionBudget, needs: freshNeeds(), picks: [] };
   }
 
   // A simple willingness-to-pay heuristic for the computer opponent: scales
@@ -702,7 +702,33 @@
       { label: auction.sides[0].label, picks: auction.sides[0].picks, rerolls: 0, needs: freshNeeds(), system: null },
       { label: auction.sides[1].label, picks: auction.sides[1].picks, rerolls: 0, needs: freshNeeds(), system: null },
     ];
-    startSystemSelection();
+    renderAuctionSummary();
+  }
+
+  function renderAuctionSummaryGrid(gridId, picks) {
+    var grid = document.getElementById(gridId);
+    grid.innerHTML = "";
+    picks.forEach(function (pick) {
+      var card = document.createElement("div");
+      card.className = "squad-player-card";
+      card.innerHTML =
+        '<div class="name">' + pick.player +
+          (typeof pick.rating === "number" ? '<span class="rating-tag">' + pick.rating + "</span>" : "") +
+          '<span class="cost-tag">$' + pick.price + "</span></div>" +
+        '<div class="meta">' + pick.slotLabel + " &middot; " + pick.team + " " + formatSeason(pick.season) + "</div>";
+      grid.appendChild(card);
+    });
+  }
+
+  function renderAuctionSummary() {
+    [0, 1].forEach(function (i) {
+      var side = state.sides[i];
+      var spent = side.picks.reduce(function (sum, p) { return sum + (p.price || 0); }, 0);
+      document.getElementById("h2h-auction-summary-team" + (i + 1) + "-name").textContent =
+        side.label + " (הוציאו $" + spent + " מתוך $" + selectedAuctionBudget + ")";
+      renderAuctionSummaryGrid("h2h-auction-summary-team" + (i + 1) + "-grid", side.picks);
+    });
+    window.AppNav.showScreen("h2hAuctionSummary");
   }
 
   function advanceAuction() {
@@ -879,6 +905,16 @@
     });
   }
 
+  document.querySelectorAll("#h2h-auction-budget-buttons .era-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll("#h2h-auction-budget-buttons .era-btn").forEach(function (b) {
+        b.classList.remove("selected");
+      });
+      btn.classList.add("selected");
+      selectedAuctionBudget = parseInt(btn.dataset.budget, 10);
+    });
+  });
+
   document.querySelectorAll("#h2h-auction-pool-buttons .era-btn").forEach(function (btn) {
     btn.addEventListener("click", function () {
       document.querySelectorAll("#h2h-auction-pool-buttons .era-btn").forEach(function (b) {
@@ -908,5 +944,8 @@
     if (!auction || auction.askSide === null) return;
     if (auction.mode === "computer" && auction.askSide === 1) return;
     handleChoice(false);
+  });
+  document.getElementById("btn-h2h-auction-summary-continue").addEventListener("click", function () {
+    startSystemSelection();
   });
 })();

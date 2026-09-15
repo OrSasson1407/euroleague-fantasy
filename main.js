@@ -14,6 +14,7 @@
     h2hSetup: "screen-h2h-setup",
     h2hDraft: "screen-h2h-draft",
     h2hAuction: "screen-h2h-auction",
+    h2hAuctionSummary: "screen-h2h-auction-summary",
     h2hSystem: "screen-h2h-system",
     h2hGame: "screen-h2h-game",
     h2hResult: "screen-h2h-result",
@@ -220,6 +221,9 @@
     showScreen("home");
   });
   document.getElementById("btn-home-from-h2hauction").addEventListener("click", function () {
+    showScreen("home");
+  });
+  document.getElementById("btn-home-from-h2hauctionsummary").addEventListener("click", function () {
     showScreen("home");
   });
 
