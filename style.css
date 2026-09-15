@@ -15,6 +15,11 @@
 
 * { box-sizing: border-box; }
 
+:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+}
+
 html, body {
   margin: 0;
   padding: 0;
@@ -356,6 +361,57 @@ header p {
   .auth-register-row {
     flex-direction: column;
   }
+}
+
+/* ---------- Onboarding tour ---------- */
+
+.onboarding-box {
+  text-align: center;
+}
+
+.onboarding-icon {
+  font-size: 2.6rem;
+  margin-bottom: 10px;
+}
+
+.onboarding-box h2 {
+  outline: none;
+}
+
+.onboarding-dots {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin: 18px 0 4px;
+}
+
+.onboarding-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: width .2s ease, background .2s ease;
+}
+
+.onboarding-dot.filled {
+  background: var(--accent-2);
+}
+
+.onboarding-dot.current {
+  background: var(--accent);
+  width: 20px;
+  border-radius: 4px;
+}
+
+.onboarding-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.onboarding-actions button {
+  flex: 1 1 0;
 }
 
 .screen { display: none; }

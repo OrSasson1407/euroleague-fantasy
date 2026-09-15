@@ -34,7 +34,7 @@
   // sizeClass: "" (default ~26px), "badge-sm", "badge-lg"
   function badgeHtml(teamName, sizeClass) {
     var cls = "team-badge" + (sizeClass ? " " + sizeClass : "");
-    return '<span class="' + cls + '" style="background:' + teamColor(teamName) + '">' +
+    return '<span class="' + cls + '" style="background:' + teamColor(teamName) + '" aria-hidden="true">' +
       teamInitials(teamName) + "</span>";
   }
 
@@ -50,14 +50,32 @@
   // toggling a body class that CSS animations key off of.
   var SETTINGS_KEY = "euroleague_settings_v1";
 
-  function loadSettings() {
+  function prefersReducedMotion() {
     try {
-      var raw = localStorage.getItem(SETTINGS_KEY);
-      var parsed = raw ? JSON.parse(raw) : {};
-      return { effectsEnabled: parsed.effectsEnabled !== false };
+      return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
     } catch (e) {
-      return { effectsEnabled: true };
+      return false;
     }
+  }
+
+  function loadSettings() {
+    var raw = null;
+    try {
+      raw = localStorage.getItem(SETTINGS_KEY);
+    } catch (e) {
+      // ignore storage failures
+    }
+    if (raw) {
+      try {
+        var parsed = JSON.parse(raw);
+        return { effectsEnabled: parsed.effectsEnabled !== false };
+      } catch (e) {
+        // fall through to the system-preference default below
+      }
+    }
+    // No explicit choice saved yet - default to the OS's reduced-motion
+    // preference instead of always defaulting effects on.
+    return { effectsEnabled: !prefersReducedMotion() };
   }
 
   var settings = loadSettings();
@@ -179,8 +197,10 @@
     if (!settings.effectsEnabled) return;
     var toast = document.createElement("div");
     toast.className = "wow-pick-toast";
+    toast.setAttribute("role", "status");
+    toast.setAttribute("aria-live", "polite");
     toast.innerHTML =
-      '<div class="wow-pick-flare">🌟</div>' +
+      '<div class="wow-pick-flare" aria-hidden="true">🌟</div>' +
       '<div class="wow-pick-text">WOW PICK!</div>' +
       '<div class="wow-pick-player">' + name + ' <span class="wow-pick-rating">' + rating + "</span></div>";
     document.body.appendChild(toast);

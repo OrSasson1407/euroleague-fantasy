@@ -27,8 +27,8 @@
 </div>
 
 <div id="auth-gate" class="auth-gate-overlay" hidden>
-  <div class="auth-gate-box">
-    <h2>ברוכים הבאים!</h2>
+  <div class="auth-gate-box" role="dialog" aria-modal="true" aria-labelledby="auth-gate-title">
+    <h2 id="auth-gate-title" tabindex="-1">ברוכים הבאים!</h2>
     <p class="auth-gate-desc">
       אפשר לשחק כאורח בלי הרשמה - אבל שימו לב: <strong>במצב אורח השיאים והשמירות לא נשמרים</strong> בשום משחקון (טבלת השיאים בבניית סגל, קריירה, באנרים).
       הרשמה עם שם משתמש שומרת את כל אלה, ותפתח בעתיד גם אפשרויות נוספות.
@@ -43,6 +43,17 @@
     </div>
     <div class="auth-gate-divider">או</div>
     <button class="secondary" id="btn-auth-guest">היכנסו כאורח (בלי שמירה)</button>
+  </div>
+</div>
+
+<div id="onboarding-overlay" class="auth-gate-overlay" hidden>
+  <div class="auth-gate-box onboarding-box" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
+    <div id="onboarding-content"></div>
+    <div class="onboarding-dots" id="onboarding-dots"></div>
+    <div class="onboarding-actions">
+      <button class="secondary" id="btn-onboarding-skip">דלג</button>
+      <button id="btn-onboarding-next">הבא &raquo;</button>
+    </div>
   </div>
 </div>
 
@@ -672,6 +683,7 @@
   <footer>גרסה 1.2 &middot; נתוני סגלים היסטוריים לצורך משחק בלבד &middot; <button class="link-btn" id="btn-footer-about">אודות</button></footer>
 </div>
 
+<script src="onboarding.js"></script>
 <script src="auth.js"></script>
 <script src="euroleague_data.js"></script>
 <script src="ratings_enrich.js"></script>

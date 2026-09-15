@@ -74,14 +74,22 @@
     return div.innerHTML;
   }
 
+  var gateLastFocused = null;
+
   function showGate() {
     var gate = document.getElementById("auth-gate");
-    if (gate) gate.hidden = false;
+    if (!gate) return;
+    gateLastFocused = document.activeElement;
+    gate.hidden = false;
+    var title = document.getElementById("auth-gate-title");
+    if (title) title.focus();
   }
 
   function hideGate() {
     var gate = document.getElementById("auth-gate");
-    if (gate) gate.hidden = true;
+    if (!gate) return;
+    gate.hidden = true;
+    if (gateLastFocused && typeof gateLastFocused.focus === "function") gateLastFocused.focus();
   }
 
   function renderStatusBar() {
@@ -118,11 +126,13 @@
     registerAs(name);
     input.value = "";
     hideGate();
+    if (window.Onboarding) window.Onboarding.maybeShow();
   }
 
   document.getElementById("btn-auth-guest").addEventListener("click", function () {
     chooseGuest();
     hideGate();
+    if (window.Onboarding) window.Onboarding.maybeShow();
   });
   document.getElementById("btn-auth-register-submit").addEventListener("click", submitRegistration);
   document.getElementById("auth-username-input").addEventListener("keydown", function (e) {
@@ -132,6 +142,8 @@
   renderStatusBar();
   if (!hasChosen()) {
     showGate();
+  } else if (window.Onboarding) {
+    window.Onboarding.maybeShow();
   }
 
   window.Auth = {

@@ -66,8 +66,10 @@
   function showToast(def) {
     var toast = document.createElement("div");
     toast.className = "achievement-toast";
+    toast.setAttribute("role", "status");
+    toast.setAttribute("aria-live", "polite");
     toast.innerHTML =
-      '<span class="achievement-toast-icon">' + def.icon + "</span>" +
+      '<span class="achievement-toast-icon" aria-hidden="true">' + def.icon + "</span>" +
       '<div><div class="achievement-toast-title">באנר חדש: ' + def.title + "</div>" +
       '<div class="achievement-toast-desc">' + def.desc + "</div></div>";
     document.body.appendChild(toast);

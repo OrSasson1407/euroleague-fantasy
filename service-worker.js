@@ -1,12 +1,13 @@
 "use strict";
 
-var CACHE_NAME = "euroleague-fantasy-v4";
+var CACHE_NAME = "euroleague-fantasy-v5";
 var CORE_ASSETS = [
   "./",
   "./index.html",
   "./style.css",
   "./manifest.json",
   "./icon.svg",
+  "./onboarding.js",
   "./auth.js",
   "./euroleague_data.js",
   "./ratings_enrich.js",
