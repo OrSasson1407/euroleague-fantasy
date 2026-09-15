@@ -216,33 +216,40 @@
   }
 
   // ---------- Dismissible info toast ----------
-  // Explains a screen's rules as a toast the user must actively dismiss,
-  // instead of a paragraph that permanently sits on the page. Always shown
-  // regardless of the effects on/off setting - it's informational content,
-  // not a decorative flourish. Only one is ever on screen at a time.
+  // Explains a screen's rules as a centered, prominent overlay the user
+  // must actively dismiss, instead of a paragraph that permanently sits on
+  // the page. Always shown regardless of the effects on/off setting -
+  // it's informational content, not a decorative flourish. Only one is
+  // ever on screen at a time.
   function showInfoToast(html) {
-    var existing = document.querySelector(".info-toast");
+    var existing = document.querySelector(".info-toast-overlay");
     if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
 
-    var toast = document.createElement("div");
-    toast.className = "info-toast";
-    toast.setAttribute("role", "status");
-    toast.innerHTML =
+    var overlay = document.createElement("div");
+    overlay.className = "info-toast-overlay";
+    overlay.setAttribute("role", "status");
+    overlay.innerHTML =
+      '<div class="info-toast-box">' +
+      '<div class="info-toast-icon" aria-hidden="true">💡</div>' +
       '<div class="info-toast-text">' + html + "</div>" +
-      '<button class="info-toast-dismiss">הבנתי</button>';
-    document.body.appendChild(toast);
+      '<button class="info-toast-dismiss">הבנתי</button>' +
+      "</div>";
+    document.body.appendChild(overlay);
     requestAnimationFrame(function () {
-      toast.classList.add("show");
+      overlay.classList.add("show");
     });
 
     function dismiss() {
-      toast.classList.remove("show");
+      overlay.classList.remove("show");
       setTimeout(function () {
-        if (toast.parentNode) toast.parentNode.removeChild(toast);
+        if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
       }, 300);
     }
 
-    toast.querySelector(".info-toast-dismiss").addEventListener("click", dismiss);
+    overlay.querySelector(".info-toast-dismiss").addEventListener("click", dismiss);
+    overlay.addEventListener("click", function (e) {
+      if (e.target === overlay) dismiss();
+    });
   }
 
   // ---------- Count-up number animation ----------
