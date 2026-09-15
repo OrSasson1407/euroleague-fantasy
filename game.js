@@ -182,6 +182,10 @@
     return typeof player.rating === "number" ? player.rating : 65;
   }
 
+  function formatSalary(cost) {
+    return "$" + cost + "M";
+  }
+
   function canAfford(player) {
     return state.budgetTotal <= 0 || playerCost(player) <= state.budgetRemaining;
   }
@@ -276,7 +280,7 @@
 
     var meta = document.getElementById("round-meta");
     meta.innerHTML = "סיבוב " + pickNumber + " מתוך " + TOTAL_ROUNDS +
-      (state.budgetTotal > 0 ? ' &middot; <span class="cost-tag">תקציב נותר: ' + state.budgetRemaining + "</span>" : "");
+      (state.budgetTotal > 0 ? ' &middot; <span class="cost-tag">תקציב נותר: ' + formatSalary(state.budgetRemaining) + "</span>" : "");
 
     document.getElementById("round-team").innerHTML = window.TeamBadge.html(picked.combo.team) + picked.combo.team;
     document.getElementById("round-season").textContent = "עונת " + formatSeason(picked.combo.season);
@@ -300,7 +304,7 @@
       info.innerHTML = player.name +
         (player.position ? '<span class="pos-tag">' + player.position + "</span>" : "") +
         (typeof player.rating === "number" ? '<span class="rating-tag">' + player.rating + "</span>" : "") +
-        (state.budgetTotal > 0 ? '<span class="cost-tag">עלות: ' + playerCost(player) + "</span>" : "") +
+        '<span class="cost-tag">' + formatSalary(playerCost(player)) + "</span>" +
         (taken ? '<span class="taken-tag">כבר נבחר</span>' :
           (tooExpensive ? '<span class="taken-tag">יקר מדי</span>' :
             (noRoomAtAll ? '<span class="taken-tag">המשבצת מלאה</span>' : "")));
