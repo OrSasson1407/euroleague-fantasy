@@ -27,7 +27,7 @@
     html += '<div class="settings-section"><div class="settings-row">' +
       '<div><div class="settings-row-title">אפקטים וצלילים</div>' +
       '<div class="settings-row-desc">קונפטי, אנימציות מעבר בין מסכים, וצלילי קליק/באזר בדראפט ובתוצאות</div></div>' +
-      '<button class="settings-toggle-btn" id="btn-settings-toggle-effects">' +
+      '<button class="settings-toggle-btn" id="btn-settings-toggle-effects" aria-pressed="' + (effectsOn ? "true" : "false") + '">' +
       (effectsOn ? "מופעל ✅" : "כבוי ❌") + "</button>" +
       "</div></div>";
 

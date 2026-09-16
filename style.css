@@ -29,6 +29,8 @@ html, body {
   direction: rtl;
   min-height: 100vh;
   overflow-x: hidden;
+  overflow-x: clip;
+  overscroll-behavior-y: contain;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -457,11 +459,13 @@ button {
   background: var(--accent);
   color: #FFF3E9;
   font-weight: 800;
-  transition: transform .1s ease, filter .15s ease;
+  transition: transform .08s ease, filter .15s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 button:hover { filter: brightness(1.08); }
-button:active { transform: scale(0.97); }
+button:active { transform: scale(0.95); filter: brightness(0.92); }
 button:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(0.5); }
 
 button.secondary {
@@ -682,6 +686,11 @@ button.secondary {
 .final-actions {
   text-align: center;
   margin-top: 32px;
+  position: sticky;
+  bottom: 0;
+  z-index: 40;
+  padding: 14px 0 6px;
+  background: linear-gradient(to top, var(--bg) 70%, rgba(11, 11, 13, 0));
 }
 
 /* Era filter (single mode) */
@@ -1041,6 +1050,31 @@ footer {
 .player-search-hint {
   text-align: center;
   color: var(--text-dim);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 36px 20px;
+  animation: screen-in .3s ease both;
+}
+
+.empty-state-icon {
+  font-size: 2.4rem;
+  margin-bottom: 10px;
+  opacity: 0.75;
+}
+
+.empty-state-text {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 4px;
+}
+
+.empty-state-hint {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  margin: 0;
 }
 
 .player-search-result {

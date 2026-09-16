@@ -3,6 +3,12 @@
 
   var formatSeason = window.PlayerSearch.formatSeason;
 
+  function escapeHtml(str) {
+    var div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
   function renderResults(query) {
     var resultsEl = document.getElementById("player-search-results");
     document.getElementById("player-profile").hidden = true;
@@ -11,13 +17,23 @@
 
     var trimmed = (query || "").trim();
     if (trimmed.length < 2) {
-      resultsEl.innerHTML = '<p class="player-search-hint">הקלידו לפחות 2 תווים לחיפוש</p>';
+      resultsEl.innerHTML =
+        '<div class="empty-state">' +
+          '<div class="empty-state-icon" aria-hidden="true">🔍</div>' +
+          '<p class="empty-state-text">חפשו שחקן מהיסטוריית היורוליג</p>' +
+          '<p class="empty-state-hint">הקלידו לפחות 2 תווים, למשל שם פרטי או משפחה</p>' +
+        "</div>";
       return;
     }
 
     var matches = window.PlayerSearch.search(trimmed);
     if (matches.length === 0) {
-      resultsEl.innerHTML = '<p class="player-search-hint">לא נמצאו שחקנים בשם הזה</p>';
+      resultsEl.innerHTML =
+        '<div class="empty-state">' +
+          '<div class="empty-state-icon" aria-hidden="true">🕵️</div>' +
+          '<p class="empty-state-text">לא נמצאו שחקנים בשם "' + escapeHtml(trimmed) + '"</p>' +
+          '<p class="empty-state-hint">נסו לבדוק את האיות, או לחפש רק שם פרטי / משפחה</p>' +
+        "</div>";
       return;
     }
 

@@ -465,10 +465,12 @@
           c.classList.remove("selected");
         });
         btn.classList.add("selected");
+        window.UiSelect.sync(grid);
         onPick(item);
       });
       grid.appendChild(btn);
     });
+    window.UiSelect.sync(grid);
   }
 
   function updatePointsDisplay() {
@@ -489,6 +491,7 @@
     document.querySelectorAll("#career-position-buttons .era-btn").forEach(function (b, i) {
       b.classList.toggle("selected", i === 0);
     });
+    window.UiSelect.sync(document.getElementById("career-position-buttons"));
 
     buildSelectGrid("career-academy-grid", ACADEMIES, function (a) { createState.academy = a; });
     buildSelectGrid("career-archetype-grid", window.RatingArchetypes, function (a) { createState.archetype = a; });
@@ -766,9 +769,11 @@
         pendingGoal = g;
         Array.from(goalGrid.children).forEach(function (c) { c.classList.remove("selected"); });
         btn.classList.add("selected");
+        window.UiSelect.sync(goalGrid);
       });
       goalGrid.appendChild(btn);
     });
+    window.UiSelect.sync(goalGrid);
 
     var grid = document.getElementById("career-focus-grid");
     TRAINING_FOCUS.forEach(function (f) {
@@ -1415,6 +1420,7 @@
         b.classList.remove("selected");
       });
       btn.classList.add("selected");
+      window.UiSelect.sync(document.getElementById("career-position-buttons"));
       createState.position = btn.dataset.pos;
     });
   });

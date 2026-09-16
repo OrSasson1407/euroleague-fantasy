@@ -888,6 +888,7 @@
         b.classList.remove("selected");
       });
       btn.classList.add("selected");
+      window.UiSelect.sync(document.getElementById("era-filter-buttons"));
       state.eraMin = parseInt(btn.dataset.min, 10);
       state.eraMax = parseInt(btn.dataset.max, 10);
     });
@@ -899,6 +900,7 @@
         b.classList.remove("selected");
       });
       btn.classList.add("selected");
+      window.UiSelect.sync(document.getElementById("budget-mode-buttons"));
       state.budgetTotal = parseInt(btn.dataset.budget, 10);
       state.budgetRemaining = state.budgetTotal;
     });
@@ -926,6 +928,7 @@
       });
       grid.appendChild(card);
     });
+    window.UiSelect.sync(grid);
   }
 
   renderSystemGrid();

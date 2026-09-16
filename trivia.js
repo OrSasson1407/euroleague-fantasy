@@ -353,5 +353,6 @@
     state.timedMode = !state.timedMode;
     e.target.textContent = "⏱ מצב מתוזמן: " + (state.timedMode ? "פועל" : "כבוי");
     e.target.classList.toggle("selected", state.timedMode);
+    e.target.setAttribute("aria-pressed", state.timedMode ? "true" : "false");
   });
 })();

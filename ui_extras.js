@@ -421,4 +421,21 @@
     isEnabled: isEffectsEnabled,
     setEnabled: setEffectsEnabled,
   };
+
+  // ---------- Toggle-button accessibility state ----------
+  // ".selected" on era-btn/system-card/team-select-btn groups is a purely
+  // visual (color) cue - screen readers can't tell which option is picked.
+  // sync() re-reads the actual class on every child and mirrors it to
+  // aria-pressed, so callers just call it once after any selection change
+  // instead of tracking true/false themselves.
+  function syncSelectedAria(container) {
+    if (!container) return;
+    Array.from(container.children).forEach(function (b) {
+      if (b.tagName === "BUTTON") {
+        b.setAttribute("aria-pressed", b.classList.contains("selected") ? "true" : "false");
+      }
+    });
+  }
+  window.UiSelect = { sync: syncSelectedAria };
+  document.querySelectorAll(".era-filter-buttons, .system-select-grid, .team-select-grid").forEach(syncSelectedAria);
 })();

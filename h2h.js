@@ -872,6 +872,7 @@
         b.classList.remove("selected");
       });
       btn.classList.add("selected");
+      window.UiSelect.sync(document.getElementById("h2h-format-buttons"));
       selectedGamesToWin = parseInt(btn.dataset.gamesToWin, 10);
     });
   });
@@ -882,6 +883,7 @@
         b.classList.remove("selected");
       });
       btn.classList.add("selected");
+      window.UiSelect.sync(document.getElementById("h2h-draftmode-buttons"));
       selectedDraftMode = btn.dataset.draftMode;
       document.getElementById("h2h-auction-filters").hidden = selectedDraftMode !== "auction";
     });
@@ -893,6 +895,7 @@
         b.classList.remove("selected");
       });
       btn.classList.add("selected");
+      window.UiSelect.sync(document.getElementById("h2h-auction-era-buttons"));
       auctionEraMin = parseInt(btn.dataset.min, 10);
       auctionEraMax = parseInt(btn.dataset.max, 10);
     });
@@ -911,9 +914,11 @@
           b.classList.remove("selected");
         });
         btn.classList.add("selected");
+        window.UiSelect.sync(grid);
       });
       grid.appendChild(btn);
     });
+    window.UiSelect.sync(grid);
   }
 
   document.querySelectorAll("#h2h-auction-budget-buttons .era-btn").forEach(function (btn) {
@@ -922,6 +927,7 @@
         b.classList.remove("selected");
       });
       btn.classList.add("selected");
+      window.UiSelect.sync(document.getElementById("h2h-auction-budget-buttons"));
       selectedAuctionBudget = parseInt(btn.dataset.budget, 10);
     });
   });
@@ -932,6 +938,7 @@
         b.classList.remove("selected");
       });
       btn.classList.add("selected");
+      window.UiSelect.sync(document.getElementById("h2h-auction-pool-buttons"));
       var wantsTeam = btn.dataset.pool === "team";
       var grid = document.getElementById("h2h-auction-team-grid");
       if (wantsTeam) {
