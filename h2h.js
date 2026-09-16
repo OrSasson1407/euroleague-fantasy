@@ -3,7 +3,7 @@
 
   var TOTAL_TURNS = 10;
   var SLOT_TEMPLATE = ["Guard", "Guard", "Forward", "Forward", "Center"];
-  var POS_LABEL = { Guard: "מגן", Forward: "חלוץ", Center: "סנטר" };
+  var POS_LABEL = { Guard: window.I18n.t("common.posGuard"), Forward: window.I18n.t("common.posForward"), Center: window.I18n.t("common.posCenter") };
   var MAX_REROLLS = 2;
   var HOME_BONUS_BASE = 5; // max score bonus for the "home" side, in a close game (see homeBonusFor)
   var selectedGamesToWin = 2; // set by the Bo3/Bo5 toggle on the setup screen
@@ -25,8 +25,8 @@
     turn: 0, // 0..9
     gamesToWin: 2, // 2 = best-of-3, 3 = best-of-5
     sides: [
-      { label: "שחקן 1", picks: [], rerolls: MAX_REROLLS, needs: freshNeeds(), system: null },
-      { label: "שחקן 2", picks: [], rerolls: MAX_REROLLS, needs: freshNeeds(), system: null },
+      { label: window.I18n.t("h2h.player1"), picks: [], rerolls: MAX_REROLLS, needs: freshNeeds(), system: null },
+      { label: window.I18n.t("h2h.player2"), picks: [], rerolls: MAX_REROLLS, needs: freshNeeds(), system: null },
     ],
   };
 
@@ -103,6 +103,10 @@
     return parts.join(", ");
   }
 
+  function seasonLabel(season) {
+    return window.I18n.t("single.seasonLabel", { season: formatSeason(season) });
+  }
+
   function buildSlotDisplay(picks) {
     var byPos = { Guard: [], Forward: [], Center: [] };
     picks.forEach(function (p) {
@@ -156,11 +160,11 @@
     renderPanels();
 
     document.getElementById("h2h-turn-indicator").innerHTML =
-      "תור " + (state.turn + 1) + " מתוך " + TOTAL_TURNS + "<br>" +
-      "<strong>" + side.label + "</strong> - נדרשים עוד: " + needsSummaryText(side.needs);
+      window.I18n.t("h2h.turnOf", { n: state.turn + 1, total: TOTAL_TURNS }) + "<br>" +
+      "<strong>" + side.label + "</strong> - " + window.I18n.t("h2h.needsRemaining", { needs: needsSummaryText(side.needs) });
 
     document.getElementById("h2h-round-team").innerHTML = window.TeamBadge.html(picked.combo.team) + picked.combo.team;
-    document.getElementById("h2h-round-season").textContent = "עונת " + formatSeason(picked.combo.season);
+    document.getElementById("h2h-round-season").textContent = seasonLabel(picked.combo.season);
 
     var grid = document.getElementById("h2h-players-grid");
     grid.innerHTML = "";
@@ -179,7 +183,7 @@
       btn.innerHTML = player.name +
         (player.position ? '<span class="pos-tag">' + player.position + "</span>" : "") +
         window.RatingTag.html(player.rating) +
-        (taken ? '<span class="taken-tag">כבר נבחר</span>' : (slotFull ? '<span class="taken-tag">המשבצת מלאה</span>' : ""));
+        (taken ? '<span class="taken-tag">' + window.I18n.t("common.takenTag") + "</span>" : (slotFull ? '<span class="taken-tag">' + window.I18n.t("common.slotFullTag") + "</span>" : ""));
       if (!disabled) {
         btn.addEventListener("click", function () {
           makePick(player, picked.combo, sideIndex);
@@ -401,11 +405,12 @@
     var quartersText = cum1.map(function (v, qi) {
       return v + "-" + cum2[qi];
     }).join(" · ");
+    var homeLabel = g.homeIndex === 0 ? state.sides[0].label : state.sides[1].label;
     return (
       '<div class="h2h-game-row">' +
-      '<div class="h2h-game-row-main"><span>משחק ' + (i + 1) + (g.homeIndex === 0 ? " (בית: " + state.sides[0].label + ")" : " (בית: " + state.sides[1].label + ")") + "</span>" +
+      '<div class="h2h-game-row-main"><span>' + window.I18n.t("h2h.gameNumber", { n: i + 1 }) + " (" + window.I18n.t("h2h.homeParen", { label: homeLabel }) + ")</span>" +
       "<span>" + g.score1 + " - " + g.score2 + "</span></div>" +
-      '<div class="h2h-game-row-quarters">לפי רבעים: ' + quartersText + "</div>" +
+      '<div class="h2h-game-row-quarters">' + window.I18n.t("single.byQuarters", { quarters: quartersText }) + "</div>" +
       "</div>"
     );
   }
@@ -417,7 +422,7 @@
   function renderGamePreview() {
     awaitingReveal = true;
     document.getElementById("h2h-game-status").textContent =
-      "משחק " + (pendingGameIndex + 1) + " · סדרה: " + seriesWins[0] + "-" + seriesWins[1];
+      window.I18n.t("h2h.gameStatus", { n: pendingGameIndex + 1, w1: seriesWins[0], w2: seriesWins[1] });
     renderSeriesLog("h2h-series-log-live");
 
     var ratingA = averageRating(state.sides[0].picks);
@@ -435,15 +440,15 @@
         '<div class="vs-mark">VS</div>' +
         '<div class="vs-side vs-side-2">' + state.sides[1].label + "</div>" +
       "</div>" +
-      "<div>סיכויי ניצחון למשחק הזה, לפי הדירוג הממוצע:</div>" +
+      "<div>" + window.I18n.t("h2h.winProbabilityLabel") + "</div>" +
       '<div class="prob-row"><span>' + state.sides[0].label + " " + pct1 + "%</span>" +
       "<span>" + pct2 + "% " + state.sides[1].label + "</span></div>" +
       '<div class="prob-bar"><div class="prob-bar-fill-1" style="width:' + pct1 + '%"></div>' +
       '<div class="prob-bar-fill-2" style="width:' + pct2 + '%"></div></div>' +
-      '<div class="home-tag">🏠 יתרון בית הפעם: ' + homeLabel + "</div>" +
-      '<div class="home-tag">שיטות: ' + state.sides[0].system.label + " נגד " + state.sides[1].system.label + "</div>";
+      '<div class="home-tag">🏠 ' + window.I18n.t("h2h.homeAdvantage", { label: homeLabel }) + "</div>" +
+      '<div class="home-tag">' + window.I18n.t("h2h.systemsMatchup", { sys1: window.PlaySystemsAPI.label(state.sides[0].system), sys2: window.PlaySystemsAPI.label(state.sides[1].system) }) + "</div>";
 
-    document.getElementById("btn-h2h-game-next").textContent = "הצג תוצאה »";
+    document.getElementById("btn-h2h-game-next").textContent = window.I18n.t("h2h.showResult");
     window.AppNav.showScreen("h2hGame");
   }
 
@@ -457,7 +462,7 @@
 
     renderSeriesLog("h2h-series-log-live");
     document.getElementById("h2h-game-status").textContent =
-      "תוצאת משחק " + pendingGameIndex + " · סדרה: " + seriesWins[0] + "-" + seriesWins[1];
+      window.I18n.t("h2h.gameResultStatus", { n: pendingGameIndex, w1: seriesWins[0], w2: seriesWins[1] });
 
     var winnerLabel = state.sides[g.winnerIndex].label;
     var cum1 = cumulativeLine(g.quarters1);
@@ -466,10 +471,10 @@
     preview.innerHTML =
       '<div class="final-score">' + g.score1 + " - " + g.score2 + "</div>" +
       window.MomentumGraph.html(cum1, cum2, 4) +
-      "<div>" + winnerLabel + " ניצח/ה במשחק זה</div>";
+      "<div>" + window.I18n.t("h2h.wonThisGame", { winner: winnerLabel }) + "</div>";
 
     var seriesDecided = seriesWins[0] >= state.gamesToWin || seriesWins[1] >= state.gamesToWin;
-    document.getElementById("btn-h2h-game-next").textContent = seriesDecided ? "לתוצאה הסופית »" : "המשחק הבא »";
+    document.getElementById("btn-h2h-game-next").textContent = seriesDecided ? window.I18n.t("h2h.toFinalResultBtn") : window.I18n.t("h2h.nextGameBtn");
   }
 
   function revealGame() {
@@ -491,7 +496,7 @@
       preview.innerHTML =
         '<div class="final-score">' + liveScore1 + " - " + liveScore2 + "</div>" +
         window.MomentumGraph.html(cum1, cum2, step) +
-        '<div class="home-tag">רבע ' + Math.min(step + 1, 4) + " מתוך 4</div>";
+        '<div class="home-tag">' + window.I18n.t("h2h.quarterOfFour", { n: Math.min(step + 1, 4) }) + "</div>";
       if (step > 0) window.Effects.playClick();
       if (step < 4) {
         revealTimer = setTimeout(function () { tick(step + 1); }, 550);
@@ -501,7 +506,7 @@
     }
 
     revealSkip = function () { finalizeReveal(g); };
-    document.getElementById("btn-h2h-game-next").textContent = "דלגו לתוצאה »";
+    document.getElementById("btn-h2h-game-next").textContent = window.I18n.t("h2h.skipToResultBtn");
     tick(0);
   }
 
@@ -517,8 +522,8 @@
           window.RatingTag.html(pick.rating) + "</div>" +
         '<div class="meta">' + pick.slotLabel + " &middot; " + pick.team + " " + formatSeason(pick.season) + "</div>" +
         '<div class="meta">' +
-          (typeof pick.offRating === "number" ? '<span class="off-tag">התק׳ ' + pick.offRating + "</span>" : "") +
-          (typeof pick.defRating === "number" ? '<span class="def-tag">הג׳ ' + pick.defRating + "</span>" : "") +
+          (typeof pick.offRating === "number" ? '<span class="off-tag">' + window.I18n.t("common.offAbbr") + " " + pick.offRating + "</span>" : "") +
+          (typeof pick.defRating === "number" ? '<span class="def-tag">' + window.I18n.t("common.defAbbr") + " " + pick.defRating + "</span>" : "") +
           (pick.archetype ? '<span class="archetype-tag">' + pick.archetype.label + "</span>" : "") +
         "</div>";
       grid.appendChild(card);
@@ -549,12 +554,12 @@
 
     var winnerLabel = state.sides[seriesWinnerIndex].label;
     document.getElementById("h2h-result-title").textContent =
-      winnerLabel + " ניצח/ה בסדרה " + seriesWins[seriesWinnerIndex] + "-" + seriesWins[loserIndex] + "!";
+      window.I18n.t("h2h.wonSeriesTitle", { winner: winnerLabel, winScore: seriesWins[seriesWinnerIndex], loseScore: seriesWins[loserIndex] });
 
     document.getElementById("h2h-final-team1-name").innerHTML =
-      state.sides[0].label + ' (דירוג ממוצע: <span id="h2h-final-rating-1">0.0</span>)';
+      state.sides[0].label + ' (' + window.I18n.t("h2h.avgRatingLabel") + ' <span id="h2h-final-rating-1">0.0</span>)';
     document.getElementById("h2h-final-team2-name").innerHTML =
-      state.sides[1].label + ' (דירוג ממוצע: <span id="h2h-final-rating-2">0.0</span>)';
+      state.sides[1].label + ' (' + window.I18n.t("h2h.avgRatingLabel") + ' <span id="h2h-final-rating-2">0.0</span>)';
     window.Effects.countUp(document.getElementById("h2h-final-rating-1"), averageRating(state.sides[0].picks), { decimals: 1 });
     window.Effects.countUp(document.getElementById("h2h-final-rating-2"), averageRating(state.sides[1].picks), { decimals: 1 });
     renderFinalTeamGrid("h2h-final-team1-grid", state.sides[0]);
@@ -576,8 +581,8 @@
     window.GameHistory.record({
       mode: "h2h",
       icon: "⚔️",
-      title: state.sides[0].label + " נגד " + state.sides[1].label,
-      detail: seriesWins[0] + "-" + seriesWins[1] + " · " + winnerLabel + " ניצח/ה",
+      title: window.I18n.t("h2h.matchupTitle", { side1: state.sides[0].label, side2: state.sides[1].label }),
+      detail: window.I18n.t("h2h.matchupDetail", { w1: seriesWins[0], w2: seriesWins[1], winner: winnerLabel }),
       outcome: state.mode === "computer" ? (seriesWinnerIndex === 0 ? "win" : "loss") : "neutral",
     });
 
@@ -604,16 +609,16 @@
 
     var card = document.getElementById("h2h-share-card");
     card.innerHTML =
-      "<h2>" + state.sides[0].label + " נגד " + state.sides[1].label + "</h2>" +
-      '<div class="share-tagline">1 על 1 &middot; יורוליג פנטזי</div>' +
+      "<h2>" + window.I18n.t("h2h.matchupTitle", { side1: state.sides[0].label, side2: state.sides[1].label }) + "</h2>" +
+      '<div class="share-tagline">' + window.I18n.t("h2h.shareTagline") + "</div>" +
       '<div class="share-rating">' + seriesWins[0] + "-" + seriesWins[1] + "</div>" +
-      '<div class="share-rating-label">תוצאת הסדרה &middot; משחק אחרון: ' + lastGame.score1 + "-" + lastGame.score2 + "</div>" +
+      '<div class="share-rating-label">' + window.I18n.t("h2h.shareRatingLabel", { score: lastGame.score1 + "-" + lastGame.score2 }) + "</div>" +
       window.MomentumGraph.html(cum1, cum2, 4) +
       '<div class="share-player-list"><h4>' + state.sides[0].label + (seriesWinnerIndex === 0 ? " 🏆" : "") + "</h4>" +
         topPlayerRowHtml(state.sides[0].picks) + "</div>" +
       '<div class="share-player-list"><h4>' + state.sides[1].label + (seriesWinnerIndex === 1 ? " 🏆" : "") + "</h4>" +
         topPlayerRowHtml(state.sides[1].picks) + "</div>" +
-      '<div class="share-footer">נוצר ביורוליג פנטזי</div>';
+      '<div class="share-footer">' + window.I18n.t("h2h.shareFooter") + "</div>";
 
     window.AppNav.showScreen("h2hShare");
   }
@@ -636,15 +641,15 @@
   }
 
   function renderSystemPickerFor(sideIndex) {
-    document.getElementById("h2h-system-title").textContent = state.sides[sideIndex].label + " - בחרו שיטת משחק";
+    document.getElementById("h2h-system-title").textContent = state.sides[sideIndex].label + " - " + window.I18n.t("common.chooseSystem");
     var grid = document.getElementById("h2h-system-grid");
     grid.innerHTML = "";
     window.PlaySystems.forEach(function (sys) {
       var card = document.createElement("button");
       card.className = "system-card";
       card.innerHTML =
-        '<div class="system-name">' + sys.label + "</div>" +
-        '<div class="system-desc">' + sys.desc + "</div>";
+        '<div class="system-name">' + window.PlaySystemsAPI.label(sys) + "</div>" +
+        '<div class="system-desc">' + window.PlaySystemsAPI.desc(sys) + "</div>";
       card.addEventListener("click", function () {
         state.sides[sideIndex].system = sys;
         renderSystemSelection();
@@ -697,8 +702,8 @@
     state.pickedNames = new Set();
     state.turn = 0;
     state.sides = [
-      { label: "שחקן 1", picks: [], rerolls: MAX_REROLLS, needs: freshNeeds(), system: null },
-      { label: mode === "computer" ? "המחשב" : "שחקן 2", picks: [], rerolls: MAX_REROLLS, needs: freshNeeds(), system: null },
+      { label: window.I18n.t("h2h.player1"), picks: [], rerolls: MAX_REROLLS, needs: freshNeeds(), system: null },
+      { label: mode === "computer" ? window.I18n.t("h2h.computer") : window.I18n.t("h2h.player2"), picks: [], rerolls: MAX_REROLLS, needs: freshNeeds(), system: null },
     ];
     renderTurn();
   }
@@ -784,8 +789,8 @@
   function renderAuctionScreen() {
     document.getElementById("h2h-auction-label-1").textContent = auction.sides[0].label;
     document.getElementById("h2h-auction-label-2").textContent = auction.sides[1].label;
-    document.getElementById("h2h-auction-budget-1").textContent = "תקציב: $" + auction.sides[0].budget;
-    document.getElementById("h2h-auction-budget-2").textContent = "תקציב: $" + auction.sides[1].budget;
+    document.getElementById("h2h-auction-budget-1").textContent = window.I18n.t("h2h.auctionBudgetDisplay", { amount: auction.sides[0].budget });
+    document.getElementById("h2h-auction-budget-2").textContent = window.I18n.t("h2h.auctionBudgetDisplay", { amount: auction.sides[1].budget });
     renderAuctionSlots(0);
     renderAuctionSlots(1);
     document.getElementById("h2h-auction-panel-1").classList.toggle("active-turn", auction.askSide === 0);
@@ -798,16 +803,16 @@
         (cp.player.position ? '<span class="pos-tag">' + cp.player.position + "</span>" : "") +
         window.RatingTag.html(cp.player.rating);
       document.getElementById("h2h-auction-player-meta").textContent =
-        cp.combo.team + " &middot; עונת " + formatSeason(cp.combo.season);
+        cp.combo.team + " &middot; " + seasonLabel(cp.combo.season);
     }
 
     var askLabel = auction.askSide != null ? auction.sides[auction.askSide].label : "";
     document.getElementById("h2h-auction-status").innerHTML =
-      "מחיר להצעה: <strong>$" + auction.nextBid + "</strong><br>תורו של <strong>" + askLabel + "</strong>";
+      window.I18n.t("h2h.auctionBidPrice", { amount: auction.nextBid }) + "<br>" + window.I18n.t("h2h.auctionTurnOf", { label: askLabel });
 
     var isComputerAsk = auction.mode === "computer" && auction.askSide === 1;
     document.getElementById("h2h-auction-actions").style.display = isComputerAsk ? "none" : "";
-    document.getElementById("btn-h2h-auction-agree").textContent = "✅ מוכן לשלם $" + auction.nextBid;
+    document.getElementById("btn-h2h-auction-agree").textContent = "✅ " + window.I18n.t("h2h.auctionAgreeWithAmount", { amount: auction.nextBid });
 
     window.AppNav.showScreen("h2hAuction");
   }
@@ -816,8 +821,8 @@
     auction = {
       mode: mode,
       sides: [
-        freshAuctionSide("שחקן 1"),
-        freshAuctionSide(mode === "computer" ? "המחשב" : "שחקן 2"),
+        freshAuctionSide(window.I18n.t("h2h.player1")),
+        freshAuctionSide(mode === "computer" ? window.I18n.t("h2h.computer") : window.I18n.t("h2h.player2")),
       ],
       roundStarter: 0,
       currentPlayer: null,
@@ -862,7 +867,7 @@
       var side = state.sides[i];
       var spent = side.picks.reduce(function (sum, p) { return sum + (p.price || 0); }, 0);
       document.getElementById("h2h-auction-summary-team" + (i + 1) + "-name").textContent =
-        side.label + " (הוציאו $" + spent + " מתוך $" + selectedAuctionBudget + ")";
+        side.label + " (" + window.I18n.t("h2h.auctionSummarySpent", { spent: spent, budget: selectedAuctionBudget }) + ")";
       renderAuctionSummaryGrid("h2h-auction-summary-team" + (i + 1) + "-grid", side.picks);
     });
     window.AppNav.showScreen("h2hAuctionSummary");
