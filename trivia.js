@@ -86,8 +86,8 @@
       combo: combo,
       correctAnswer: combo.team,
       options: options,
-      titleText: "איזו קבוצה שיחקה עם הסגל הזה?",
-      subText: "עונת " + formatSeason(combo.season),
+      titleText: window.I18n.t("trivia.questionTitleTeam"),
+      subText: window.I18n.t("single.seasonLabel", { season: formatSeason(combo.season) }),
     };
   }
 
@@ -124,7 +124,7 @@
       correctAnswer: combo.season,
       options: options,
       titleText: club,
-      subText: "באיזו עונה שיחק סגל זה?",
+      subText: window.I18n.t("trivia.questionSubSeason"),
     };
   }
 
@@ -181,8 +181,8 @@
 
     renderProgress();
     document.getElementById("trivia-round-meta").textContent =
-      "שאלה " + state.round + " מתוך " + TOTAL_QUESTIONS + " · ניקוד: " + state.score +
-      (state.streak >= 2 ? " · 🔥 רצף: " + state.streak : "");
+      window.I18n.t("trivia.roundMeta", { n: state.round, total: TOTAL_QUESTIONS, score: state.score }) +
+      (state.streak >= 2 ? " · " + window.I18n.t("trivia.streakSuffix", { streak: state.streak }) : "");
 
     document.getElementById("trivia-question-title").textContent = question.titleText;
     document.getElementById("trivia-question-sub").textContent = question.subText;
@@ -250,7 +250,7 @@
     } else {
       state.streak = 0;
       var yourLabel = isTimeout
-        ? "לא ענית בזמן"
+        ? window.I18n.t("trivia.timeoutAnswerLabel")
         : (question.type === "season" ? formatSeason(selected) : selected);
       state.mistakes.push({
         titleText: question.titleText,
@@ -273,19 +273,20 @@
 
     var feedback = document.getElementById("trivia-feedback");
     if (isTimeout) {
-      feedback.textContent = "⏱ הזמן נגמר! התשובה הנכונה: " + correctLabel;
+      feedback.textContent = "⏱ " + window.I18n.t("trivia.timeoutFeedback", { answer: correctLabel });
       feedback.className = "trivia-feedback wrong-text";
     } else if (correct) {
-      feedback.textContent = "✔ נכון!" + (speedBonus > 0 ? " (+" + (1 + speedBonus) + ", בונוס מהירות)" : " (+1)");
+      feedback.textContent = "✔ " + window.I18n.t("trivia.correctFeedback") +
+        (speedBonus > 0 ? " " + window.I18n.t("trivia.speedBonusSuffix", { points: 1 + speedBonus }) : " (+1)");
       feedback.className = "trivia-feedback correct-text";
     } else {
-      feedback.textContent = "✘ טעות - התשובה הנכונה: " + correctLabel;
+      feedback.textContent = "✘ " + window.I18n.t("trivia.wrongFeedback", { answer: correctLabel });
       feedback.className = "trivia-feedback wrong-text";
     }
 
     document.getElementById("trivia-round-meta").textContent =
-      "שאלה " + state.round + " מתוך " + TOTAL_QUESTIONS + " · ניקוד: " + state.score +
-      (state.streak >= 2 ? " · 🔥 רצף: " + state.streak : "");
+      window.I18n.t("trivia.roundMeta", { n: state.round, total: TOTAL_QUESTIONS, score: state.score }) +
+      (state.streak >= 2 ? " · " + window.I18n.t("trivia.streakSuffix", { streak: state.streak }) : "");
 
     document.getElementById("btn-trivia-next").style.display = "";
   }
@@ -293,14 +294,14 @@
   function renderMistakes() {
     var container = document.getElementById("trivia-mistakes");
     if (state.mistakes.length === 0) {
-      container.innerHTML = '<p style="text-align:center; color:var(--text-dim);">ענית נכון על הכל! 🎉</p>';
+      container.innerHTML = '<p style="text-align:center; color:var(--text-dim);">' + window.I18n.t("trivia.noMistakes") + "</p>";
       return;
     }
-    container.innerHTML = "<h3>שאלות שכדאי לחזור עליהן:</h3>" + state.mistakes.map(function (m) {
+    container.innerHTML = "<h3>" + window.I18n.t("trivia.mistakesHeader") + "</h3>" + state.mistakes.map(function (m) {
       return (
         '<div class="trivia-mistake-row">' +
         '<div class="q">' + m.titleText + " (" + m.subText + ")</div>" +
-        '<div class="a">תשובתך: ' + m.yourLabel + " · התשובה הנכונה: <strong>" + m.correctLabel + "</strong></div>" +
+        '<div class="a">' + window.I18n.t("trivia.mistakeYourAnswer", { your: m.yourLabel, correct: m.correctLabel }) + "</div>" +
         "</div>"
       );
     }).join("");
@@ -310,14 +311,14 @@
     clearTimer();
     var bonusPoints = state.score - state.correctCount;
     document.getElementById("trivia-final-title").textContent =
-      "הציון שלכם: " + state.correctCount + " מתוך " + TOTAL_QUESTIONS +
-      (bonusPoints > 0 ? " (" + state.score + " נקודות כולל בונוס מהירות)" : "");
+      window.I18n.t("trivia.finalScore", { correct: state.correctCount, total: TOTAL_QUESTIONS }) +
+      (bonusPoints > 0 ? " " + window.I18n.t("trivia.finalScoreBonusSuffix", { score: state.score }) : "");
 
     var msg;
-    if (state.correctCount >= 22) msg = "מומחה יורוליג אמיתי! 🏆";
-    else if (state.correctCount >= 17) msg = "ידע מרשים!";
-    else if (state.correctCount >= 10) msg = "לא רע בכלל!";
-    else msg = "יש עוד ללמוד על ההיסטוריה של היורוליג...";
+    if (state.correctCount >= 22) msg = window.I18n.t("trivia.msgExpert");
+    else if (state.correctCount >= 17) msg = window.I18n.t("trivia.msgImpressive");
+    else if (state.correctCount >= 10) msg = window.I18n.t("trivia.msgNotBad");
+    else msg = window.I18n.t("trivia.msgMoreToLearn");
     document.getElementById("trivia-final-sub").textContent = msg;
     renderMistakes();
 
@@ -357,7 +358,7 @@
 
   document.getElementById("btn-trivia-timed-toggle").addEventListener("click", function (e) {
     state.timedMode = !state.timedMode;
-    e.target.textContent = "⏱ מצב מתוזמן: " + (state.timedMode ? "פועל" : "כבוי");
+    e.target.textContent = window.I18n.t(state.timedMode ? "trivia.timedOn" : "trivia.timedOff");
     e.target.classList.toggle("selected", state.timedMode);
     e.target.setAttribute("aria-pressed", state.timedMode ? "true" : "false");
   });
