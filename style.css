@@ -29,6 +29,14 @@ html, body {
   direction: rtl;
   min-height: 100vh;
   overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+.league-table-wrap::-webkit-scrollbar {
+  display: none;
 }
 
 #app {
@@ -1770,6 +1778,8 @@ body.effects-off #screen-home::before {
 .league-table-wrap {
   overflow-x: auto;
   margin-top: 10px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .league-table {
