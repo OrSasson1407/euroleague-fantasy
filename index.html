@@ -11,27 +11,43 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#0B0B0D">
+<script>
+  // Applied here (before body parses) rather than waiting for i18n.js at the
+  // bottom of the page, so there's no flash of the wrong text direction -
+  // a much more jarring flash than the color-theme one this app doesn't
+  // bother avoiding, since a wrong dir briefly mirrors the whole layout.
+  (function () {
+    try {
+      var raw = localStorage.getItem("euroleague_settings_v1");
+      var lang = raw ? (JSON.parse(raw).lang || "he") : "he";
+      document.documentElement.setAttribute("lang", lang);
+      document.documentElement.setAttribute("dir", lang === "en" ? "ltr" : "rtl");
+    } catch (e) {
+      // localStorage unavailable - keep the default he/rtl already in the markup
+    }
+  })();
+</script>
 </head>
 <body>
 
 <div id="splash-screen" class="splash-screen" aria-hidden="true">
   <div class="splash-logo">🏀</div>
-  <div class="splash-text">יורוליג פנטזי</div>
+  <div class="splash-text" data-i18n="common.appName">יורוליג פנטזי</div>
 </div>
 
 <div class="topbar" id="topbar">
-  <button class="topbar-logo" id="topbar-logo" aria-label="לדף הבית" title="לדף הבית">
+  <button class="topbar-logo" id="topbar-logo" data-i18n-aria="common.home" data-i18n-title="common.home" aria-label="לדף הבית" title="לדף הבית">
     <span class="topbar-logo-icon">🏀</span>
-    <span class="topbar-logo-text">יורוליג פנטזי</span>
+    <span class="topbar-logo-text" data-i18n="common.appName">יורוליג פנטזי</span>
   </button>
   <div class="topbar-actions">
     <div class="auth-status-bar" id="auth-status-bar"></div>
-    <div class="topbar-coin-display" id="topbar-coin-display" aria-label="מטבעות">
+    <div class="topbar-coin-display" id="topbar-coin-display" data-i18n-aria="topbar.coins" aria-label="מטבעות">
       🪙 <span id="topbar-coin-balance">0</span>
     </div>
-    <button class="topbar-icon-btn" id="btn-open-shop" aria-label="חנות" title="חנות">🏪</button>
-    <button class="topbar-icon-btn" id="btn-open-profile" aria-label="פרופיל" title="פרופיל">👤</button>
-    <button class="topbar-icon-btn" id="btn-open-settings" aria-label="הגדרות" title="הגדרות">⚙️</button>
+    <button class="topbar-icon-btn" id="btn-open-shop" data-i18n-aria="topbar.shop" data-i18n-title="topbar.shop" aria-label="חנות" title="חנות">🏪</button>
+    <button class="topbar-icon-btn" id="btn-open-profile" data-i18n-aria="topbar.profile" data-i18n-title="topbar.profile" aria-label="פרופיל" title="פרופיל">👤</button>
+    <button class="topbar-icon-btn" id="btn-open-settings" data-i18n-aria="topbar.settings" data-i18n-title="topbar.settings" aria-label="הגדרות" title="הגדרות">⚙️</button>
   </div>
 </div>
 
@@ -70,37 +86,37 @@
   <section id="screen-home" class="screen active">
     <div class="center-box">
       <header>
-        <h1>הרכב כל הזמנים - יורוליג</h1>
-        <p>בחרו מצב משחק</p>
+        <h1 data-i18n="home.title">הרכב כל הזמנים - יורוליג</h1>
+        <p data-i18n="home.subtitle">בחרו מצב משחק</p>
       </header>
       <div class="mode-cards">
         <button class="mode-card" id="btn-mode-single">
-          <div class="mode-card-title">בניית סגל</div>
-          <div class="mode-card-desc">10 סיבובים - הרכיבו הרכב חלומי אחד (חמישייה פותחת + ספסל) מתוך היסטוריית היורוליג</div>
+          <div class="mode-card-title" data-i18n="home.modes.single.title">בניית סגל</div>
+          <div class="mode-card-desc" data-i18n="home.modes.single.desc">10 סיבובים - הרכיבו הרכב חלומי אחד (חמישייה פותחת + ספסל) מתוך היסטוריית היורוליג</div>
         </button>
         <button class="mode-card" id="btn-mode-h2h">
-          <div class="mode-card-title">1 על 1</div>
-          <div class="mode-card-desc">התמודדו מול חבר או מול המחשב - כל אחד בונה חמישייה (2 מגנים, 2 חלוצים, סנטר), ובסוף נראה מי מנצח בסימולציה</div>
+          <div class="mode-card-title" data-i18n="home.modes.h2h.title">1 על 1</div>
+          <div class="mode-card-desc" data-i18n="home.modes.h2h.desc">התמודדו מול חבר או מול המחשב - כל אחד בונה חמישייה (2 מגנים, 2 חלוצים, סנטר), ובסוף נראה מי מנצח בסימולציה</div>
         </button>
         <button class="mode-card" id="btn-mode-league">
-          <div class="mode-card-title">ליגה</div>
-          <div class="mode-card-desc">בחרו קבוצה אהובה, הרכיבו לה סגל של 10 שחקנים מכל השנים שלה, ואז שחקו נגד 19 קבוצות אמיתיות נוספות בליגה מלאה של 20</div>
+          <div class="mode-card-title" data-i18n="home.modes.league.title">ליגה</div>
+          <div class="mode-card-desc" data-i18n="home.modes.league.desc">בחרו קבוצה אהובה, הרכיבו לה סגל של 10 שחקנים מכל השנים שלה, ואז שחקו נגד 19 קבוצות אמיתיות נוספות בליגה מלאה של 20</div>
         </button>
         <button class="mode-card" id="btn-mode-trivia">
-          <div class="mode-card-title">טריוויה</div>
-          <div class="mode-card-desc">בחרו לזהות קבוצה או לזהות עונה - 25 שאלות בכל נושא. כמה תקלעו?</div>
+          <div class="mode-card-title" data-i18n="home.modes.trivia.title">טריוויה</div>
+          <div class="mode-card-desc" data-i18n="home.modes.trivia.desc">בחרו לזהות קבוצה או לזהות עונה - 25 שאלות בכל נושא. כמה תקלעו?</div>
         </button>
         <button class="mode-card" id="btn-mode-badges">
-          <div class="mode-card-title">🏅 באנרים</div>
-          <div class="mode-card-desc">אספו באנרים על הישגים בכל המשחקונים - כמה תצליחו לפתוח?</div>
+          <div class="mode-card-title" data-i18n="home.modes.badges.title">🏅 באנרים</div>
+          <div class="mode-card-desc" data-i18n="home.modes.badges.desc">אספו באנרים על הישגים בכל המשחקונים - כמה תצליחו לפתוח?</div>
         </button>
         <button class="mode-card" id="btn-mode-player-search">
-          <div class="mode-card-title">🔍 פרופיל שחקן</div>
-          <div class="mode-card-desc">חפשו כל שחקן מתוך היסטוריית היורוליג וראו את כל העונות שלו, כולל היסטוריית דירוג</div>
+          <div class="mode-card-title" data-i18n="home.modes.playerSearch.title">🔍 פרופיל שחקן</div>
+          <div class="mode-card-desc" data-i18n="home.modes.playerSearch.desc">חפשו כל שחקן מתוך היסטוריית היורוליג וראו את כל העונות שלו, כולל היסטוריית דירוג</div>
         </button>
         <button class="mode-card" id="btn-mode-career">
-          <div class="mode-card-title">🏀 קריירה</div>
-          <div class="mode-card-desc">התחילו כשחקן בן 16 באקדמיה, התפתחו עד לליגה המקצוענית, ונהלו קריירה שלמה עד הפרישה</div>
+          <div class="mode-card-title" data-i18n="home.modes.career.title">🏀 קריירה</div>
+          <div class="mode-card-desc" data-i18n="home.modes.career.desc">התחילו כשחקן בן 16 באקדמיה, התפתחו עד לליגה המקצוענית, ונהלו קריירה שלמה עד הפרישה</div>
         </button>
       </div>
     </div>
@@ -807,6 +823,10 @@
   <footer>גרסה 1.2 &middot; נתוני סגלים היסטוריים לצורך משחק בלבד &middot; <button class="link-btn" id="btn-footer-about">אודות</button></footer>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/i18next@23.11.5/dist/umd/i18next.min.js"></script>
+<script src="locales_he.js"></script>
+<script src="locales_en.js"></script>
+<script src="i18n.js"></script>
 <script src="onboarding.js"></script>
 <script src="auth.js"></script>
 <script src="euroleague_data.js"></script>

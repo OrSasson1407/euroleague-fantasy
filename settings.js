@@ -22,8 +22,18 @@
 
     var effectsOn = window.Effects ? window.Effects.isEnabled() : true;
     var theme = window.Effects ? window.Effects.getTheme() : "dark";
+    var lang = window.I18n ? window.I18n.getLang() : "he";
 
     var html = "";
+
+    html += '<div class="settings-section"><div class="settings-row">' +
+      '<div><div class="settings-row-title">' + window.I18n.t("settings.language.label") + "</div>" +
+      '<div class="settings-row-desc">' + window.I18n.t("settings.language.desc") + "</div></div>" +
+      '<div class="era-filter-buttons" id="settings-lang-buttons">' +
+      '<button class="era-btn' + (lang === "he" ? " selected" : "") + '" data-lang-choice="he">🇮🇱 עברית</button>' +
+      '<button class="era-btn' + (lang === "en" ? " selected" : "") + '" data-lang-choice="en">🇬🇧 English</button>' +
+      "</div>" +
+      "</div></div>";
 
     html += '<div class="settings-section"><div class="settings-row">' +
       '<div><div class="settings-row-title">ערכת עיצוב</div>' +
@@ -58,6 +68,16 @@
       "</div></div>";
 
     container.innerHTML = html;
+
+    var langButtons = document.getElementById("settings-lang-buttons");
+    if (langButtons) {
+      window.UiSelect.sync(langButtons);
+      Array.from(langButtons.querySelectorAll(".era-btn")).forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          window.I18n.setLang(btn.dataset.langChoice);
+        });
+      });
+    }
 
     var themeButtons = document.getElementById("settings-theme-buttons");
     if (themeButtons) {
