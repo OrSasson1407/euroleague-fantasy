@@ -26,6 +26,9 @@
   </button>
   <div class="topbar-actions">
     <div class="auth-status-bar" id="auth-status-bar"></div>
+    <button class="topbar-coin-btn" id="btn-open-shop" aria-label="חנות" title="חנות">
+      🪙 <span id="topbar-coin-balance">0</span>
+    </button>
     <button class="topbar-icon-btn" id="btn-open-profile" aria-label="פרופיל" title="פרופיל">👤</button>
     <button class="topbar-icon-btn" id="btn-open-settings" aria-label="הגדרות" title="הגדרות">⚙️</button>
   </div>
@@ -110,6 +113,21 @@
     <div class="badges-grid" id="badges-grid"></div>
     <div class="final-actions">
       <button class="secondary" id="btn-home-from-badges">לדף הבית</button>
+    </div>
+  </section>
+
+  <section id="screen-shop" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 style="margin-top:0;">🪙 החנות</h2>
+      <div class="shop-balance-display">
+        <span class="shop-balance-value" id="shop-balance">0</span>
+        <span class="shop-balance-label">מטבעות</span>
+      </div>
+      <p class="shop-hint">מרוויחים 100 מטבעות על כל באנר שנפתח במשחק</p>
+    </div>
+    <div id="shop-catalog"></div>
+    <div class="final-actions">
+      <button class="secondary" id="btn-home-from-shop">לדף הבית</button>
     </div>
   </section>
 
@@ -769,6 +787,7 @@
 <script src="player_search.js"></script>
 <script src="achievements.js"></script>
 <script src="game_history.js"></script>
+<script src="shop.js"></script>
 <script src="ui_extras.js"></script>
 <script src="main.js"></script>
 <script src="game.js"></script>

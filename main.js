@@ -32,6 +32,7 @@
     triviaQuestion: "screen-trivia-question",
     triviaFinal: "screen-trivia-final",
     badges: "screen-badges",
+    shop: "screen-shop",
     profile: "screen-profile",
     settings: "screen-settings",
     about: "screen-about",
@@ -67,6 +68,7 @@
 
   function showScreen(name) {
     if (name === "home" && window.TeamBadge) window.TeamBadge.clearAccent();
+    if (window.Shop) window.Shop.refreshTopbarDisplay();
     Object.keys(idMap).forEach(function (key) {
       var el = document.getElementById(idMap[key]);
       if (el) el.classList.toggle("active", key === name);
