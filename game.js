@@ -385,12 +385,18 @@
           window.RatingTag.html(slot.pick.rating) +
           "</span>" : "");
       if (slot.pick) {
-        chip.addEventListener("click", function () {
-          onLineupChipClick(slot.pick);
-        });
+        chip._entry = slot.pick;
       }
       container.appendChild(chip);
     });
+  }
+
+  // Same-position swap: keeps the required 2 guards / 2 forwards / 1 center
+  // balance in each half, whether triggered by tap-then-tap or by a drag.
+  function swapLineupEntries(a, b) {
+    var tmp = a.slot;
+    a.slot = b.slot;
+    b.slot = tmp;
   }
 
   function onLineupChipClick(entry) {
@@ -399,11 +405,7 @@
     } else if (lineupSelection === entry) {
       lineupSelection = null;
     } else if (lineupSelection.position === entry.position) {
-      // Same position on both sides, so swapping keeps the required
-      // 2 guards / 2 forwards / 1 center balance in each half.
-      var tmp = lineupSelection.slot;
-      lineupSelection.slot = entry.slot;
-      entry.slot = tmp;
+      swapLineupEntries(lineupSelection, entry);
       lineupSelection = null;
     } else {
       lineupSelection = entry;
@@ -414,6 +416,17 @@
   function renderLineupScreen() {
     renderLineupSlotsPanel("single-lineup-starters", "starter");
     renderLineupSlotsPanel("single-lineup-bench", "bench");
+    var chips = document.querySelectorAll("#single-lineup-starters .filled, #single-lineup-bench .filled");
+    window.ChipDrag.wireGroup(chips, {
+      getEntry: function (chipEl) { return chipEl._entry; },
+      isValidTarget: function (dragged, other) { return dragged !== other && dragged.position === other.position; },
+      onDrop: function (dragged, other) {
+        swapLineupEntries(dragged, other);
+        lineupSelection = null;
+        renderLineupScreen();
+      },
+      onTap: onLineupChipClick,
+    });
   }
 
   function showLineupScreen() {

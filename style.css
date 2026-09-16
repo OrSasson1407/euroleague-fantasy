@@ -954,8 +954,9 @@ footer {
 }
 
 .h2h-slot-chip.swappable {
-  cursor: pointer;
-  transition: border-color .15s ease, transform .1s ease;
+  cursor: grab;
+  touch-action: none;
+  transition: border-color .15s ease, transform .1s ease, box-shadow .15s ease, opacity .15s ease;
 }
 
 .h2h-slot-chip.swappable:hover {
@@ -965,6 +966,30 @@ footer {
 .h2h-slot-chip.selected-swap {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px rgba(214,40,40,0.25);
+}
+
+/* Drag-and-drop lineup swapping (alongside the tap-to-select swap above) */
+.h2h-slot-chip.dragging {
+  cursor: grabbing;
+  z-index: 200;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+  opacity: 0.96;
+  pointer-events: none;
+}
+
+.h2h-slot-chip.drop-ready {
+  border-color: var(--accent-2);
+  border-style: dashed;
+}
+
+.h2h-slot-chip.drop-invalid {
+  opacity: 0.4;
+}
+
+.h2h-slot-chip.drop-hover {
+  border-color: var(--accent-2);
+  box-shadow: 0 0 0 2px rgba(255, 183, 3, 0.35);
+  transform: scale(1.03);
 }
 
 .h2h-turn-indicator {

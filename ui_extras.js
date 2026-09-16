@@ -438,4 +438,103 @@
   }
   window.UiSelect = { sync: syncSelectedAria };
   document.querySelectorAll(".era-filter-buttons, .system-select-grid, .team-select-grid").forEach(syncSelectedAria);
+
+  // ---------- Drag-and-drop chip swapping ----------
+  // Shared by game.js and league.js's lineup screens, which both let you tap
+  // one filled slot then another of the same position to swap them. This adds
+  // real drag-and-drop on top of that (never replacing it - a plain tap/click
+  // with no meaningful movement still falls through to onTap). Pointer Events
+  // are used instead of native HTML5 drag-and-drop so it works the same way
+  // with mouse, touch and pen instead of being mouse-only.
+  //
+  // wireGroup(chipEls, opts) where opts is:
+  //   getEntry(chipEl)              -> the data object a chip represents
+  //   isValidTarget(dragged, other) -> can `dragged` be swapped with `other`
+  //   onDrop(dragged, other)        -> perform the swap (caller re-renders)
+  //   onTap(entry)                  -> plain tap/click with no real drag
+  function wireChipDragGroup(chipEls, opts) {
+    var chips = Array.from(chipEls);
+    var DRAG_THRESHOLD = 8;
+
+    chips.forEach(function (chipEl) {
+      var entry = opts.getEntry(chipEl);
+      var startX, startY, dragging, hoverTarget;
+
+      function onMove(e) {
+        var dx = e.clientX - startX;
+        var dy = e.clientY - startY;
+        if (!dragging) {
+          if (Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+          dragging = true;
+          beginDrag();
+        }
+        chipEl.style.left = (chipEl._dragBaseLeft + dx) + "px";
+        chipEl.style.top = (chipEl._dragBaseTop + dy) + "px";
+        updateHover(e.clientX, e.clientY);
+      }
+
+      function onUp(e) {
+        chipEl.removeEventListener("pointermove", onMove);
+        chipEl.removeEventListener("pointerup", onUp);
+        chipEl.removeEventListener("pointercancel", onUp);
+        if (dragging) {
+          endDrag();
+        } else {
+          opts.onTap(entry);
+        }
+      }
+
+      chipEl.addEventListener("pointerdown", function (e) {
+        if (e.button !== undefined && e.button !== 0) return;
+        startX = e.clientX;
+        startY = e.clientY;
+        dragging = false;
+        hoverTarget = null;
+        chipEl.setPointerCapture(e.pointerId);
+        chipEl.addEventListener("pointermove", onMove);
+        chipEl.addEventListener("pointerup", onUp);
+        chipEl.addEventListener("pointercancel", onUp);
+      });
+
+      function beginDrag() {
+        var rect = chipEl.getBoundingClientRect();
+        chipEl._dragBaseLeft = rect.left;
+        chipEl._dragBaseTop = rect.top;
+        chipEl.style.position = "fixed";
+        chipEl.style.left = rect.left + "px";
+        chipEl.style.top = rect.top + "px";
+        chipEl.style.width = rect.width + "px";
+        chipEl.classList.add("dragging");
+        chips.forEach(function (other) {
+          if (other === chipEl) return;
+          var otherEntry = opts.getEntry(other);
+          other.classList.add(opts.isValidTarget(entry, otherEntry) ? "drop-ready" : "drop-invalid");
+        });
+      }
+
+      function updateHover(x, y) {
+        var el = document.elementFromPoint(x, y);
+        var target = el ? el.closest(".drop-ready") : null;
+        if (target === hoverTarget) return;
+        if (hoverTarget) hoverTarget.classList.remove("drop-hover");
+        hoverTarget = target;
+        if (hoverTarget) hoverTarget.classList.add("drop-hover");
+      }
+
+      function endDrag() {
+        chipEl.classList.remove("dragging");
+        chipEl.style.position = "";
+        chipEl.style.left = "";
+        chipEl.style.top = "";
+        chipEl.style.width = "";
+        chips.forEach(function (other) {
+          other.classList.remove("drop-ready", "drop-invalid", "drop-hover");
+        });
+        if (hoverTarget) {
+          opts.onDrop(entry, opts.getEntry(hoverTarget));
+        }
+      }
+    });
+  }
+  window.ChipDrag = { wireGroup: wireChipDragGroup };
 })();
