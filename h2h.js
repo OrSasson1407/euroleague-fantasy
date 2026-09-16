@@ -400,6 +400,11 @@
 
     var preview = document.getElementById("h2h-game-preview");
     preview.innerHTML =
+      '<div class="vs-banner">' +
+        '<div class="vs-side vs-side-1">' + state.sides[0].label + "</div>" +
+        '<div class="vs-mark">VS</div>' +
+        '<div class="vs-side vs-side-2">' + state.sides[1].label + "</div>" +
+      "</div>" +
       "<div>סיכויי ניצחון למשחק הזה, לפי הדירוג הממוצע:</div>" +
       '<div class="prob-row"><span>' + state.sides[0].label + " " + pct1 + "%</span>" +
       "<span>" + pct2 + "% " + state.sides[1].label + "</span></div>" +
@@ -454,9 +459,13 @@
   }
 
   function finishSeries() {
-    window.Effects.playBuzzer();
     var seriesWinnerIndex = seriesWins[0] > seriesWins[1] ? 0 : 1;
     var loserIndex = seriesWinnerIndex === 0 ? 1 : 0;
+    if (seriesWinnerIndex === 0) {
+      window.Effects.playWin();
+    } else {
+      window.Effects.playLose();
+    }
 
     renderSeriesLog("h2h-series-log");
 
@@ -475,14 +484,16 @@
     document.getElementById("h2h-result-title").textContent =
       winnerLabel + " ניצח/ה בסדרה " + seriesWins[seriesWinnerIndex] + "-" + seriesWins[loserIndex] + "!";
 
-    document.getElementById("h2h-final-team1-name").textContent =
-      state.sides[0].label + " (דירוג ממוצע: " + averageRating(state.sides[0].picks).toFixed(1) + ")";
-    document.getElementById("h2h-final-team2-name").textContent =
-      state.sides[1].label + " (דירוג ממוצע: " + averageRating(state.sides[1].picks).toFixed(1) + ")";
+    document.getElementById("h2h-final-team1-name").innerHTML =
+      state.sides[0].label + ' (דירוג ממוצע: <span id="h2h-final-rating-1">0.0</span>)';
+    document.getElementById("h2h-final-team2-name").innerHTML =
+      state.sides[1].label + ' (דירוג ממוצע: <span id="h2h-final-rating-2">0.0</span>)';
+    window.Effects.countUp(document.getElementById("h2h-final-rating-1"), averageRating(state.sides[0].picks), { decimals: 1 });
+    window.Effects.countUp(document.getElementById("h2h-final-rating-2"), averageRating(state.sides[1].picks), { decimals: 1 });
     renderFinalTeamGrid("h2h-final-team1-grid", state.sides[0]);
     renderFinalTeamGrid("h2h-final-team2-grid", state.sides[1]);
 
-    window.Effects.confetti();
+    if (seriesWinnerIndex === 0) window.Effects.confetti();
 
     window.Achievements.markPlayed("h2h");
     var seriesPlayed = window.Achievements.incrementCounter("h2h_series_played");

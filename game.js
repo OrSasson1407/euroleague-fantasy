@@ -609,9 +609,17 @@
     var system = state.selectedSystem;
     var starPlayer = system ? window.PlaySystemsAPI.findStarPlayer(state.squad) : null;
 
+    var maxRating = -1;
+    state.squad.forEach(function (e) {
+      if (typeof e.rating === "number" && e.rating > maxRating) maxRating = e.rating;
+    });
+    var starAssigned = false;
+
     state.squad.forEach(function (entry) {
       var card = document.createElement("div");
-      card.className = "player-card-v2 " + ratingTier(entry.rating);
+      var isStar = !starAssigned && typeof entry.rating === "number" && entry.rating === maxRating;
+      if (isStar) starAssigned = true;
+      card.className = "player-card-v2 " + ratingTier(entry.rating) + (isStar ? " player-card-star" : "");
       var fitTag = "";
       if (system) {
         var fits = window.PlaySystemsAPI.fits(entry, system, starPlayer);
@@ -619,6 +627,7 @@
           (fits ? "✔ מתאים לשיטה" : "✘ לא מתאים") + "</span>";
       }
       card.innerHTML =
+        (isStar ? '<div class="player-card-star-badge">⭐ הכוכב</div>' : "") +
         (typeof entry.rating === "number" ? '<div class="player-card-rating">' + entry.rating + "</div>" : "") +
         '<div class="player-card-pos">' + (entry.position || "") + "</div>" +
         '<div class="player-card-name">' + entry.player + "</div>" +
@@ -647,7 +656,9 @@
           "<br>התאמה לשיטה: <strong>" + (systemFit >= 0 ? "+" : "") + systemFit.toFixed(1) + "</strong>";
       }
       if (chemistry > 0) {
-        detailHtml += "<br>בונוס כימיה (שחקנים מאותה קבוצה): <strong>+" + chemistry + "</strong>";
+        var ringCount = Math.max(1, Math.min(Math.round(chemistry / 3), 6));
+        var ringsHtml = '<span class="chemistry-meter">' + new Array(ringCount + 1).join('<span class="chem-ring"></span>') + "</span>";
+        detailHtml += "<br>בונוס כימיה (שחקנים מאותה קבוצה): <strong>+" + chemistry + "</strong> " + ringsHtml;
       }
 
       var afterHtml = "";

@@ -120,6 +120,23 @@
 
   applyEffectsClass();
 
+  // ---------- Splash screen ----------
+  // The CSS animation handles the actual fade; this just cleans the
+  // element out of the DOM afterward (or immediately, with no fade at
+  // all, when effects are off) so it never lingers as a stray fixed
+  // full-screen element.
+  (function initSplash() {
+    var splash = document.getElementById("splash-screen");
+    if (!splash) return;
+    if (!settings.effectsEnabled) {
+      splash.parentNode.removeChild(splash);
+      return;
+    }
+    setTimeout(function () {
+      if (splash.parentNode) splash.parentNode.removeChild(splash);
+    }, 1200);
+  })();
+
   // ---------- Sound effects ----------
   // Synthesized with the Web Audio API (no audio files to ship). A single
   // shared AudioContext is created lazily on first use, inside a real click
@@ -170,6 +187,40 @@
     gain.connect(ctx.destination);
     osc.start();
     osc.stop(ctx.currentTime + 0.45);
+  }
+
+  // A single scheduled tone, used to build the short win/lose melodies
+  // below - startOffset lets several notes be queued on the same
+  // AudioContext clock without waiting for each other.
+  function scheduleTone(freq, startOffset, duration, type, volume) {
+    var ctx = getAudioCtx();
+    if (!ctx) return;
+    if (ctx.state === "suspended") ctx.resume();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    var startTime = ctx.currentTime + startOffset;
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.exponentialRampToValueAtTime(volume, startTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(startTime);
+    osc.stop(startTime + duration + 0.05);
+  }
+
+  function playWin() {
+    if (!settings.effectsEnabled) return;
+    scheduleTone(523.25, 0, 0.15, "triangle", 0.1); // C5
+    scheduleTone(659.25, 0.12, 0.15, "triangle", 0.1); // E5
+    scheduleTone(783.99, 0.24, 0.35, "triangle", 0.12); // G5
+  }
+
+  function playLose() {
+    if (!settings.effectsEnabled) return;
+    scheduleTone(311.13, 0, 0.25, "sawtooth", 0.08); // Eb4
+    scheduleTone(233.08, 0.2, 0.45, "sawtooth", 0.08); // Bb3
   }
 
   // ---------- Confetti burst ----------
@@ -362,6 +413,8 @@
     countUp: countUp,
     playClick: playClick,
     playBuzzer: playBuzzer,
+    playWin: playWin,
+    playLose: playLose,
     showInfoToast: showInfoToast,
     wipeTransition: wipeTransition,
     flipCard: flipCard,
