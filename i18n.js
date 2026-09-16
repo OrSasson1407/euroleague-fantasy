@@ -29,6 +29,13 @@
       he: { translation: window.LOCALE_HE },
       en: { translation: window.LOCALE_EN },
     },
+    // Every interpolated value in this app comes from trusted internal state
+    // (ratings, counts, player/team names already passed through escapeHtml
+    // where needed) rather than untrusted external input, and most call
+    // sites build raw HTML strings directly - i18next's default XSS escaping
+    // would double-escape (or mangle embedded markup like team badges)
+    // rather than protect anything here.
+    interpolation: { escapeValue: false },
   });
 
   function applyDirection(lang) {

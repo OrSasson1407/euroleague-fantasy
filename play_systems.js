@@ -6,11 +6,12 @@
   // players who don't fit take a small penalty (10% of the matching bonus).
   var FIT_PENALTY_RATIO = 0.10;
 
+  // label/desc are resolved through window.I18n.t() at render time (see
+  // label()/desc() below) rather than stored here, so every caller that
+  // displays a system automatically follows the current language.
   var SYSTEMS = [
     {
       id: "fastbreak",
-      label: "התקפה מהירה",
-      desc: "מעדיפה יורי מטווח ופליימייקרים - בונוס להתקפה, אבל יותר תנודתיות בתוצאה",
       fitArchetypes: ["sharpshooter", "playmaker"],
       offBonus: 5,
       defBonus: 0,
@@ -18,8 +19,6 @@
     },
     {
       id: "lockdown",
-      label: "הגנה קשוחה",
-      desc: "מעדיפה עוגנים הגנתיים וקלאצ'רים - בונוס להגנה, ותוצאות יציבות יותר",
       fitArchetypes: ["anchor", "clutch"],
       offBonus: 0,
       defBonus: 5,
@@ -27,8 +26,6 @@
     },
     {
       id: "balanced",
-      label: "משחק מאוזן",
-      desc: "מעדיפה שחקנים כל-סביביים ופליימייקרים - בונוס קטן לשני הצדדים",
       fitArchetypes: ["allaround", "playmaker"],
       offBonus: 2,
       defBonus: 2,
@@ -36,8 +33,6 @@
     },
     {
       id: "starcentric",
-      label: "סביב כוכב אחד",
-      desc: "השחקן המדורג הכי גבוה בהרכב מקבל בונוס גדול - שאר הקבוצה תורמת פחות",
       fitArchetypes: [],
       offBonus: 6,
       defBonus: 6,
@@ -46,14 +41,20 @@
     },
     {
       id: "clutch",
-      label: "זמן קלאץ'",
-      desc: "מעדיפה שחקני קלאץ' - שיטה שנשענת על יציבות תחת לחץ",
       fitArchetypes: ["clutch"],
       offBonus: 4,
       defBonus: 4,
       varianceMultiplier: 0.85,
     },
   ];
+
+  function label(sys) {
+    return sys ? window.I18n.t("systems." + sys.id + ".label") : window.I18n.t("systems.none.label");
+  }
+
+  function desc(sys) {
+    return sys ? window.I18n.t("systems." + sys.id + ".desc") : window.I18n.t("systems.none.desc");
+  }
 
   function findStarPlayer(players) {
     if (!players || players.length === 0) return null;
@@ -83,5 +84,5 @@
   }
 
   window.PlaySystems = SYSTEMS;
-  window.PlaySystemsAPI = { findStarPlayer: findStarPlayer, fits: fits, fitBonus: fitBonus };
+  window.PlaySystemsAPI = { findStarPlayer: findStarPlayer, fits: fits, fitBonus: fitBonus, label: label, desc: desc };
 })();

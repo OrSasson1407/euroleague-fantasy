@@ -1347,7 +1347,7 @@
       "<p>חתמתם עם <strong>" + o.club + "</strong>" + (o.stay ? " (המשכתם אצל הקבוצה שלכם)" : " (קבוצה חדשה)") + "</p>" +
       "<p>תפקיד: " + o.role + " &middot; משכורת: ₪" + o.salary.toLocaleString() +
       " &middot; אורך חוזה: " + career.contract.yearsLeft + " עונות</p>" +
-      (o.stay ? "" : "<p>שיטת המאמן החדשה: " + o.system.label + "</p>") +
+      (o.stay ? "" : "<p>שיטת המאמן החדשה: " + window.PlaySystemsAPI.label(o.system) + "</p>") +
       "</div>" +
       '<div class="final-actions"><button id="btn-contract-confirm-next">המשך &raquo;</button></div>';
 

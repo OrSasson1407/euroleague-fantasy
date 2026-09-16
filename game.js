@@ -5,7 +5,7 @@
   var MAX_REROLLS = 2;
   var TRADES_ALLOWED = 2;
   var SLOT_TEMPLATE = ["Guard", "Guard", "Forward", "Forward", "Center"];
-  var POS_LABEL = { Guard: "מגן", Forward: "חלוץ", Center: "סנטר" };
+  var POS_LABEL = { Guard: window.I18n.t("common.posGuard"), Forward: window.I18n.t("common.posForward"), Center: window.I18n.t("common.posCenter") };
 
   var state = {
     usedComboIndexes: [],
@@ -76,7 +76,7 @@
       rating: rounded,
       date: new Date().toISOString(),
       budgetMode: state.budgetTotal > 0,
-      systemLabel: state.selectedSystem ? state.selectedSystem.label : null,
+      systemLabel: state.selectedSystem ? window.PlaySystemsAPI.label(state.selectedSystem) : null,
       squad: state.squad.map(function (e) {
         return {
           player: e.player, position: e.position, rating: e.rating,
@@ -102,7 +102,7 @@
     var list = loadTopSquads();
     if (list.length > 0) {
       el.hidden = false;
-      el.textContent = "שיא אישי: " + list[0].rating.toFixed(1);
+      el.textContent = window.I18n.t("single.personalBest", { rating: list[0].rating.toFixed(1) });
     } else {
       el.hidden = true;
     }
@@ -114,13 +114,13 @@
     var list = loadTopSquads();
     if (list.length === 0) {
       container.innerHTML =
-        '<p style="text-align:center;color:var(--text-dim);">עדיין אין הרכבים שמורים בטבלת השיאים. השלימו בנייה כדי להתחיל!</p>';
+        '<p style="text-align:center;color:var(--text-dim);">' + window.I18n.t("single.leaderboardEmpty") + "</p>";
       return;
     }
     list.forEach(function (entry, i) {
       var row = document.createElement("div");
       row.className = "leaderboard-row";
-      var dateStr = new Date(entry.date).toLocaleDateString("he-IL");
+      var dateStr = new Date(entry.date).toLocaleDateString(window.I18n.getLang() === "en" ? "en-US" : "he-IL");
 
       var header = document.createElement("button");
       header.className = "leaderboard-row-header";
@@ -128,7 +128,7 @@
         '<span class="leaderboard-rank">#' + (i + 1) + "</span>" +
         '<span class="leaderboard-rating">' + entry.rating.toFixed(1) + "</span>" +
         '<span class="leaderboard-meta">' + dateStr +
-          (entry.budgetMode ? " &middot; מצב תקציב" : "") +
+          (entry.budgetMode ? " &middot; " + window.I18n.t("single.budgetModeTag") : "") +
           (entry.systemLabel ? " &middot; " + entry.systemLabel : "") +
         "</span>";
       row.appendChild(header);
@@ -281,11 +281,11 @@
     renderSlotsPanels();
 
     var meta = document.getElementById("round-meta");
-    meta.innerHTML = "סיבוב " + pickNumber + " מתוך " + TOTAL_ROUNDS +
-      (state.budgetTotal > 0 ? ' &middot; <span class="cost-tag">תקציב נותר: ' + formatSalary(state.budgetRemaining) + "</span>" : "");
+    meta.innerHTML = window.I18n.t("single.roundOf", { n: pickNumber, total: TOTAL_ROUNDS }) +
+      (state.budgetTotal > 0 ? ' &middot; <span class="cost-tag">' + window.I18n.t("single.budgetRemainingTag", { amount: formatSalary(state.budgetRemaining) }) + "</span>" : "");
 
     document.getElementById("round-team").innerHTML = window.TeamBadge.html(picked.combo.team) + picked.combo.team;
-    document.getElementById("round-season").textContent = "עונת " + formatSeason(picked.combo.season);
+    document.getElementById("round-season").textContent = window.I18n.t("single.seasonLabel", { season: formatSeason(picked.combo.season) });
 
     var grid = document.getElementById("players-grid");
     grid.innerHTML = "";
@@ -309,15 +309,15 @@
         (player.position ? '<span class="pos-tag">' + player.position + "</span>" : "") +
         window.RatingTag.html(player.rating) +
         '<span class="cost-tag">' + formatSalary(playerCost(player)) + "</span>" +
-        (taken ? '<span class="taken-tag">כבר נבחר</span>' :
-          (tooExpensive ? '<span class="taken-tag">יקר מדי</span>' :
-            (noRoomAtAll ? '<span class="taken-tag">המשבצת מלאה</span>' : "")));
+        (taken ? '<span class="taken-tag">' + window.I18n.t("common.takenTag") + "</span>" :
+          (tooExpensive ? '<span class="taken-tag">' + window.I18n.t("common.tooExpensiveTag") + "</span>" :
+            (noRoomAtAll ? '<span class="taken-tag">' + window.I18n.t("common.slotFullTag") + "</span>" : "")));
       card.appendChild(info);
 
       if (!taken && !tooExpensive && !noRoomAtAll && player.position) {
         var actions = document.createElement("div");
         actions.className = "player-dual-actions";
-        [{ half: "starter", label: "לחמישייה הפותחת", room: room1 }, { half: "bench", label: "לספסל", room: room2 }].forEach(function (opt) {
+        [{ half: "starter", label: window.I18n.t("common.toStarters"), room: room1 }, { half: "bench", label: window.I18n.t("common.toBench"), room: room2 }].forEach(function (opt) {
           var btn = document.createElement("button");
           btn.className = "player-dual-btn";
           btn.textContent = opt.label;
@@ -445,7 +445,7 @@
 
   function renderTradeScreen() {
     document.getElementById("single-trade-count").textContent =
-      "נשארו לכם " + state.tradesRemaining + " הזדמנויות מסחר";
+      window.I18n.t("single.tradesRemaining", { count: state.tradesRemaining });
     document.getElementById("single-trade-note").textContent = state.lastTradeMessage || "";
     document.getElementById("single-trade-offer-actions").hidden = !pendingTradeOffer;
     document.getElementById("btn-single-trade-continue").disabled = !!pendingTradeOffer;
@@ -469,7 +469,7 @@
 
       var btn = document.createElement("button");
       btn.className = "player-dual-btn";
-      btn.textContent = "🔄 נסה החלפה";
+      btn.textContent = "🔄 " + window.I18n.t("single.tryTradeBtn");
       btn.disabled = state.tradesRemaining <= 0;
       btn.addEventListener("click", function () {
         openTradeOffer(idx);
@@ -486,7 +486,7 @@
     var current = document.createElement("div");
     current.className = "squad-player-card trade-current-card";
     current.innerHTML =
-      '<div class="meta">השחקן הנוכחי שלכם</div>' +
+      '<div class="meta">' + window.I18n.t("single.currentPlayerLabel") + "</div>" +
       '<div class="name">' + entry.player +
         window.RatingTag.html(entry.rating) + "</div>" +
       '<div class="meta">' + entry.slotLabel + " &middot; " + POS_LABEL[entry.position] + " &middot; " +
@@ -497,14 +497,14 @@
       var card = document.createElement("div");
       card.className = "squad-player-card trade-offer-card";
       card.innerHTML =
-        '<div class="meta">הצעה להחלפה</div>' +
+        '<div class="meta">' + window.I18n.t("single.tradeOfferLabel") + "</div>" +
         '<div class="name">' + offer.player.name +
           window.RatingTag.html(offer.player.rating) + "</div>" +
         '<div class="meta">' + offer.combo.team + " " + formatSeason(offer.combo.season) + "</div>";
 
       var btn = document.createElement("button");
       btn.className = "player-dual-btn";
-      btn.textContent = "✅ בצע החלפה";
+      btn.textContent = "✅ " + window.I18n.t("single.confirmTradeBtn");
       btn.addEventListener("click", function () {
         confirmTrade(offer);
       });
@@ -535,7 +535,7 @@
     });
 
     if (candidates.length === 0) {
-      state.lastTradeMessage = "לא נמצא שחקן זמין להחלפה בעמדה הזו כרגע.";
+      state.lastTradeMessage = window.I18n.t("single.noTradeCandidates");
       renderTradeScreen();
       return;
     }
@@ -574,8 +574,12 @@
     entry.season = offer.combo.season;
 
     state.tradesRemaining--;
-    state.lastTradeMessage = "הוחלף: " + oldName + " (" + (typeof oldRating === "number" ? oldRating : "-") +
-      ") ⬅ " + entry.player + " (" + (typeof entry.rating === "number" ? entry.rating : "-") + ")";
+    state.lastTradeMessage = window.I18n.t("single.tradeCompletedMsg", {
+      oldName: oldName,
+      oldRating: typeof oldRating === "number" ? oldRating : "-",
+      newName: entry.player,
+      newRating: typeof entry.rating === "number" ? entry.rating : "-",
+    });
     pendingTradeOffer = null;
     window.Effects.flipCard(oldName, oldRating, entry.player, entry.rating, renderTradeScreen);
   }
@@ -641,17 +645,17 @@
       if (system) {
         var fits = window.PlaySystemsAPI.fits(entry, system, starPlayer);
         fitTag = '<span class="archetype-tag ' + (fits ? "fit-good" : "fit-bad") + '">' +
-          (fits ? "✔ מתאים לשיטה" : "✘ לא מתאים") + "</span>";
+          (fits ? "✔ " + window.I18n.t("single.systemFitGood") : "✘ " + window.I18n.t("single.systemFitBad")) + "</span>";
       }
       card.innerHTML =
-        (isStar ? '<div class="player-card-star-badge">⭐ הכוכב</div>' : "") +
+        (isStar ? '<div class="player-card-star-badge">⭐ ' + window.I18n.t("common.starBadge") + "</div>" : "") +
         (typeof entry.rating === "number" ? '<div class="player-card-rating">' + entry.rating + "</div>" : "") +
         '<div class="player-card-pos">' + (entry.position || "") + "</div>" +
         '<div class="player-card-name">' + entry.player + "</div>" +
         '<div class="player-card-meta">' + entry.slotLabel + " &middot; " + entry.team + " " + formatSeason(entry.season) + "</div>" +
         '<div class="player-card-meta">' +
-          (typeof entry.offRating === "number" ? '<span class="off-tag">התק׳ ' + entry.offRating + "</span>" : "") +
-          (typeof entry.defRating === "number" ? '<span class="def-tag">הג׳ ' + entry.defRating + "</span>" : "") +
+          (typeof entry.offRating === "number" ? '<span class="off-tag">' + window.I18n.t("common.offAbbr") + " " + entry.offRating + "</span>" : "") +
+          (typeof entry.defRating === "number" ? '<span class="def-tag">' + window.I18n.t("common.defAbbr") + " " + entry.defRating + "</span>" : "") +
           (entry.archetype ? '<span class="archetype-tag">' + entry.archetype.label + "</span>" : "") +
           fitTag +
         "</div>";
@@ -667,38 +671,38 @@
     if (summaryEl) {
       var finalTotal = weighted + chemistry + systemFit;
 
-      var detailHtml = "דירוג משוקלל (65% חמישייה פותחת, 35% ספסל): <strong>" + weighted.toFixed(1) + "</strong>";
+      var detailHtml = window.I18n.t("single.weightedRatingLabel") + " <strong>" + weighted.toFixed(1) + "</strong>";
       if (system) {
-        detailHtml += "<br>שיטת המשחק: <strong>" + system.label + "</strong>" +
-          "<br>התאמה לשיטה: <strong>" + (systemFit >= 0 ? "+" : "") + systemFit.toFixed(1) + "</strong>";
+        detailHtml += "<br>" + window.I18n.t("single.playSystemLabel") + " <strong>" + window.PlaySystemsAPI.label(system) + "</strong>" +
+          "<br>" + window.I18n.t("single.systemFitLabel") + " <strong>" + (systemFit >= 0 ? "+" : "") + systemFit.toFixed(1) + "</strong>";
       }
       if (chemistry > 0) {
         var ringCount = Math.max(1, Math.min(Math.round(chemistry / 3), 6));
         var ringsHtml = '<span class="chemistry-meter">' + new Array(ringCount + 1).join('<span class="chem-ring"></span>') + "</span>";
-        detailHtml += "<br>בונוס כימיה (שחקנים מאותה קבוצה): <strong>+" + chemistry + "</strong> " + ringsHtml;
+        detailHtml += "<br>" + window.I18n.t("single.chemistryBonusLabel") + " <strong>+" + chemistry + "</strong> " + ringsHtml;
       }
 
       var afterHtml = "";
       var beforeList = loadTopSquads();
       if (window.Auth && window.Auth.isGuest()) {
-        afterHtml = "🕶️ מצב אורח - ההרכב הזה לא יישמר בטבלת השיאים. הירשמו כדי לשמור שיאים אישיים!";
+        afterHtml = "🕶️ " + window.I18n.t("single.guestNoSaveWarning");
       } else {
         var rank = maybeAddToLeaderboard(finalTotal);
         renderBestDisplay();
         if (rank) {
-          afterHtml = "🏆 נכנסתם לטבלת השיאים! מקום <strong>" + rank + "</strong> מתוך " + MAX_TOP_SQUADS;
+          afterHtml = "🏆 " + window.I18n.t("single.leaderboardEntered", { rank: rank, total: MAX_TOP_SQUADS });
           if (rank === 1) {
-            afterHtml += " &nbsp;🎉 השיא האישי החדש שלכם!";
+            afterHtml += " &nbsp;🎉 " + window.I18n.t("single.newPersonalBest");
             window.Effects.confetti();
           }
         } else if (beforeList.length > 0) {
-          afterHtml = "שיא אישי נוכחי: <strong>" + beforeList[0].rating.toFixed(1) + "</strong>";
+          afterHtml = window.I18n.t("single.currentPersonalBest", { rating: beforeList[0].rating.toFixed(1) });
         }
       }
 
       summaryEl.innerHTML =
         '<div class="final-rating-hero"><div class="value" id="squad-final-rating-value">0.0</div>' +
-        '<div class="label">דירוג סופי של ההרכב</div></div>' +
+        '<div class="label">' + window.I18n.t("single.finalSquadRatingLabel") + "</div></div>" +
         "<div>" + detailHtml + "</div>" +
         (afterHtml ? '<div style="margin-top:8px;">' + afterHtml + "</div>" : "");
 
@@ -730,13 +734,13 @@
 
     var card = document.getElementById("single-share-card");
     card.innerHTML =
-      "<h2>ההרכב שלי</h2>" +
-      '<div class="share-tagline">הרכב כל הזמנים - יורוליג</div>' +
+      "<h2>" + window.I18n.t("single.shareTitle") + "</h2>" +
+      '<div class="share-tagline">' + window.I18n.t("home.title") + "</div>" +
       '<div class="share-rating">' + (state.lastFinalTotal || 0).toFixed(1) + "</div>" +
-      '<div class="share-rating-label">דירוג סופי</div>' +
-      '<div class="share-player-list"><h4>חמישייה פותחת</h4>' + starters.map(playerRowHtml).join("") + "</div>" +
-      '<div class="share-player-list"><h4>ספסל</h4>' + bench.map(playerRowHtml).join("") + "</div>" +
-      '<div class="share-footer">נוצר במחולל הרכב כל הזמנים - יורוליג</div>';
+      '<div class="share-rating-label">' + window.I18n.t("single.finalRatingLabel") + "</div>" +
+      '<div class="share-player-list"><h4>' + window.I18n.t("common.starters") + "</h4>" + starters.map(playerRowHtml).join("") + "</div>" +
+      '<div class="share-player-list"><h4>' + window.I18n.t("common.bench") + "</h4>" + bench.map(playerRowHtml).join("") + "</div>" +
+      '<div class="share-footer">' + window.I18n.t("single.shareFooter") + "</div>";
 
     showScreen("singleShare");
   }
@@ -825,10 +829,10 @@
     var content = document.getElementById("single-exhibition-content");
     content.innerHTML =
       '<div class="career-event-card">' +
-      "<p>ההרכב שלכם נגד " + window.TeamBadge.html(challenger.team) + challenger.team + " " + formatSeason(challenger.season) + "</p>" +
+      "<p>" + window.I18n.t("single.exhibitionVsLabel") + " " + window.TeamBadge.html(challenger.team) + challenger.team + " " + formatSeason(challenger.season) + "</p>" +
       '<div class="share-rating">' + myScore + " - " + oppScore + "</div>" +
-      "<p>לפי רבעים: " + quartersText + "</p>" +
-      "<p>" + (won ? "🏆 ניצחתם!" : "😔 הפסדתם הפעם") + "</p>" +
+      "<p>" + window.I18n.t("single.byQuarters", { quarters: quartersText }) + "</p>" +
+      "<p>" + (won ? "🏆 " + window.I18n.t("single.exhibitionWon") : "😔 " + window.I18n.t("single.exhibitionLost")) + "</p>" +
       "</div>";
 
     if (won) {
@@ -939,7 +943,7 @@
     grid.innerHTML = "";
     var noneCard = document.createElement("button");
     noneCard.className = "system-card" + (!state.selectedSystem ? " selected" : "");
-    noneCard.innerHTML = '<div class="system-name">ללא שיטה</div><div class="system-desc">בלי בונוס/קנס התאמה</div>';
+    noneCard.innerHTML = '<div class="system-name">' + window.PlaySystemsAPI.label(null) + '</div><div class="system-desc">' + window.PlaySystemsAPI.desc(null) + "</div>";
     noneCard.addEventListener("click", function () {
       state.selectedSystem = null;
       renderSystemGrid();
@@ -949,7 +953,7 @@
     window.PlaySystems.forEach(function (sys) {
       var card = document.createElement("button");
       card.className = "system-card" + (state.selectedSystem === sys ? " selected" : "");
-      card.innerHTML = '<div class="system-name">' + sys.label + '</div><div class="system-desc">' + sys.desc + "</div>";
+      card.innerHTML = '<div class="system-name">' + window.PlaySystemsAPI.label(sys) + '</div><div class="system-desc">' + window.PlaySystemsAPI.desc(sys) + "</div>";
       card.addEventListener("click", function () {
         state.selectedSystem = sys;
         renderSystemGrid();
