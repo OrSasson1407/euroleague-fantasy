@@ -1973,6 +1973,49 @@ body.effects-off #screen-home::before {
   font-size: 0.85rem;
 }
 
+/* Live quarter-by-quarter momentum graph (h2h game reveal).
+   The SVG's own x-axis is always left-to-right regardless of page direction,
+   but every other timeline in this app (e.g. the player career chart) flows
+   right-to-left to match RTL reading order - mirror the drawing so "tip-off"
+   lines up with its label on the right and "Q4" with its label on the left. */
+.momentum-graph {
+  width: 100%;
+  max-width: 300px;
+  height: 90px;
+  display: block;
+  margin: 12px auto 2px;
+  overflow: visible;
+  transform: scaleX(-1);
+}
+
+.momentum-baseline {
+  stroke: var(--border);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.momentum-line {
+  fill: none;
+  stroke: var(--text);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.momentum-labels {
+  display: flex;
+  justify-content: space-between;
+  max-width: 300px;
+  margin: 0 auto 6px;
+  font-size: 0.68rem;
+  color: var(--border);
+}
+
+.momentum-label.revealed {
+  color: var(--text-dim);
+  font-weight: 700;
+}
+
 /* League playoff bracket */
 .playoffs-bracket {
   display: flex;

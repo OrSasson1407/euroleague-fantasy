@@ -34,6 +34,8 @@
   var seriesWins = [0, 0];
   var pendingGameIndex = 0;
   var awaitingReveal = true; // true = next click reveals a result; false = next click advances/finishes
+  var revealTimer = null; // pending setTimeout id for the quarter-by-quarter reveal animation
+  var revealSkip = null; // while animating a reveal, calling this jumps straight to the final result
 
   function normalizeName(name) {
     return name.trim().toLowerCase();
@@ -337,6 +339,36 @@
     });
   }
 
+  // Live "game flow" graph: plots the running score gap (side1 - side2) at
+  // tip-off and after each quarter, revealing one more point per tick so it
+  // draws itself as the game plays out. Gold = side1 leading, red = side2.
+  function momentumGraphHtml(cum1, cum2, revealCount) {
+    var maxDiff = 30;
+    var pts = [{ x: 0, diff: 0 }];
+    for (var i = 0; i < revealCount; i++) {
+      pts.push({ x: (i + 1) * 75, diff: cum1[i] - cum2[i] });
+    }
+    var toY = function (diff) {
+      var clamped = Math.max(-1, Math.min(1, diff / maxDiff));
+      return (50 - clamped * 40).toFixed(1);
+    };
+    var svgPts = pts.map(function (p) { return p.x + "," + toY(p.diff); }).join(" ");
+    var last = pts[pts.length - 1];
+    var leadingColor = last.diff > 0 ? "var(--accent-2)" : (last.diff < 0 ? "var(--accent)" : "var(--text-dim)");
+    var labels = ["התחלה", "רבע 1", "רבע 2", "רבע 3", "רבע 4"];
+    var labelsHtml = labels.map(function (lab, i) {
+      return '<span class="momentum-label' + (i <= revealCount ? " revealed" : "") + '">' + lab + "</span>";
+    }).join("");
+    return (
+      '<svg class="momentum-graph" viewBox="0 0 300 100" preserveAspectRatio="none" aria-hidden="true">' +
+        '<line x1="0" y1="50" x2="300" y2="50" class="momentum-baseline"></line>' +
+        (pts.length > 1 ? '<polyline points="' + svgPts + '" class="momentum-line"></polyline>' : "") +
+        '<circle cx="' + last.x + '" cy="' + toY(last.diff) + '" r="4.5" style="fill:' + leadingColor + '"></circle>' +
+      "</svg>" +
+      '<div class="momentum-labels">' + labelsHtml + "</div>"
+    );
+  }
+
   function playOneGame(gameIndex) {
     var homeIndex = gameIndex % 2;
     var bonus1 = homeIndex === 0 ? HOME_BONUS : 0;
@@ -417,9 +449,10 @@
     window.AppNav.showScreen("h2hGame");
   }
 
-  function revealGame() {
-    awaitingReveal = false;
-    var g = playOneGame(pendingGameIndex);
+  function finalizeReveal(g) {
+    if (revealTimer) { clearTimeout(revealTimer); revealTimer = null; }
+    revealSkip = null;
+
     seriesGames.push(g);
     seriesWins[g.winnerIndex]++;
     pendingGameIndex++;
@@ -429,13 +462,49 @@
       "תוצאת משחק " + pendingGameIndex + " · סדרה: " + seriesWins[0] + "-" + seriesWins[1];
 
     var winnerLabel = state.sides[g.winnerIndex].label;
+    var cum1 = cumulativeLine(g.quarters1);
+    var cum2 = cumulativeLine(g.quarters2);
     var preview = document.getElementById("h2h-game-preview");
     preview.innerHTML =
       '<div class="final-score">' + g.score1 + " - " + g.score2 + "</div>" +
+      momentumGraphHtml(cum1, cum2, 4) +
       "<div>" + winnerLabel + " ניצח/ה במשחק זה</div>";
 
     var seriesDecided = seriesWins[0] >= state.gamesToWin || seriesWins[1] >= state.gamesToWin;
     document.getElementById("btn-h2h-game-next").textContent = seriesDecided ? "לתוצאה הסופית »" : "המשחק הבא »";
+  }
+
+  function revealGame() {
+    awaitingReveal = false;
+    var g = playOneGame(pendingGameIndex);
+
+    if (!window.Effects.isEnabled()) {
+      finalizeReveal(g);
+      return;
+    }
+
+    var cum1 = cumulativeLine(g.quarters1);
+    var cum2 = cumulativeLine(g.quarters2);
+    var preview = document.getElementById("h2h-game-preview");
+
+    function tick(step) {
+      var liveScore1 = step > 0 ? cum1[step - 1] : 0;
+      var liveScore2 = step > 0 ? cum2[step - 1] : 0;
+      preview.innerHTML =
+        '<div class="final-score">' + liveScore1 + " - " + liveScore2 + "</div>" +
+        momentumGraphHtml(cum1, cum2, step) +
+        '<div class="home-tag">רבע ' + Math.min(step + 1, 4) + " מתוך 4</div>";
+      if (step > 0) window.Effects.playClick();
+      if (step < 4) {
+        revealTimer = setTimeout(function () { tick(step + 1); }, 550);
+      } else {
+        revealTimer = setTimeout(function () { finalizeReveal(g); }, 500);
+      }
+    }
+
+    revealSkip = function () { finalizeReveal(g); };
+    document.getElementById("btn-h2h-game-next").textContent = "דלגו לתוצאה »";
+    tick(0);
   }
 
   function renderFinalTeamGrid(gridId, side) {
@@ -510,6 +579,10 @@
   }
 
   function onGameNext() {
+    if (revealSkip) {
+      revealSkip();
+      return;
+    }
     if (awaitingReveal) {
       revealGame();
       return;
@@ -563,6 +636,8 @@
   }
 
   function startSeries() {
+    if (revealTimer) { clearTimeout(revealTimer); revealTimer = null; }
+    revealSkip = null;
     seriesGames = [];
     seriesWins = [0, 0];
     pendingGameIndex = 0;
