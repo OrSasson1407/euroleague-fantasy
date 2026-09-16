@@ -18,6 +18,7 @@
     needsByHalf: null, // { starter: {Guard,Forward,Center}, bench: {...} } - remaining open slots per half
     eraMin: 0,
     eraMax: 9999,
+    legendsMode: false, // shop unlock: restrict the whole draft pool to 90+ rated players
     selectedSystem: null,
     budgetTotal: 0, // 0 = no budget cap
     budgetRemaining: 0,
@@ -195,6 +196,7 @@
       if (state.pickedNames.has(normalizeName(p.name))) return false;
       if (!p.position) return false;
       if (!canAfford(p)) return false;
+      if (state.legendsMode && (typeof p.rating !== "number" || p.rating < 90)) return false;
       return positionHasRoom(p.position);
     });
   }
@@ -287,9 +289,11 @@
 
     var grid = document.getElementById("players-grid");
     grid.innerHTML = "";
-    var sortedPlayers = picked.combo.players.slice().sort(function (a, b) {
-      return (b.rating || 0) - (a.rating || 0);
-    });
+    var sortedPlayers = picked.combo.players.slice()
+      .filter(function (p) { return !state.legendsMode || (typeof p.rating === "number" && p.rating >= 90); })
+      .sort(function (a, b) {
+        return (b.rating || 0) - (a.rating || 0);
+      });
     sortedPlayers.forEach(function (player) {
       var taken = state.pickedNames.has(normalizeName(player.name));
       var tooExpensive = !taken && !canAfford(player);
@@ -916,6 +920,17 @@
       window.UiSelect.sync(document.getElementById("budget-mode-buttons"));
       state.budgetTotal = parseInt(btn.dataset.budget, 10);
       state.budgetRemaining = state.budgetTotal;
+    });
+  });
+
+  document.querySelectorAll("#legends-mode-buttons .era-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll("#legends-mode-buttons .era-btn").forEach(function (b) {
+        b.classList.remove("selected");
+      });
+      btn.classList.add("selected");
+      window.UiSelect.sync(document.getElementById("legends-mode-buttons"));
+      state.legendsMode = btn.dataset.legends === "1";
     });
   });
 

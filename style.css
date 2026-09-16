@@ -197,6 +197,59 @@ header p {
   margin: 0 0 10px;
 }
 
+.shop-item-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: 560px;
+  margin: 0 auto 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.shop-item-card.owned {
+  border-color: var(--success);
+}
+
+.shop-item-icon {
+  font-size: 1.8rem;
+  flex: 0 0 auto;
+}
+
+.shop-item-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.shop-item-title {
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.shop-item-desc {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.shop-item-buy {
+  flex: 0 0 auto;
+  font-size: 0.85rem;
+  padding: 10px 16px;
+  white-space: nowrap;
+}
+
+.shop-item-owned {
+  flex: 0 0 auto;
+  color: var(--success);
+  font-weight: 700;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
 .auth-status-bar {
   display: flex;
   align-items: center;

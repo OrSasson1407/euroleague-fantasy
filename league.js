@@ -15,7 +15,9 @@
     rerolls: MAX_REROLLS,
     needsByHalf: null, // { 1: {Guard,Forward,Center}, 2: {Guard,Forward,Center} } - remaining open slots per half
     playSystem: null, // the coaching system chosen for this season, or null
+    freeAgentUsed: false, // shop unlock: once per league season (reset in chooseClub)
   };
+  var freeAgentTargetEntry = null; // the search result currently picked, awaiting a roster slot to replace
 
   function playoffSizeFor(leagueSize) {
     return leagueSize <= 8 ? 4 : 8;
@@ -120,6 +122,7 @@
     state.rerolls = MAX_REROLLS;
     state.needsByHalf = freshNeedsByHalf();
     state.playSystem = null;
+    state.freeAgentUsed = false;
     renderDraftRound();
   }
 
@@ -361,6 +364,9 @@
       },
       onTap: onLineupChipClick,
     });
+
+    var freeAgentBtn = document.getElementById("btn-league-freeagent-open");
+    freeAgentBtn.hidden = !(window.Shop && window.Shop.isOwned("freeAgentSigning")) || state.freeAgentUsed;
   }
 
   function showLineupScreen() {
@@ -852,6 +858,97 @@
     proceedAfterTradeDecision();
   }
 
+  // ---------- Free agent signing (shop unlock, once per league season) ----------
+  // Unlike the regular trade window, the candidate pool is the whole
+  // historical dataset (via window.PlayerSearch) rather than just your own
+  // club's history.
+
+  function renderFreeAgentResults(query) {
+    var resultsEl = document.getElementById("league-freeagent-results");
+    document.getElementById("league-freeagent-slots-wrap").hidden = true;
+    freeAgentTargetEntry = null;
+    resultsEl.innerHTML = "";
+
+    var trimmed = (query || "").trim();
+    if (trimmed.length < 2) return;
+
+    var currentNames = {};
+    state.myRoster.forEach(function (e) { currentNames[normalizeName(e.player)] = true; });
+
+    var matches = window.PlayerSearch.search(trimmed).filter(function (entry) {
+      return !currentNames[normalizeName(entry.name)];
+    });
+    if (matches.length === 0) {
+      resultsEl.innerHTML = '<p class="player-search-hint">לא נמצאו שחקנים זמינים בשם הזה</p>';
+      return;
+    }
+    matches.slice(0, 10).forEach(function (entry) {
+      var btn = document.createElement("button");
+      btn.className = "player-search-result";
+      btn.innerHTML =
+        '<span class="name">' + entry.name + "</span>" +
+        '<span class="meta">' + entry.bestAppearance.team + " " + formatSeason(entry.bestAppearance.season) + "</span>" +
+        window.RatingTag.html(entry.bestAppearance.rating);
+      btn.addEventListener("click", function () {
+        freeAgentTargetEntry = entry;
+        renderFreeAgentSlotPicker();
+      });
+      resultsEl.appendChild(btn);
+    });
+  }
+
+  function renderFreeAgentSlotPicker() {
+    var wrap = document.getElementById("league-freeagent-slots-wrap");
+    var slotsEl = document.getElementById("league-freeagent-slots");
+    slotsEl.innerHTML = "";
+    var position = freeAgentTargetEntry.bestAppearance.position;
+    var matchingSlots = state.myRoster.filter(function (e) { return e.position === position; });
+    if (matchingSlots.length === 0) {
+      slotsEl.innerHTML = '<p style="color:var(--text-dim);">אין משבצת בעמדת ' + (POS_LABEL[position] || position) + " להחלפה.</p>";
+    } else {
+      matchingSlots.forEach(function (entry) {
+        var chip = document.createElement("div");
+        chip.className = "h2h-slot-chip filled swappable";
+        chip.innerHTML =
+          '<span class="h2h-slot-type">' + (entry.half === 1 ? "פותחת" : "ספסל") + " · " + POS_LABEL[entry.position] + "</span>" +
+          '<span class="h2h-slot-player">' + entry.player + window.RatingTag.html(entry.rating) + "</span>";
+        chip.addEventListener("click", function () {
+          signFreeAgent(entry);
+        });
+        slotsEl.appendChild(chip);
+      });
+    }
+    wrap.hidden = false;
+  }
+
+  function signFreeAgent(rosterEntry) {
+    var idx = state.myRoster.indexOf(rosterEntry);
+    if (idx === -1 || !freeAgentTargetEntry) return;
+    var b = freeAgentTargetEntry.bestAppearance;
+    state.myRoster[idx] = {
+      player: freeAgentTargetEntry.name,
+      position: b.position,
+      rating: b.rating,
+      offRating: b.offRating,
+      defRating: b.defRating,
+      archetype: b.archetype,
+      team: b.team,
+      season: b.season,
+      slotLabel: POS_LABEL[b.position],
+      half: rosterEntry.half,
+    };
+    if (lastTeams) {
+      lastTeams[0].rating = ratingForMyRoster(state.myRoster);
+      lastTeams[0].offense = offenseForMyRoster(state.myRoster, state.playSystem);
+      lastTeams[0].defense = defenseForMyRoster(state.myRoster, state.playSystem);
+    }
+    state.freeAgentUsed = true;
+    freeAgentTargetEntry = null;
+    window.Effects.confetti();
+    window.AppNav.showScreen("leagueLineup");
+    renderLineupScreen();
+  }
+
   function showTradeScreen(checkpoint) {
     pendingTradeCheckpoint = checkpoint;
     tradeSelection = null;
@@ -1063,6 +1160,20 @@
     showTeamSelect();
   });
   document.getElementById("btn-league-reroll").addEventListener("click", reroll);
+
+  document.getElementById("btn-league-freeagent-open").addEventListener("click", function () {
+    document.getElementById("league-freeagent-search").value = "";
+    document.getElementById("league-freeagent-results").innerHTML = "";
+    document.getElementById("league-freeagent-slots-wrap").hidden = true;
+    freeAgentTargetEntry = null;
+    window.AppNav.showScreen("leagueFreeAgent");
+  });
+  document.getElementById("btn-league-freeagent-back").addEventListener("click", function () {
+    window.AppNav.showScreen("leagueLineup");
+  });
+  document.getElementById("league-freeagent-search").addEventListener("input", function (e) {
+    renderFreeAgentResults(e.target.value);
+  });
 
   document.querySelectorAll("#league-format-buttons .era-btn").forEach(function (btn) {
     btn.addEventListener("click", function () {

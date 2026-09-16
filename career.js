@@ -662,7 +662,13 @@
 
     var offers = generateDraftOffers();
     var content = document.getElementById("career-hub-content");
-    content.innerHTML = '<div class="system-select-grid" id="career-draft-grid"></div>';
+    var hasFreeChoice = window.Shop && window.Shop.isOwned("freeClubChoice");
+    content.innerHTML =
+      '<div class="system-select-grid" id="career-draft-grid"></div>' +
+      (hasFreeChoice
+        ? '<div style="text-align:center;margin-top:16px;"><button class="secondary" id="btn-career-free-club-choice">🎽 בחרו קבוצה חופשית</button></div>' +
+          '<div class="team-select-grid" id="career-free-club-grid" hidden></div>'
+        : "");
 
     var grid = document.getElementById("career-draft-grid");
     offers.forEach(function (o) {
@@ -675,6 +681,35 @@
         acceptDraft(o);
       });
       grid.appendChild(btn);
+    });
+
+    if (hasFreeChoice) {
+      document.getElementById("btn-career-free-club-choice").addEventListener("click", function (e) {
+        var freeGrid = document.getElementById("career-free-club-grid");
+        freeGrid.innerHTML = "";
+        uniqueClubs().forEach(function (club) {
+          var btn = document.createElement("button");
+          btn.className = "team-select-btn";
+          btn.innerHTML = window.TeamBadge.html(club) + "<span>" + club + "</span>";
+          btn.addEventListener("click", function () {
+            acceptFreeClub(club);
+          });
+          freeGrid.appendChild(btn);
+        });
+        freeGrid.hidden = false;
+        e.target.hidden = true;
+      });
+    }
+  }
+
+  function acceptFreeClub(club) {
+    var draftRating = (career.offRating + career.defRating) / 2;
+    acceptDraft({
+      club: club,
+      strength: clubAverageStrength(club),
+      salary: Math.round(draftRating * 1200 * (0.8 + Math.random() * 0.4)),
+      system: window.PlaySystems[Math.floor(Math.random() * window.PlaySystems.length)],
+      isLoan: false,
     });
   }
 

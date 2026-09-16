@@ -9,18 +9,41 @@
   var STORAGE_KEY = "euroleague_shop_v1";
   var COINS_PER_BADGE = 100;
 
-  // The catalog is intentionally empty for now - prizes come in a later
-  // pass. The shop screen itself, the currency, and the topbar balance are
-  // real and working.
-  var CATALOG = [];
+  // Each item is a permanent, one-time unlock (buy once, the ability is
+  // yours forever after) rather than a consumable - matches how the other
+  // modes' game.js/career.js/league.js check window.Shop.isOwned(id) once
+  // to decide whether to offer the unlocked option at all.
+  var CATALOG = [
+    {
+      id: "legendsDraft",
+      icon: "🌟",
+      title: "דראפט אגדות",
+      desc: "מצב דראפט בלעדי בבניית סגל - מאגר השחקנים מוגבל לדירוג 90+ בלבד",
+      price: 800,
+    },
+    {
+      id: "freeClubChoice",
+      icon: "🎽",
+      title: "בחירת קבוצה חופשית",
+      desc: "ביום הדראפט בקריירה, בחרו כל קבוצה שתרצו במקום לבחור מתוך ההצעות שהוצגו",
+      price: 600,
+    },
+    {
+      id: "freeAgentSigning",
+      icon: "✍️",
+      title: "חתימת שחקן חופשי",
+      desc: "פעם בכל עונת ליגה, בחרו כל שחקן מההיסטוריה והחתימו אותו ישירות להרכב שלכם",
+      price: 700,
+    },
+  ];
 
   function load() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
       var parsed = raw ? JSON.parse(raw) : null;
-      return { spent: (parsed && parsed.spent) || 0 };
+      return { spent: (parsed && parsed.spent) || 0, owned: (parsed && parsed.owned) || {} };
     } catch (e) {
-      return { spent: 0 };
+      return { spent: 0, owned: {} };
     }
   }
 
@@ -55,6 +78,23 @@
     return true;
   }
 
+  function isOwned(id) {
+    return !!data.owned[id];
+  }
+
+  function purchase(id) {
+    var item = null;
+    for (var i = 0; i < CATALOG.length; i++) {
+      if (CATALOG[i].id === id) { item = CATALOG[i]; break; }
+    }
+    if (!item || isOwned(id) || getBalance() < item.price) return false;
+    data.spent += item.price;
+    data.owned[id] = true;
+    save();
+    refreshTopbarDisplay();
+    return true;
+  }
+
   function refreshTopbarDisplay() {
     var el = document.getElementById("topbar-coin-balance");
     if (el) el.textContent = getBalance().toLocaleString("he-IL");
@@ -64,16 +104,32 @@
     document.getElementById("shop-balance").textContent = getBalance().toLocaleString("he-IL");
 
     var catalogEl = document.getElementById("shop-catalog");
-    if (CATALOG.length === 0) {
-      catalogEl.innerHTML =
-        '<div class="empty-state">' +
-          '<div class="empty-state-icon" aria-hidden="true">🛍️</div>' +
-          '<p class="empty-state-text">החנות בבנייה</p>' +
-          '<p class="empty-state-hint">פריטים לרכישה יתווספו בקרוב - המשיכו לפתוח באנרים כדי לצבור מטבעות!</p>' +
-        "</div>";
-      return;
-    }
-    // Future: render CATALOG items as purchasable cards here.
+    var balance = getBalance();
+    catalogEl.innerHTML = CATALOG.map(function (item) {
+      var owned = isOwned(item.id);
+      var afford = balance >= item.price;
+      return (
+        '<div class="shop-item-card' + (owned ? " owned" : "") + '">' +
+          '<div class="shop-item-icon" aria-hidden="true">' + item.icon + "</div>" +
+          '<div class="shop-item-body">' +
+            '<div class="shop-item-title">' + item.title + "</div>" +
+            '<div class="shop-item-desc">' + item.desc + "</div>" +
+          "</div>" +
+          (owned
+            ? '<span class="shop-item-owned">✅ נרכש</span>'
+            : '<button class="shop-item-buy" data-item-id="' + item.id + '"' + (afford ? "" : " disabled") + ">🪙 " + item.price + "</button>") +
+        "</div>"
+      );
+    }).join("");
+
+    Array.from(catalogEl.querySelectorAll(".shop-item-buy")).forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (purchase(btn.dataset.itemId)) {
+          window.Effects.confetti();
+          renderShopScreen();
+        }
+      });
+    });
   }
 
   function open() {
@@ -91,6 +147,7 @@
   window.Shop = {
     getBalance: getBalance,
     spend: spend,
+    isOwned: isOwned,
     refreshTopbarDisplay: refreshTopbarDisplay,
     coinsPerBadge: COINS_PER_BADGE,
   };

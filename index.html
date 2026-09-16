@@ -307,6 +307,13 @@
           <button class="era-btn" data-budget="650">תקציב מוגבל ($650M)</button>
         </div>
       </div>
+      <div class="era-filter" id="legends-mode-section" hidden>
+        <div class="era-filter-label">🌟 דראפט אגדות (פריט חנות):</div>
+        <div class="era-filter-buttons" id="legends-mode-buttons">
+          <button class="era-btn selected" data-legends="0">רגיל</button>
+          <button class="era-btn" data-legends="1">רק 90+ (אגדות)</button>
+        </div>
+      </div>
       <p class="career-last-summary" id="single-best-display" hidden></p>
       <button id="btn-start">התחלת משחק</button>
       <div style="margin-top:16px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
@@ -643,8 +650,28 @@
       </div>
     </div>
     <div class="final-actions">
+      <button class="secondary" id="btn-league-freeagent-open" hidden>✍️ חתימת שחקן חופשי</button>
       <button id="btn-league-lineup-continue">המשך לליגה &raquo;</button>
       <button class="secondary" id="btn-home-from-league-lineup">לדף הבית</button>
+    </div>
+  </section>
+
+  <section id="screen-league-freeagent" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 style="margin-top:0;">✍️ חתימת שחקן חופשי</h2>
+      <p style="color:var(--text-dim); text-align:center;">פעם אחת בעונה - בחרו כל שחקן מההיסטוריה והחתימו אותו ישירות להרכב</p>
+      <input type="text" id="league-freeagent-search" class="player-search-input" placeholder="הקלידו שם שחקן..." />
+    </div>
+    <div id="league-freeagent-results"></div>
+    <div class="h2h-status" id="league-freeagent-slots-wrap" hidden>
+      <div class="h2h-player-panel" style="flex-basis:100%;">
+        <div class="h2h-player-name">בחרו את מי להחליף (אותה עמדה)</div>
+        <div class="h2h-slots" id="league-freeagent-slots"></div>
+      </div>
+    </div>
+    <div class="final-actions">
+      <button class="secondary" id="btn-league-freeagent-back">חזרה &raquo;</button>
+      <button class="secondary" id="btn-home-from-league-freeagent">לדף הבית</button>
     </div>
   </section>
 

@@ -22,6 +22,7 @@
     leagueTeamSelect: "screen-league-team-select",
     leagueDraft: "screen-league-draft",
     leagueLineup: "screen-league-lineup",
+    leagueFreeAgent: "screen-league-freeagent",
     leagueSystem: "screen-league-system",
     leagueSimChoice: "screen-league-simchoice",
     leagueLive: "screen-league-live",
@@ -69,6 +70,10 @@
   function showScreen(name) {
     if (name === "home" && window.TeamBadge) window.TeamBadge.clearAccent();
     if (window.Shop) window.Shop.refreshTopbarDisplay();
+    if (name === "start" && window.Shop) {
+      var legendsSection = document.getElementById("legends-mode-section");
+      if (legendsSection) legendsSection.hidden = !window.Shop.isOwned("legendsDraft");
+    }
     Object.keys(idMap).forEach(function (key) {
       var el = document.getElementById(idMap[key]);
       if (el) el.classList.toggle("active", key === name);
@@ -175,6 +180,9 @@
     showScreen("home");
   });
   document.getElementById("btn-home-from-league-lineup").addEventListener("click", function () {
+    showScreen("home");
+  });
+  document.getElementById("btn-home-from-league-freeagent").addEventListener("click", function () {
     showScreen("home");
   });
   document.getElementById("btn-home-from-league-system").addEventListener("click", function () {
