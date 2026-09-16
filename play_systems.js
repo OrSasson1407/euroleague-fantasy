@@ -14,7 +14,7 @@
       fitArchetypes: ["sharpshooter", "playmaker"],
       offBonus: 5,
       defBonus: 0,
-      varianceMultiplier: 1.15,
+      varianceMultiplier: 1.4,
     },
     {
       id: "lockdown",
@@ -23,7 +23,7 @@
       fitArchetypes: ["anchor", "clutch"],
       offBonus: 0,
       defBonus: 5,
-      varianceMultiplier: 0.85,
+      varianceMultiplier: 0.7,
     },
     {
       id: "balanced",
@@ -41,7 +41,7 @@
       fitArchetypes: [],
       offBonus: 6,
       defBonus: 6,
-      varianceMultiplier: 1.05,
+      varianceMultiplier: 1.15,
       starMode: true,
     },
     {
@@ -51,7 +51,7 @@
       fitArchetypes: ["clutch"],
       offBonus: 4,
       defBonus: 4,
-      varianceMultiplier: 1.0,
+      varianceMultiplier: 0.85,
     },
   ];
 

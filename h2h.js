@@ -5,7 +5,7 @@
   var SLOT_TEMPLATE = ["Guard", "Guard", "Forward", "Forward", "Center"];
   var POS_LABEL = { Guard: "מגן", Forward: "חלוץ", Center: "סנטר" };
   var MAX_REROLLS = 2;
-  var HOME_BONUS = 3; // score bonus for the "home" side in a given game
+  var HOME_BONUS_BASE = 5; // max score bonus for the "home" side, in a close game (see homeBonusFor)
   var selectedGamesToWin = 2; // set by the Bo3/Bo5 toggle on the setup screen
   var selectedDraftMode = "turns"; // 'turns' | 'auction', set by the setup screen toggle
   var selectedAuctionBudget = 25; // set by the setup screen's budget toggle
@@ -200,10 +200,29 @@
       var thisTurn = state.turn;
       setTimeout(function () {
         if (state.turn !== thisTurn) return; // safety: turn already advanced
-        var choice = eligiblePlayers[Math.floor(Math.random() * eligiblePlayers.length)];
+        var choice = computerDraftChoice(eligiblePlayers, side.needs);
         makePick(choice, picked.combo, sideIndex);
       }, 700);
     }
+  }
+
+  // Picks the best-scored eligible player rather than a uniformly random
+  // one: rating first, with a bonus for closing out a position that has
+  // only one slot left open (a lone remaining Center need is a use-it-or-
+  // lose-it opportunity in a way a 2-of-2 Guard need isn't).
+  function computerDraftChoice(eligiblePlayers, needs) {
+    var best = null;
+    var bestScore = -Infinity;
+    eligiblePlayers.forEach(function (p) {
+      var remaining = needs[p.position] || 1;
+      var scarcityBonus = remaining <= 1 ? 4 : 0;
+      var score = (p.rating || 0) + scarcityBonus;
+      if (score > bestScore) {
+        bestScore = score;
+        best = p;
+      }
+    });
+    return best;
   }
 
   function reroll() {
@@ -339,16 +358,25 @@
     });
   }
 
+  // Home court matters most in a close matchup and fades out as the talent
+  // gap grows - a blowout stays a blowout either way, so the bonus shouldn't
+  // hand the stronger side the same flat bump as it would in an even game.
+  function homeBonusFor(power1, power2) {
+    var closeness = Math.max(0, 1 - Math.abs(power1 - power2) / 20);
+    return HOME_BONUS_BASE * closeness;
+  }
+
   function playOneGame(gameIndex) {
     var homeIndex = gameIndex % 2;
-    var bonus1 = homeIndex === 0 ? HOME_BONUS : 0;
-    var bonus2 = homeIndex === 1 ? HOME_BONUS : 0;
     var sys1 = state.sides[0].system;
     var sys2 = state.sides[1].system;
     var offense1 = averageOffense(state.sides[0].picks, sys1);
     var defense1 = averageDefense(state.sides[0].picks, sys1);
     var offense2 = averageOffense(state.sides[1].picks, sys2);
     var defense2 = averageDefense(state.sides[1].picks, sys2);
+    var homeBonusValue = homeBonusFor((offense1 + defense1) / 2, (offense2 + defense2) / 2);
+    var bonus1 = homeIndex === 0 ? homeBonusValue : 0;
+    var bonus2 = homeIndex === 1 ? homeBonusValue : 0;
     var mult1 = sys1 ? sys1.varianceMultiplier : 1;
     var mult2 = sys2 ? sys2.varianceMultiplier : 1;
     var score1 = simulateTeamScore(offense1, defense2, bonus1, chemistryBonus(state.sides[0].picks), mult1);
@@ -694,13 +722,24 @@
     return { label: label, budget: selectedAuctionBudget, needs: freshNeeds(), picks: [] };
   }
 
-  // A simple willingness-to-pay heuristic for the computer opponent: scales
-  // roughly $3-$18 across the real rating range, so it competes harder for
-  // stars without ever being a perfect, unbeatable bidder.
-  function computerWantsBid(player, price) {
+  // A willingness-to-pay heuristic for the computer opponent: a rating-based
+  // base value (roughly $3-$18 across the real rating range) scaled by how
+  // much of its remaining budget it can still spend per remaining roster
+  // slot, so a side on a tight budget (or one that's already spent heavily
+  // relative to what's left to fill) rations itself instead of spending as
+  // if this were the only player left to buy. $8/slot is the rough average
+  // for the $40 "generous" budget over 5 picks, so that tier keeps close to
+  // its original behavior while $15/$25 tiers get noticeably more careful.
+  function computerWantsBid(player, price, side) {
     var rating = typeof player.rating === "number" ? player.rating : 65;
-    var value = 3 + ((rating - 60) / (99 - 60)) * 15;
-    return price <= value;
+    var baseValue = 3 + ((rating - 60) / (99 - 60)) * 15;
+
+    var remainingSlots = 0;
+    for (var pos in side.needs) remainingSlots += side.needs[pos];
+    var budgetPerSlot = side.budget / Math.max(1, remainingSlots);
+    var affordabilityFactor = Math.min(1.4, Math.max(0.5, budgetPerSlot / 8));
+
+    return price <= baseValue * affordabilityFactor;
   }
 
   function pickAuctionCandidate() {
@@ -874,7 +913,7 @@
       var bidSnapshot = auction.nextBid;
       setTimeout(function () {
         if (!auction || auction.currentPlayer !== cpSnapshot || auction.askSide !== sideIndex) return;
-        handleChoice(computerWantsBid(cpSnapshot.player, bidSnapshot));
+        handleChoice(computerWantsBid(cpSnapshot.player, bidSnapshot, side));
       }, 650);
     }
     // Otherwise: wait for the human's click on the agree/refuse buttons.
