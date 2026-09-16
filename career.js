@@ -907,8 +907,22 @@
     var beforeReputation = career.reputation, beforeCoachMeter = career.team.coachMeter;
     var diff = getDifficulty();
 
-    var starter = career.team.coachMeter >= 40 || career.age - career.team.joinAge >= 2;
-    var contributionWeight = starter ? 0.35 : 0.15;
+    // Tenure lowers the bar to start (a long-standing player gets more
+    // benefit of the doubt) rather than replacing it outright - coachMeter
+    // still matters even for a veteran, it just takes a genuinely bad
+    // relationship (not just an imperfect one) to bench someone who's been
+    // there for years.
+    var tenure = career.age - career.team.joinAge;
+    var starterThreshold = Math.max(15, 40 - tenure * 5);
+    var starter = career.team.coachMeter >= starterThreshold;
+
+    // Reputation and tenure let a player's standing within the team keep
+    // growing past the flat starter/bench split, so an established veteran
+    // starter contributes more to the team's actual output than a rookie
+    // who just barely cracked the starting five.
+    var tenureBonus = Math.min(0.1, tenure * 0.02);
+    var repBonus = Math.min(0.08, (career.reputation / 100) * 0.08);
+    var contributionWeight = (starter ? 0.35 : 0.15) + tenureBonus + repBonus;
 
     var myOffense = effectiveOffense();
     var myDefense = effectiveDefense();
@@ -925,7 +939,12 @@
       else losses++;
     }
 
-    var ppg = Math.max(2, ((myOffense - 50) * 0.45 + 8) * (starter ? 1 : 0.5));
+    // Offense still drives scoring (it's fundamentally an offensive stat),
+    // but a small share comes from defense too - good defenders rack up
+    // extra box-score points off steals, putbacks and transition chances,
+    // so two players with the same offRating but different defRating
+    // shouldn't score identically.
+    var ppg = Math.max(2, ((myOffense - 50) * 0.45 + (myDefense - 50) * 0.1 + 8) * (starter ? 1 : 0.5));
 
     var delta = ageGrowthDelta(career.age);
     var offShare = focusId === "offense" ? 0.7 : focusId === "defense" ? 0.3 : 0.5;
@@ -933,8 +952,12 @@
     career.defRating = clamp(career.defRating + delta * (1 - offShare), 30, 99);
     updatePeakRating();
 
+    // Injury risk climbs gradually past 27, matching the age-based decline
+    // the growth curve above already models - a flat rate regardless of age
+    // didn't fit a game that otherwise treats older players as more fragile.
+    var ageInjuryFactor = 1 + Math.max(0, career.age - 27) * 0.04;
     var shieldActive = !!career.injuryShieldActive;
-    var injuryChance = 0.08 * diff.injuryMult * (shieldActive ? 0.5 : 1);
+    var injuryChance = 0.08 * diff.injuryMult * ageInjuryFactor * (shieldActive ? 0.5 : 1);
     var injuryEvent = null;
     if (!career.injury && Math.random() < injuryChance) {
       injuryEvent = { severe: Math.random() < 0.3, seasonsLeft: Math.random() < 0.3 ? 2 : 1 };
@@ -1051,12 +1074,35 @@
     return career.difficulty || { injuryMult: 1, declineMult: 1, growthMult: 1 };
   }
 
+  // Smooth piecewise-linear curve instead of hard age buckets - the old
+  // version had a player always improving at 29 and always declining at 30,
+  // a full flip on a single birthday. These anchors connect continuously
+  // (each segment starts where the last one ended) so nearby ages trend
+  // similarly instead of jumping at one boundary.
+  var AGE_GROWTH_ANCHORS = [
+    { age: 18, val: 3.5 },
+    { age: 24, val: 2.5 },
+    { age: 29, val: 0.5 },
+    { age: 33, val: -1.0 },
+    { age: 40, val: -3.5 },
+  ];
+
   function ageGrowthDelta(age) {
     var diff = getDifficulty();
-    if (age <= 23) return (2 + Math.random() * 2) * diff.growthMult;
-    if (age <= 29) return Math.random() * 1.5 * diff.growthMult;
-    if (age <= 33) return -Math.random() * 1.5 * diff.declineMult;
-    return -(1.5 + Math.random() * 2) * diff.declineMult;
+    var anchors = AGE_GROWTH_ANCHORS;
+    var base = anchors[anchors.length - 1].val;
+    for (var i = 0; i < anchors.length - 1; i++) {
+      var a = anchors[i], b = anchors[i + 1];
+      if (age <= a.age) { base = a.val; break; }
+      if (age <= b.age) {
+        var t = (age - a.age) / (b.age - a.age);
+        base = a.val + (b.val - a.val) * t;
+        break;
+      }
+    }
+    var mult = base >= 0 ? diff.growthMult : diff.declineMult;
+    var noise = (Math.random() - 0.5) * 2;
+    return base * mult + noise * mult;
   }
 
   function finalizeSeason(focusId) {
