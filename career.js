@@ -11,176 +11,181 @@
   // own historical EuroLeague dataset, and the draft (age 19) picks its 3
   // offers only from that pool: pick a Spanish academy, get drafted by a
   // Spanish club, etc.
+  // label/country/desc are resolved from locales_he.js/locales_en.js at
+  // load time (career.js loads after i18n.js, and the page reloads on
+  // language switch, so a one-time lookup here is safe) rather than
+  // hardcoded, keyed by id under the career.academies.* namespace.
   var ACADEMIES = [
     {
-      label: "אקדמיה ספרדית", country: "ספרד",
-      desc: "ידועה בפיתוח מתקפי וזריקה - בוגריה מגיעים בעיקר לקבוצות ספרדיות",
+      id: "spain",
       offBias: 0.65, reputationBonus: 0,
       clubs: ["Baskonia", "Bilbao Basket", "Estudiantes", "FC Barcelona", "Gran Canaria", "Joventut Badalona", "Real Madrid", "Unicaja Malaga", "Valencia Basket"],
     },
     {
-      label: "אקדמיה יוונית", country: "יוון",
-      desc: "מתמקדת בחוסן מנטלי ומוניטין מוקדם - בוגריה מגיעים בעיקר לקבוצות יווניות",
+      id: "greece",
       offBias: 0.5, reputationBonus: 10,
       clubs: ["AEK", "Aris", "Iraklis", "Olympiacos", "Panathinaikos", "Panionios", "Peristeri"],
     },
     {
-      label: "אקדמיה טורקית", country: "טורקיה",
-      desc: "קבוצות עשירות ותחרות פנימית קשה - בוגריה מגיעים בעיקר לקבוצות טורקיות",
+      id: "turkey",
       offBias: 0.55, reputationBonus: 0,
       clubs: ["Anadolu Efes", "Besiktas", "Darussafaka", "Fenerbahce", "Galatasaray", "Karsiyaka", "Ulker"],
     },
     {
-      label: "אקדמיה איטלקית", country: "איטליה",
-      desc: "מסורת עשירה ומשחק טקטי - בוגריה מגיעים בעיקר לקבוצות איטלקיות",
+      id: "italy",
       offBias: 0.45, reputationBonus: 0,
       clubs: ["Avellino", "Benetton Treviso", "Cantu", "Fortitudo Bologna", "Montepaschi Siena", "Napoli", "Olimpia Milano", "Sassari", "Scavolini Pesaro", "Virtus Bologna", "Virtus Roma"],
     },
     {
-      label: "אקדמיה צרפתית", country: "צרפת",
-      desc: "ידועה בפיתוח אתלטי ומהירות - בוגריה מגיעים בעיקר לקבוצות צרפתיות",
+      id: "france",
       offBias: 0.55, reputationBonus: 0,
       clubs: ["AS Monaco", "ASVEL", "Chalon", "Cholet", "Le Mans", "Limoges", "Nancy", "Nanterre", "Paris Basketball", "Pau-Orthez", "Roanne", "SLUC Nancy", "Strasbourg"],
     },
     {
-      label: "אקדמיה רוסית", country: "רוסיה",
-      desc: "פיתוח פיזי וקשוח עם דגש הגנתי - בוגריה מגיעים בעיקר לקבוצות רוסיות",
+      id: "russia",
       offBias: 0.35, reputationBonus: 0,
       clubs: ["CSKA Moscow", "Dynamo Moscow", "Khimki", "Lokomotiv Kuban", "Nizhny Novgorod", "UNICS Kazan", "Ural Great", "Zenit St Petersburg"],
     },
     {
-      label: "אקדמיה גרמנית", country: "גרמניה",
-      desc: "משחק ממושמע ומאוזן - בוגריה מגיעים בעיקר לקבוצות גרמניות",
+      id: "germany",
       offBias: 0.5, reputationBonus: 0,
       clubs: ["Alba Berlin", "Bayern Munich", "Brose Bamberg", "Cologne", "Oldenburg", "Opel Skyliners"],
     },
     {
-      label: "אקדמיה קרואטית", country: "קרואטיה",
-      desc: "ידועה בהפקת יורים מוכשרים - בוגריה מגיעים בעיקר לקבוצות קרואטיות",
+      id: "croatia",
       offBias: 0.6, reputationBonus: 0,
       clubs: ["Cedevita", "Cibona", "Split", "Zadar", "Zagreb"],
     },
     {
-      label: "אקדמיה ליטאית", country: "ליטא",
-      desc: "פיתוח מאוזן ויסודות משחק - בוגריה מגיעים בעיקר לקבוצות ליטאיות",
+      id: "lithuania",
       offBias: 0.5, reputationBonus: 0,
       clubs: ["Lietuvos Rytas", "Neptunas", "Zalgiris Kaunas"],
     },
     {
-      label: "אקדמיה סרבית", country: "סרביה",
-      desc: "ידועה בפיתוח הגנתי קשוח - בוגריה מגיעים בעיקר לקבוצות סרביות",
+      id: "serbia",
       offBias: 0.35, reputationBonus: 0,
       clubs: ["Crvena zvezda", "Partizan"],
     },
     {
-      label: "אקדמיה פולנית", country: "פולין",
-      desc: "עבודה קשה ויסודות מוצקים - בוגריה מגיעים בעיקר לקבוצות פולניות",
+      id: "poland",
       offBias: 0.45, reputationBonus: 0,
       clubs: ["Asseco Prokom Gdynia", "Prokom Trefl Sopot", "Slask Wroclaw", "Turow Zgorzelec", "Zielona Gora"],
     },
     {
-      label: "אקדמיה ישראלית", country: "ישראל",
-      desc: "אינטנסיביות ותנופה התקפית - בוגריה מגיעים בעיקר לקבוצות ישראליות",
+      id: "israel",
       offBias: 0.55, reputationBonus: 0,
       clubs: ["Hapoel Tel Aviv", "Maccabi Raanana", "Maccabi Tel Aviv"],
     },
   ];
+  ACADEMIES.forEach(function (a) {
+    a.label = window.I18n.t("career.academies." + a.id + ".label");
+    a.country = window.I18n.t("career.academies." + a.id + ".country");
+    a.desc = window.I18n.t("career.academies." + a.id + ".desc");
+  });
 
   var BACKGROUNDS = [
-    { label: "ילד הכרך הגדול", desc: "גדל בתשומת לב תקשורתית - בונוס קטן למוניטין", reputationStart: 10 },
-    { label: "ילד העיירה", desc: "גדל הרחק מהזרקורים - התמקדות טהורה במשחק", offRatingBonus: 1, defRatingBonus: 1 },
-    { label: "משפחת כדורסל", desc: "גדל בבית עם רקע כדורסלי - קפיצת התחלה קטנה", offRatingBonus: 2 },
-    { label: "התפתחות מאוחרת", desc: "התחיל מאוחר יותר מהרגיל - פחות בהתחלה, יותר פוטנציאל", offRatingBonus: -2, defRatingBonus: -2 },
+    { id: "bigCity", reputationStart: 10 },
+    { id: "smallTown", offRatingBonus: 1, defRatingBonus: 1 },
+    { id: "basketballFamily", offRatingBonus: 2 },
+    { id: "lateBloomer", offRatingBonus: -2, defRatingBonus: -2 },
   ];
+  BACKGROUNDS.forEach(function (b) {
+    b.label = window.I18n.t("career.backgrounds." + b.id + ".label");
+    b.desc = window.I18n.t("career.backgrounds." + b.id + ".desc");
+  });
 
   var TRAINING_FOCUS = [
-    { id: "offense", label: "התמקדות בהתקפה", desc: "צמיחה מוגברת בהתקפה" },
-    { id: "defense", label: "התמקדות בהגנה", desc: "צמיחה מוגברת בהגנה" },
-    { id: "balanced", label: "אימון מאוזן", desc: "צמיחה שווה משני הצדדים" },
+    { id: "offense" },
+    { id: "defense" },
+    { id: "balanced" },
   ];
+  TRAINING_FOCUS.forEach(function (f) {
+    f.label = window.I18n.t("career.trainingFocus." + f.id + ".label");
+    f.desc = window.I18n.t("career.trainingFocus." + f.id + ".desc");
+  });
 
   var EVENTS = [
     {
-      title: "רגע קלאץ'",
-      desc: "המשחק צמוד בשניות האחרונות. המאמן מסתכל עליכם.",
-      choiceA: { label: "לקחת את הזריקה", riskFail: 0.4, reputationDelta: 8, failReputationDelta: -4 },
-      choiceB: { label: "להעביר לחבר לקבוצה", reputationDelta: 2 },
+      id: "clutchMoment",
+      choiceA: { riskFail: 0.4, reputationDelta: 8, failReputationDelta: -4 },
+      choiceB: { reputationDelta: 2 },
     },
     {
-      title: "הצעת חסות",
-      desc: "חברת ציוד ספורט מציעה לכם חוזה חסות קטן.",
-      choiceA: { label: "לקבל את ההצעה", moneyDelta: 8000 },
-      choiceB: { label: "לסרב ולהתמקד במשחק", reputationDelta: 3 },
+      id: "sponsorship",
+      choiceA: { moneyDelta: 8000 },
+      choiceB: { reputationDelta: 3 },
     },
     {
-      title: "חילוקי דעות עם המאמן",
-      desc: "המאמן רוצה שתשחקו בתפקיד שונה מהרגיל שלכם.",
-      choiceA: { label: "להסכים ולהתאים את עצמכם", coachMeterDelta: 10 },
-      choiceB: { label: "לעמוד על שלכם", coachMeterDelta: -8, reputationDelta: 3 },
+      id: "coachDisagreement",
+      choiceA: { coachMeterDelta: 10 },
+      choiceB: { coachMeterDelta: -8, reputationDelta: 3 },
     },
     {
-      title: "ראיון תקשורתי",
-      desc: "כתב מבקש ראיון אחרי המשחק.",
-      choiceA: { label: "ראיון צנוע וממוקד קבוצה", coachMeterDelta: 4 },
-      choiceB: { label: "ראיון בטחוני ומגניב", reputationDelta: 6, coachMeterDelta: -2 },
+      id: "mediaInterview",
+      choiceA: { coachMeterDelta: 4 },
+      choiceB: { reputationDelta: 6, coachMeterDelta: -2 },
     },
     {
-      title: "אירוע משפחתי",
-      desc: "המשפחה מזמינה אתכם לאירוע חשוב באותו שבוע שבו תוכנן אימון נוסף.",
-      choiceA: { label: "לבלות עם המשפחה", reputationDelta: 4 },
-      choiceB: { label: "להישאר ולהתאמן", coachMeterDelta: 5 },
+      id: "familyEvent",
+      choiceA: { reputationDelta: 4 },
+      choiceB: { coachMeterDelta: 5 },
     },
     {
-      title: "בעיה בריאותית קלה",
-      desc: "אתם מרגישים לא במיטבכם בימים שלפני המשחק החשוב.",
-      choiceA: { label: "לנוח כמה ימים", coachMeterDelta: -3 },
-      choiceB: { label: "להתעלם ולהמשיך כרגיל", riskFail: 0.35, reputationDelta: 5, failReputationDelta: -6 },
+      id: "minorHealthIssue",
+      choiceA: { coachMeterDelta: -3 },
+      choiceB: { riskFail: 0.35, reputationDelta: 5, failReputationDelta: -6 },
     },
     {
-      title: "הזמנה לפעילות קהילתית",
-      desc: "ארגון מקומי מזמין אתכם להשתתף באירוע קהילתי למען הנוער באזור.",
-      choiceA: { label: "להשתתף בשמחה", reputationDelta: 6 },
-      choiceB: { label: "להתנצל ולהתמקד במנוחה", coachMeterDelta: 3 },
+      id: "communityEvent",
+      choiceA: { reputationDelta: 6 },
+      choiceB: { coachMeterDelta: 3 },
     },
     {
-      title: "הצעת לימודים במקביל",
-      desc: "מוסד אקדמי מציע לכם ללמוד קורס במקביל לקריירה.",
-      choiceA: { label: "ללמוד במקביל לקריירה", reputationDelta: 5, coachMeterDelta: -2 },
-      choiceB: { label: "להתמקד רק בכדורסל", coachMeterDelta: 4 },
+      id: "studyOffer",
+      choiceA: { reputationDelta: 5, coachMeterDelta: -2 },
+      choiceB: { coachMeterDelta: 4 },
     },
   ];
+  EVENTS.forEach(function (ev) {
+    ev.title = window.I18n.t("career.events." + ev.id + ".title");
+    ev.desc = window.I18n.t("career.events." + ev.id + ".desc");
+    ev.choiceA.label = window.I18n.t("career.events." + ev.id + ".choiceA");
+    ev.choiceB.label = window.I18n.t("career.events." + ev.id + ".choiceB");
+  });
 
   var DIFFICULTIES = [
-    { id: "arcade", label: "ארקייד", desc: "פחות פציעות, ירידה מתונה יותר עם הגיל, קצת יותר סלחני", injuryMult: 0.6, declineMult: 0.6, growthMult: 1.1 },
-    { id: "realistic", label: "ריאליסטי", desc: "פציעות שכיחות יותר וירידה חדה יותר עם הגיל - אתגר אמיתי", injuryMult: 1.4, declineMult: 1.4, growthMult: 0.9 },
+    { id: "arcade", injuryMult: 0.6, declineMult: 0.6, growthMult: 1.1 },
+    { id: "realistic", injuryMult: 1.4, declineMult: 1.4, growthMult: 0.9 },
   ];
+  DIFFICULTIES.forEach(function (d) {
+    d.label = window.I18n.t("career.difficulties." + d.id + ".label");
+    d.desc = window.I18n.t("career.difficulties." + d.id + ".desc");
+  });
 
   var GOALS = [
     {
       id: "winning",
-      label: "עונה מנצחת",
-      desc: "לסיים עם יותר ניצחונות מהפסדים",
       check: function (record) { return record.wins > record.losses; },
       rewardRep: 8,
       rewardMoney: 0,
     },
     {
       id: "health",
-      label: "להישאר בריאים",
-      desc: "לסיים את העונה בלי פציעה חדשה",
       check: function (record) { return !record.injuryEvent; },
       rewardRep: 4,
       rewardMoney: 5000,
     },
     {
       id: "coach",
-      label: "לשפר יחסים עם המאמן",
-      desc: "לסיים את העונה עם שיפור ביחסים עם המאמן",
       check: function (record) { return record.coachMeterDelta > 0; },
       rewardRep: 5,
       rewardMoney: 0,
     },
   ];
+  GOALS.forEach(function (g) {
+    g.label = window.I18n.t("career.goals." + g.id + ".label");
+    g.desc = window.I18n.t("career.goals." + g.id + ".desc");
+  });
 
   var AGENT_COST = 20000;
   var SECONDARY_ARCHETYPE_RATING_THRESHOLD = 75;
@@ -194,18 +199,21 @@
   // Career-wide milestones, checked once per pro season and shown as a
   // celebratory banner the moment they're first crossed.
   var MILESTONE_DEFS = [
-    { id: "wins_50", label: "🎉 עברתם 50 ניצחונות בקריירה!", check: function (t) { return t.wins >= 50; } },
-    { id: "wins_100", label: "🎉 עברתם 100 ניצחונות בקריירה!", check: function (t) { return t.wins >= 100; } },
-    { id: "seasons_5", label: "🎉 5 עונות מקצועניות מאחוריכם!", check: function (t) { return t.proSeasons >= 5; } },
-    { id: "seasons_10", label: "🎉 10 עונות מקצועניות - קריירה ארוכה ומרשימה!", check: function (t) { return t.proSeasons >= 10; } },
-    { id: "rating_70", label: "🎉 שברתם את מחסום ה-70 בדירוג!", check: function (t) { return t.peakRating >= 70; } },
-    { id: "rating_80", label: "🎉 שברתם את מחסום ה-80 בדירוג - עלית אמיתית!", check: function (t) { return t.peakRating >= 80; } },
-    { id: "rating_90", label: "🎉 דירוג 90+ - אתם בין הגדולים שההיסטוריה זוכרת!", check: function (t) { return t.peakRating >= 90; } },
-    { id: "trophies_1", label: "🎉 האליפות הראשונה שלכם!", check: function (t) { return t.trophies >= 1; } },
-    { id: "trophies_3", label: "🎉 3 אליפויות קריירה - שושלת אמיתית!", check: function (t) { return t.trophies >= 3; } },
-    { id: "money_1m", label: "🎉 עברתם מיליון שקל בהכנסות קריירה!", check: function (t) { return t.money >= 1000000; } },
-    { id: "money_5m", label: "🎉 5 מיליון שקל - קריירה עשירה!", check: function (t) { return t.money >= 5000000; } },
+    { id: "wins_50", check: function (t) { return t.wins >= 50; } },
+    { id: "wins_100", check: function (t) { return t.wins >= 100; } },
+    { id: "seasons_5", check: function (t) { return t.proSeasons >= 5; } },
+    { id: "seasons_10", check: function (t) { return t.proSeasons >= 10; } },
+    { id: "rating_70", check: function (t) { return t.peakRating >= 70; } },
+    { id: "rating_80", check: function (t) { return t.peakRating >= 80; } },
+    { id: "rating_90", check: function (t) { return t.peakRating >= 90; } },
+    { id: "trophies_1", check: function (t) { return t.trophies >= 1; } },
+    { id: "trophies_3", check: function (t) { return t.trophies >= 3; } },
+    { id: "money_1m", check: function (t) { return t.money >= 1000000; } },
+    { id: "money_5m", check: function (t) { return t.money >= 5000000; } },
   ];
+  MILESTONE_DEFS.forEach(function (m) {
+    m.label = "🎉 " + window.I18n.t("career.milestones." + m.id);
+  });
 
   function computeCareerTotals() {
     var wins = 0, proSeasons = 0, trophies = 0;
@@ -226,30 +234,30 @@
     var defCost = Math.round(900 * career.defRating);
     var options = [
       {
-        id: "offense", label: "שדרוג התקפה (+2)",
-        desc: "עלות: ₪" + offCost.toLocaleString(), cost: offCost,
+        id: "offense", label: window.I18n.t("career.upgrades.offense"),
+        desc: window.I18n.t("career.costLabel", { cost: offCost.toLocaleString() }), cost: offCost,
         apply: function () { career.offRating = clamp(career.offRating + 2, 30, 99); updatePeakRating(); },
       },
       {
-        id: "defense", label: "שדרוג הגנה (+2)",
-        desc: "עלות: ₪" + defCost.toLocaleString(), cost: defCost,
+        id: "defense", label: window.I18n.t("career.upgrades.defense"),
+        desc: window.I18n.t("career.costLabel", { cost: defCost.toLocaleString() }), cost: defCost,
         apply: function () { career.defRating = clamp(career.defRating + 2, 30, 99); updatePeakRating(); },
       },
       {
-        id: "coach", label: "אימון אישי עם המאמן",
-        desc: "יחסים עם המאמן +8 מיידית &middot; עלות: ₪" + COACH_BOOST_COST.toLocaleString(), cost: COACH_BOOST_COST,
+        id: "coach", label: window.I18n.t("career.upgrades.coach"),
+        desc: window.I18n.t("career.coachBoostDesc", { cost: COACH_BOOST_COST.toLocaleString() }), cost: COACH_BOOST_COST,
         apply: function () { career.team.coachMeter = clamp(career.team.coachMeter + 8, 0, 100); },
       },
       {
-        id: "pr", label: 'קמפיין יח"צ',
-        desc: "מוניטין +8 מיידית &middot; עלות: ₪" + PR_CAMPAIGN_COST.toLocaleString(), cost: PR_CAMPAIGN_COST,
+        id: "pr", label: window.I18n.t("career.upgrades.pr"),
+        desc: window.I18n.t("career.prBoostDesc", { cost: PR_CAMPAIGN_COST.toLocaleString() }), cost: PR_CAMPAIGN_COST,
         apply: function () { career.reputation = clamp(career.reputation + 8, 0, 100); },
       },
     ];
     if (!career.injuryShieldActive) {
       options.push({
-        id: "injuryShield", label: "אימון מניעת פציעות",
-        desc: "מחצית מהסיכון לפציעה בעונה הקרובה &middot; עלות: ₪" + INJURY_SHIELD_COST.toLocaleString(), cost: INJURY_SHIELD_COST,
+        id: "injuryShield", label: window.I18n.t("career.upgrades.injuryShield"),
+        desc: window.I18n.t("career.injuryShieldDesc", { cost: INJURY_SHIELD_COST.toLocaleString() }), cost: INJURY_SHIELD_COST,
         apply: function () { career.injuryShieldActive = true; },
       });
     }
@@ -326,11 +334,11 @@
   }
 
   function reputationLabel(rep) {
-    if (rep >= 80) return "כוכב-על";
-    if (rep >= 60) return "ידוע";
-    if (rep >= 40) return "מוכר";
-    if (rep >= 20) return "מתחיל";
-    return "אלמוני";
+    if (rep >= 80) return window.I18n.t("career.repSuperstar");
+    if (rep >= 60) return window.I18n.t("career.repKnown");
+    if (rep >= 40) return window.I18n.t("career.repFamiliar");
+    if (rep >= 20) return window.I18n.t("career.repBeginner");
+    return window.I18n.t("career.repUnknown");
   }
 
   function updatePeakRating() {
@@ -344,9 +352,9 @@
 
   function ratingHeaderHtml() {
     return (
-      '<div class="career-rating-badge">דירוג כולל: <strong>' + overallRating() + "</strong>" +
-      ' <span class="off-tag">התק׳ ' + Math.round(career.offRating) + "</span>" +
-      ' <span class="def-tag">הג׳ ' + Math.round(career.defRating) + "</span></div>"
+      '<div class="career-rating-badge">' + window.I18n.t("career.overallRatingLabel") + ' <strong>' + overallRating() + "</strong>" +
+      ' <span class="off-tag">' + window.I18n.t("common.offAbbr") + " " + Math.round(career.offRating) + "</span>" +
+      ' <span class="def-tag">' + window.I18n.t("common.defAbbr") + " " + Math.round(career.defRating) + "</span></div>"
     );
   }
 
@@ -357,9 +365,8 @@
     var arrow = diff > 0 ? "⬆" : diff < 0 ? "⬇" : "➡";
     var diffText = (diff >= 0 ? "+" : "") + diff;
     return (
-      "<p>דירוג כולל: מ-" + before + " ל-" + after + " (" + diffText + " " + arrow + ")</p>" +
-      "<p>התקפה: מ-" + Math.round(beforeOff) + " ל-" + Math.round(afterOff) + " &middot; הגנה: מ-" +
-      Math.round(beforeDef) + " ל-" + Math.round(afterDef) + "</p>"
+      "<p>" + window.I18n.t("career.ratingChangeLine1", { before: before, after: after, diff: diffText, arrow: arrow }) + "</p>" +
+      "<p>" + window.I18n.t("career.ratingChangeLine2", { beforeOff: Math.round(beforeOff), afterOff: Math.round(afterOff), beforeDef: Math.round(beforeDef), afterDef: Math.round(afterDef) }) + "</p>"
     );
   }
 
@@ -433,9 +440,10 @@
     var last = loadLastCareer();
     if (last) {
       lastEl.hidden = false;
-      lastEl.innerHTML =
-        "הקריירה הקודמת שלכם: <strong>" + last.name + "</strong> (" + last.position + ") &middot; שיא דירוג " +
-        last.peakRating + " &middot; פרש/ה בגיל " + last.retirementAge + " &middot; " + last.trophies + " אליפויות";
+      lastEl.innerHTML = window.I18n.t("career.lastCareerSummary", {
+        name: last.name, position: last.position, peak: last.peakRating,
+        retireAge: last.retirementAge, trophies: last.trophies,
+      });
     } else {
       lastEl.hidden = true;
     }
@@ -453,13 +461,15 @@
 
   // ---------- Character creation ----------
 
-  function buildSelectGrid(containerId, items, onPick) {
+  function buildSelectGrid(containerId, items, onPick, labelFn, descFn) {
+    labelFn = labelFn || function (item) { return item.label; };
+    descFn = descFn || function (item) { return item.desc; };
     var grid = document.getElementById(containerId);
     grid.innerHTML = "";
     items.forEach(function (item, i) {
       var btn = document.createElement("button");
       btn.className = "system-card" + (i === 0 ? " selected" : "");
-      btn.innerHTML = '<div class="system-name">' + item.label + '</div><div class="system-desc">' + item.desc + "</div>";
+      btn.innerHTML = '<div class="system-name">' + labelFn(item) + '</div><div class="system-desc">' + descFn(item) + "</div>";
       btn.addEventListener("click", function () {
         Array.from(grid.children).forEach(function (c) {
           c.classList.remove("selected");
@@ -494,7 +504,7 @@
     window.UiSelect.sync(document.getElementById("career-position-buttons"));
 
     buildSelectGrid("career-academy-grid", ACADEMIES, function (a) { createState.academy = a; });
-    buildSelectGrid("career-archetype-grid", window.RatingArchetypes, function (a) { createState.archetype = a; });
+    buildSelectGrid("career-archetype-grid", window.RatingArchetypes, function (a) { createState.archetype = a; }, window.RatingArchetypesAPI.label, window.RatingArchetypesAPI.desc);
     buildSelectGrid("career-background-grid", BACKGROUNDS, function (b) { createState.background = b; });
     buildSelectGrid("career-difficulty-grid", DIFFICULTIES, function (d) { createState.difficulty = d; });
 
@@ -503,7 +513,7 @@
   }
 
   function startCareer() {
-    var name = document.getElementById("career-name-input").value.trim() || "שחקן אלמוני";
+    var name = document.getElementById("career-name-input").value.trim() || window.I18n.t("career.defaultPlayerName");
     career = {
       name: name,
       position: createState.position,
@@ -576,14 +586,14 @@
   }
 
   function renderAcademyHub() {
-    document.getElementById("career-hub-title").textContent = career.academy.label + " · גיל " + career.age;
+    document.getElementById("career-hub-title").textContent = window.I18n.t("career.teamAgeHeader", { team: career.academy.label, age: career.age });
     document.getElementById("career-hub-status").innerHTML = ratingHeaderHtml();
 
     var content = document.getElementById("career-hub-content");
     content.innerHTML =
-      '<p style="text-align:center;color:var(--text-dim);">על מה תתמקדו באימונים העונה?</p>' +
+      '<p style="text-align:center;color:var(--text-dim);">' + window.I18n.t("career.academyFocusPrompt") + "</p>" +
       '<div class="system-select-grid" id="career-academy-focus-grid"></div>' +
-      '<div style="text-align:center;margin-top:10px;"><button class="secondary" id="btn-career-stats">📊 סטטיסטיקת קריירה</button></div>';
+      '<div style="text-align:center;margin-top:10px;"><button class="secondary" id="btn-career-stats">' + window.I18n.t("career.statsBtn") + "</button></div>";
 
     var grid = document.getElementById("career-academy-focus-grid");
     grid.innerHTML = "";
@@ -604,18 +614,18 @@
   }
 
   function renderAcademyRecap(record) {
-    document.getElementById("career-hub-title").textContent = "סיכום עונת אקדמיה - גיל " + record.age;
+    document.getElementById("career-hub-title").textContent = window.I18n.t("career.academyRecapTitle", { age: record.age });
     document.getElementById("career-hub-status").textContent = "";
 
     var content = document.getElementById("career-hub-content");
     content.innerHTML =
       '<div class="career-event-card">' +
-      "<p>אימון שנבחר: " + record.focusLabel + "</p>" +
+      "<p>" + window.I18n.t("career.trainingChosenLine", { focus: record.focusLabel }) + "</p>" +
       ratingChangeHtml(record.beforeOff, record.beforeDef, record.afterOff, record.afterDef) +
-      (record.breakout ? "<p>🌟 עונת פריצת דרך! קפיצה גדולה בסטטים.</p>" : "") +
-      (record.youthNationalTeam ? "<p>🇪🇺 נבחרתם לנבחרת הנוער!</p>" : "") +
+      (record.breakout ? "<p>🌟 " + window.I18n.t("career.breakoutLine") + "</p>" : "") +
+      (record.youthNationalTeam ? "<p>🇪🇺 " + window.I18n.t("career.youthNationalTeamLine") + "</p>" : "") +
       "</div>" +
-      '<div class="final-actions"><button id="btn-career-academy-next">המשך &raquo;</button></div>';
+      '<div class="final-actions"><button id="btn-career-academy-next">' + window.I18n.t("career.continueBtn") + "</button></div>";
 
     document.getElementById("btn-career-academy-next").addEventListener("click", function () {
       if (career.age >= ACADEMY_END_AGE) renderDraft();
@@ -643,7 +653,7 @@
       var strength = clubAverageStrength(club);
       var isLoan = i === 2;
       if (isLoan) strength = Math.min(strength, 68);
-      var role = strength > 78 ? "ספסל" : "תפקיד מתחלף";
+      var role = strength > 78 ? window.I18n.t("common.bench") : window.I18n.t("career.roleRotational");
       var salary = Math.round(draftRating * 1200 * (isLoan ? 0.5 : 1) * (0.8 + Math.random() * 0.4));
       return {
         club: club,
@@ -657,7 +667,7 @@
   }
 
   function renderDraft() {
-    document.getElementById("career-hub-title").textContent = "יום הדראפט - גיל 19";
+    document.getElementById("career-hub-title").textContent = window.I18n.t("career.draftDayTitle");
     document.getElementById("career-hub-status").innerHTML = ratingHeaderHtml();
 
     var offers = generateDraftOffers();
@@ -666,7 +676,7 @@
     content.innerHTML =
       '<div class="system-select-grid" id="career-draft-grid"></div>' +
       (hasFreeChoice
-        ? '<div style="text-align:center;margin-top:16px;"><button class="secondary" id="btn-career-free-club-choice">🎽 בחרו קבוצה חופשית</button></div>' +
+        ? '<div style="text-align:center;margin-top:16px;"><button class="secondary" id="btn-career-free-club-choice">🎽 ' + window.I18n.t("career.freeClubChoiceBtn") + "</button></div>" +
           '<div class="team-select-grid" id="career-free-club-grid" hidden></div>'
         : "");
 
@@ -675,8 +685,8 @@
       var btn = document.createElement("button");
       btn.className = "system-card";
       btn.innerHTML =
-        '<div class="system-name">' + window.TeamBadge.html(o.club) + o.club + (o.isLoan ? " (השאלה)" : "") + "</div>" +
-        '<div class="system-desc">תפקיד: ' + o.role + " &middot; משכורת: ₪" + o.salary.toLocaleString() + "</div>";
+        '<div class="system-name">' + window.TeamBadge.html(o.club) + o.club + (o.isLoan ? " (" + window.I18n.t("career.loanSuffix") + ")" : "") + "</div>" +
+        '<div class="system-desc">' + window.I18n.t("career.offerDesc", { role: o.role, salary: o.salary.toLocaleString() }) + "</div>";
       btn.addEventListener("click", function () {
         acceptDraft(o);
       });
@@ -726,16 +736,16 @@
 
   function renderSeasonHub() {
     document.getElementById("career-hub-title").innerHTML =
-      window.TeamBadge.html(career.team.label) + career.team.label + " · גיל " + career.age;
+      window.TeamBadge.html(career.team.label) + window.I18n.t("career.teamAgeHeader", { team: career.team.label, age: career.age });
     document.getElementById("career-hub-status").innerHTML =
       ratingHeaderHtml() +
       '<div class="career-status-line">' +
-      "חוזה: " + career.contract.yearsLeft + " עונות נותרו &middot; משכורת: ₪" + career.contract.salary.toLocaleString() +
-      " &middot; בנק: ₪" + career.money.toLocaleString() +
-      " &middot; יחסים עם המאמן: " + career.team.coachMeter + "/100" +
-      " &middot; מוניטין: " + reputationLabel(career.reputation) +
-      (career.onNationalTeam ? " &middot; 🇪🇺 נבחרת לאומית" : "") +
-      (career.fanFavorite ? " &middot; ❤️ אהובי הקהל" : "") +
+      window.I18n.t("career.statusLine", {
+        years: career.contract.yearsLeft, salary: career.contract.salary.toLocaleString(),
+        money: career.money.toLocaleString(), coach: career.team.coachMeter, repLabel: reputationLabel(career.reputation),
+      }) +
+      (career.onNationalTeam ? " &middot; 🇪🇺 " + window.I18n.t("career.nationalTeamStatusTag") : "") +
+      (career.fanFavorite ? " &middot; ❤️ " + window.I18n.t("career.fanFavoriteTag") : "") +
       "</div>";
 
     pendingGoal = GOALS[0];
@@ -743,10 +753,9 @@
 
     if (career.injury) {
       content.innerHTML =
-        '<div class="career-event-card"><h3>פציעה</h3><p>אתם מתמודדים עם פציעה (' +
-        (career.injury.severe ? "קשה" : "קלה") + '). איך תתקדמו העונה?</p>' +
-        '<div class="h2h-setup-buttons"><button id="btn-career-injury-play">לשחק על אף הכאב (סיכון)</button>' +
-        '<button id="btn-career-injury-rest">להיזהר ולהתאושש</button></div></div>';
+        '<div class="career-event-card"><h3>' + window.I18n.t("career.injuryTitle") + '</h3><p>' + window.I18n.t("career.injuryPrompt", { severity: (career.injury.severe ? window.I18n.t("career.severityHard") : window.I18n.t("career.severityMild")) }) + '</p>' +
+        '<div class="h2h-setup-buttons"><button id="btn-career-injury-play">' + window.I18n.t("career.playThroughBtn") + "</button>" +
+        '<button id="btn-career-injury-rest">' + window.I18n.t("career.restBtn") + "</button></div></div>";
       document.getElementById("btn-career-injury-play").addEventListener("click", function () {
         beginSeasonAction("balanced", true);
       });
@@ -759,18 +768,18 @@
     var showAgentOffer = !career.hasAgent && career.money >= AGENT_COST;
 
     content.innerHTML =
-      '<p style="text-align:center;color:var(--text-dim);">חנות שדרוגים - השקיעו מהכסף שצברתם (בבנק: ₪' + career.money.toLocaleString() + "):</p>" +
+      '<p style="text-align:center;color:var(--text-dim);">' + window.I18n.t("career.shopPrompt", { money: career.money.toLocaleString() }) + "</p>" +
       '<div class="system-select-grid" id="career-shop-grid"></div>' +
-      '<p style="text-align:center;color:var(--text-dim);">מטרה לעונה:</p>' +
+      '<p style="text-align:center;color:var(--text-dim);">' + window.I18n.t("career.goalPrompt") + "</p>" +
       '<div class="system-select-grid" id="career-goal-grid"></div>' +
-      '<p style="text-align:center;color:var(--text-dim);">בחרו על מה תתמקדו באימונים העונה:</p>' +
+      '<p style="text-align:center;color:var(--text-dim);">' + window.I18n.t("career.proFocusPrompt") + "</p>" +
       '<div class="system-select-grid" id="career-focus-grid"></div>' +
       (showAgentOffer
-        ? '<div style="text-align:center;margin-top:10px;"><button class="secondary" id="btn-career-hire-agent">לשכור סוכן מקצועי (₪' + AGENT_COST.toLocaleString() + ")</button></div>"
+        ? '<div style="text-align:center;margin-top:10px;"><button class="secondary" id="btn-career-hire-agent">' + window.I18n.t("career.hireAgentBtn", { cost: AGENT_COST.toLocaleString() }) + "</button></div>"
         : "") +
-      '<div style="text-align:center;margin-top:10px;"><button class="secondary" id="btn-career-stats">📊 סטטיסטיקת קריירה</button></div>' +
+      '<div style="text-align:center;margin-top:10px;"><button class="secondary" id="btn-career-stats">' + window.I18n.t("career.statsBtn") + "</button></div>" +
       (career.age >= RETIRE_MIN_AGE
-        ? '<div style="text-align:center;margin-top:10px;"><button class="secondary" id="btn-career-retire-now">לשקול פרישה</button></div>'
+        ? '<div style="text-align:center;margin-top:10px;"><button class="secondary" id="btn-career-retire-now">' + window.I18n.t("career.considerRetireBtn") + "</button></div>"
         : "");
 
     document.getElementById("btn-career-stats").addEventListener("click", function () {
@@ -879,34 +888,34 @@
     if (success) {
       if (choice.reputationDelta) {
         career.reputation = clamp(career.reputation + choice.reputationDelta, 0, 100);
-        changes.push("מוניטין " + (choice.reputationDelta >= 0 ? "+" : "") + choice.reputationDelta);
+        changes.push(window.I18n.t("career.reputationChangeLine", { delta: (choice.reputationDelta >= 0 ? "+" : "") + choice.reputationDelta }));
       }
       if (choice.moneyDelta) {
         career.money += choice.moneyDelta;
-        changes.push("כסף +₪" + choice.moneyDelta.toLocaleString());
+        changes.push(window.I18n.t("career.moneyChangeLine", { amount: choice.moneyDelta.toLocaleString() }));
       }
       if (choice.coachMeterDelta) {
         career.team.coachMeter = clamp(career.team.coachMeter + choice.coachMeterDelta, 0, 100);
-        changes.push("יחסים עם המאמן " + (choice.coachMeterDelta >= 0 ? "+" : "") + choice.coachMeterDelta);
+        changes.push(window.I18n.t("career.coachChangeLine", { delta: (choice.coachMeterDelta >= 0 ? "+" : "") + choice.coachMeterDelta }));
       }
     } else if (choice.failReputationDelta) {
       career.reputation = clamp(career.reputation + choice.failReputationDelta, 0, 100);
-      changes.push("מוניטין " + choice.failReputationDelta);
+      changes.push(window.I18n.t("career.reputationChangeLine", { delta: choice.failReputationDelta }));
     }
     saveCareer();
     renderEventOutcome(event, choice, success, changes);
   }
 
   function renderEventOutcome(event, choice, success, changes) {
-    document.getElementById("career-hub-title").textContent = event.title + " - " + (success ? "✅ הצליח!" : "❌ לא הצליח");
+    document.getElementById("career-hub-title").textContent = event.title + " - " + (success ? "✅ " + window.I18n.t("career.eventSuccessLabel") : "❌ " + window.I18n.t("career.eventFailLabel"));
     document.getElementById("career-hub-status").textContent = "";
 
     var content = document.getElementById("career-hub-content");
     content.innerHTML =
-      '<div class="career-event-card"><p>בחרתם: ' + choice.label + "</p>" +
-      (changes.length ? changes.map(function (c) { return "<p>" + c + "</p>"; }).join("") : "<p>אין השפעה ישירה הפעם.</p>") +
+      '<div class="career-event-card"><p>' + window.I18n.t("career.chosenLabel", { choice: choice.label }) + "</p>" +
+      (changes.length ? changes.map(function (c) { return "<p>" + c + "</p>"; }).join("") : "<p>" + window.I18n.t("career.noDirectEffect") + "</p>") +
       "</div>" +
-      '<div class="final-actions"><button id="btn-event-outcome-next">המשך לעונה &raquo;</button></div>';
+      '<div class="final-actions"><button id="btn-event-outcome-next">' + window.I18n.t("career.continueToSeasonBtn") + "</button></div>";
 
     document.getElementById("btn-event-outcome-next").addEventListener("click", function () {
       finalizeSeason(pendingFocus);
@@ -1003,13 +1012,13 @@
     if (shieldActive) career.injuryShieldActive = false;
 
     var awards = [];
-    if (starter && ppg >= 18 && Math.random() < 0.4) awards.push("נבחר לחמישיית העל של העונה");
+    if (starter && ppg >= 18 && Math.random() < 0.4) awards.push("allStar");
     var champion = wins >= 6 && Math.random() < 0.25;
-    if (champion) awards.push("אלופת העונה!");
+    if (champion) awards.push("seasonChampion");
 
     var qualifiesNT = (myOffense + myDefense) / 2 >= 78 && career.reputation >= 40;
     career.onNationalTeam = qualifiesNT && Math.random() < 0.5;
-    var specialEvent = career.onNationalTeam && career.age % 4 === 0 ? "יורובאסקט" : null;
+    var specialEvent = career.onNationalTeam && career.age % 4 === 0 ? "euroBasket" : null;
 
     var standing = computeLeagueStanding(wins, losses);
 
@@ -1147,38 +1156,40 @@
   }
 
   function renderRecap(record) {
-    document.getElementById("career-hub-title").textContent = "סיכום עונה - גיל " + record.age;
+    document.getElementById("career-hub-title").textContent = window.I18n.t("career.recapTitle", { age: record.age });
     document.getElementById("career-hub-status").innerHTML = ratingHeaderHtml();
 
     var lines = [];
-    lines.push("אימון שנבחר: " + record.focusLabel);
-    lines.push("תפקיד: " + (record.starter ? "חמישייה פותחת" : "ספסל"));
-    lines.push("שיא עונתי: " + record.wins + "-" + record.losses);
-    lines.push("מיקום בטבלה: " + record.leagueRank + " מתוך " + record.leagueTotal);
-    lines.push("ממוצע נקודות: " + record.ppg);
+    lines.push(window.I18n.t("career.trainingChosenLine", { focus: record.focusLabel }));
+    lines.push(window.I18n.t("career.roleLine", { role: (record.starter ? window.I18n.t("common.starters") : window.I18n.t("common.bench")) }));
+    lines.push(window.I18n.t("career.seasonRecordLine", { wins: record.wins, losses: record.losses }));
+    lines.push(window.I18n.t("career.leagueRankLine", { rank: record.leagueRank, total: record.leagueTotal }));
+    lines.push(window.I18n.t("career.ppgLine", { ppg: record.ppg }));
     if (record.champion) {
-      lines.push("🏆 אלופת העונה!");
+      lines.push("🏆 " + window.I18n.t("career.awards.seasonChampion"));
       window.Effects.confetti();
     }
     record.awards.forEach(function (a) {
-      if (a !== "אלופת העונה!") lines.push("🌟 " + a);
+      if (a !== "seasonChampion") lines.push("🌟 " + window.I18n.t("career.awards." + a));
     });
-    if (record.onNationalTeam) lines.push("🇪🇺 נבחרתם לנבחרת הלאומית!");
-    if (record.specialEvent) lines.push("🌍 " + record.specialEvent + " - חוויה בינלאומית מיוחדת");
-    if (record.injuryEvent) lines.push("🩹 נפצעתם (" + (record.injuryEvent.severe ? "פציעה קשה" : "פציעה קלה") + ")");
-    if (record.shieldUsed && !record.injuryEvent) lines.push("🛡️ אימון מניעת הפציעות עבד - נשארתם בריאים!");
+    if (record.onNationalTeam) lines.push("🇪🇺 " + window.I18n.t("career.nationalTeamCalledUp"));
+    if (record.specialEvent) lines.push("🌍 " + window.I18n.t("career.specialEventLine", { event: window.I18n.t("career.specialEvents." + record.specialEvent) }));
+    if (record.injuryEvent) lines.push("🩹 " + window.I18n.t("career.injuredLine", { severity: (record.injuryEvent.severe ? window.I18n.t("career.severeInjury") : window.I18n.t("career.mildInjury")) }));
+    if (record.shieldUsed && !record.injuryEvent) lines.push("🛡️ " + window.I18n.t("career.injuryShieldWorked"));
     if (record.goalLabel) {
-      lines.push((record.goalAchieved ? "🎯 יעד הושג: " : "❌ יעד לא הושג: ") + record.goalLabel);
+      lines.push((record.goalAchieved ? "🎯 " + window.I18n.t("career.goalAchievedLine", { goal: record.goalLabel }) : "❌ " + window.I18n.t("career.goalMissedLine", { goal: record.goalLabel })));
     }
-    if (record.released) lines.push("😬 הקבוצה החליטה לא להאריך את החוזה שלכם");
-    if (record.fanFavoriteJustEarned) lines.push("❤️ הפכתם לאהובי הקהל אצל " + career.team.label + "!");
+    if (record.released) lines.push("😬 " + window.I18n.t("career.releasedLine"));
+    if (record.fanFavoriteJustEarned) lines.push("❤️ " + window.I18n.t("career.fanFavoriteEarnedLine", { team: career.team.label }));
 
-    var moneyLine = "כסף שהורווח העונה: ₪" + record.moneyEarned.toLocaleString() + " &middot; בנק כולל: ₪" + career.money.toLocaleString();
-    var coachLine = "יחסים עם המאמן: " +
-      (record.fitsSystem ? "מתאימים לשיטת המאמן" : "לא מתאימים לשיטת המאמן") +
-      " (" + (record.coachMeterDelta >= 0 ? "+" : "") + record.coachMeterDelta + ") &middot; כעת: " + career.team.coachMeter + "/100";
-    var repLine = "מוניטין: " + (record.reputationDelta >= 0 ? "+" : "") + record.reputationDelta +
-      " &middot; כעת: " + reputationLabel(career.reputation);
+    var moneyLine = window.I18n.t("career.moneyLine", { earned: record.moneyEarned.toLocaleString(), total: career.money.toLocaleString() });
+    var coachLine = window.I18n.t("career.coachLine", {
+      fitStatus: (record.fitsSystem ? window.I18n.t("career.fitsSystemYes") : window.I18n.t("career.fitsSystemNo")),
+      delta: (record.coachMeterDelta >= 0 ? "+" : "") + record.coachMeterDelta, value: career.team.coachMeter,
+    });
+    var repLine = window.I18n.t("career.repLine", {
+      delta: (record.reputationDelta >= 0 ? "+" : "") + record.reputationDelta, label: reputationLabel(career.reputation),
+    });
 
     var milestoneBanner = record.milestonesHit && record.milestonesHit.length
       ? '<div class="career-milestone-banner">' +
@@ -1196,7 +1207,7 @@
       "<p>" + coachLine + "</p>" +
       "<p>" + repLine + "</p>" +
       "</div>" +
-      '<div class="final-actions"><button id="btn-career-next">המשך &raquo;</button></div>';
+      '<div class="final-actions"><button id="btn-career-next">' + window.I18n.t("career.continueBtn") + "</button></div>";
 
     document.getElementById("btn-career-next").addEventListener("click", function () {
       if (record.secondaryUnlockPending) {
@@ -1220,20 +1231,20 @@
   }
 
   function renderSecondaryArchetypeUnlock() {
-    document.getElementById("career-hub-title").textContent = "🌟 פריצת דרך בקריירה!";
+    document.getElementById("career-hub-title").textContent = "🌟 " + window.I18n.t("career.secondaryUnlockTitle");
     document.getElementById("career-hub-status").innerHTML = ratingHeaderHtml();
 
     var options = window.RatingArchetypes.filter(function (a) { return a.id !== career.archetype.id; });
     var content = document.getElementById("career-hub-content");
     content.innerHTML =
-      '<p style="text-align:center;color:var(--text-dim);">הגעתם לרמה חדשה - בחרו תכונת אופי משנית שתתווסף לתכונה הראשית שלכם:</p>' +
+      '<p style="text-align:center;color:var(--text-dim);">' + window.I18n.t("career.secondaryUnlockPrompt") + "</p>" +
       '<div class="system-select-grid" id="career-secondary-grid"></div>';
 
     var grid = document.getElementById("career-secondary-grid");
     options.forEach(function (a) {
       var btn = document.createElement("button");
       btn.className = "system-card";
-      btn.innerHTML = '<div class="system-name">' + a.label + '</div><div class="system-desc">' + a.desc + "</div>";
+      btn.innerHTML = '<div class="system-name">' + window.RatingArchetypesAPI.label(a) + '</div><div class="system-desc">' + window.RatingArchetypesAPI.desc(a) + "</div>";
       btn.addEventListener("click", function () {
         career.secondaryArchetype = a;
         saveCareer();
@@ -1244,7 +1255,7 @@
   }
 
   function renderCareerStatsScreen(returnFn) {
-    document.getElementById("career-hub-title").textContent = "📊 סטטיסטיקת קריירה";
+    document.getElementById("career-hub-title").textContent = window.I18n.t("career.statsBtn");
     document.getElementById("career-hub-status").innerHTML = ratingHeaderHtml();
 
     var totals = computeCareerTotals();
@@ -1258,15 +1269,15 @@
     var content = document.getElementById("career-hub-content");
     content.innerHTML =
       '<div class="career-event-card">' +
-      "<p>שם: " + career.name + " &middot; עמדה: " + career.position + " &middot; גיל נוכחי: " + career.age + "</p>" +
-      "<p>עונות אקדמיה: " + academySeasons + " &middot; עונות מקצועניות: " + totals.proSeasons + "</p>" +
-      "<p>סה\"כ ניצחונות קריירה: " + totals.wins + " &middot; ממוצע נקודות לעונה: " + avgPpg + "</p>" +
-      "<p>אליפויות: " + totals.trophies + " &middot; שיא דירוג עד כה: " + totals.peakRating + "</p>" +
-      "<p>סה\"כ הכנסות: ₪" + career.money.toLocaleString() + "</p>" +
-      "<p>קבוצה נוכחית: " + (career.team ? career.team.label : "-") + (career.fanFavorite ? " &middot; ❤️ אהובי הקהל" : "") + "</p>" +
-      "<p>שיטת אופי: " + career.archetype.label + (career.secondaryArchetype ? " + " + career.secondaryArchetype.label : "") + "</p>" +
+      "<p>" + window.I18n.t("career.statsNameLine", { name: career.name, position: career.position, age: career.age }) + "</p>" +
+      "<p>" + window.I18n.t("career.statsSeasonsLine", { academySeasons: academySeasons, proSeasons: totals.proSeasons }) + "</p>" +
+      "<p>" + window.I18n.t("career.statsWinsLine", { wins: totals.wins, ppg: avgPpg }) + "</p>" +
+      "<p>" + window.I18n.t("career.statsTrophiesLine", { trophies: totals.trophies, peak: totals.peakRating }) + "</p>" +
+      "<p>" + window.I18n.t("career.statsEarningsLine", { money: career.money.toLocaleString() }) + "</p>" +
+      "<p>" + window.I18n.t("career.statsCurrentTeamLine", { team: (career.team ? career.team.label : "-") }) + (career.fanFavorite ? " &middot; ❤️ " + window.I18n.t("career.fanFavoriteTag") : "") + "</p>" +
+      "<p>" + window.I18n.t("career.statsArchetypeLine", { archetype: window.RatingArchetypesAPI.label(career.archetype) + (career.secondaryArchetype ? " + " + window.RatingArchetypesAPI.label(career.secondaryArchetype) : "") }) + "</p>" +
       "</div>" +
-      '<div class="final-actions"><button id="btn-career-stats-back">חזרה &raquo;</button></div>';
+      '<div class="final-actions"><button id="btn-career-stats-back">' + window.I18n.t("career.backBtn") + "</button></div>";
 
     document.getElementById("btn-career-stats-back").addEventListener("click", returnFn);
   }
@@ -1281,7 +1292,7 @@
     var staySalary = Math.round(career.contract.salary * (0.9 + career.reputation / 200 + Math.random() * 0.2) * agentMult);
     offers.push({
       club: career.team.label,
-      role: career.team.coachMeter >= 40 ? "חמישייה פותחת" : "ספסל",
+      role: career.team.coachMeter >= 40 ? window.I18n.t("common.starters") : window.I18n.t("common.bench"),
       salary: staySalary,
       stay: true,
       strength: career.team.baseStrength,
@@ -1294,7 +1305,7 @@
       var salary = Math.round(draftRating * 1500 * (0.8 + Math.random() * 0.6) * (1 + career.reputation / 200) * agentMult);
       offers.push({
         club: club,
-        role: strength > 78 ? "ספסל" : "חמישייה פותחת",
+        role: strength > 78 ? window.I18n.t("common.bench") : window.I18n.t("common.starters"),
         salary: salary,
         stay: false,
         strength: strength,
@@ -1306,8 +1317,8 @@
   }
 
   function renderContractOffers() {
-    document.getElementById("career-hub-title").textContent = "חוזה חדש";
-    document.getElementById("career-hub-status").textContent = "החוזה שלכם עם " + career.team.label + " הסתיים";
+    document.getElementById("career-hub-title").textContent = window.I18n.t("career.newContractTitle");
+    document.getElementById("career-hub-status").textContent = window.I18n.t("career.contractEndedStatus", { team: career.team.label });
 
     var offers = generateContractOffers();
     var content = document.getElementById("career-hub-content");
@@ -1318,8 +1329,8 @@
       var btn = document.createElement("button");
       btn.className = "system-card";
       btn.innerHTML =
-        '<div class="system-name">' + window.TeamBadge.html(o.club) + o.club + (o.stay ? " (הישארות)" : "") + "</div>" +
-        '<div class="system-desc">תפקיד: ' + o.role + " &middot; משכורת: ₪" + o.salary.toLocaleString() + "</div>";
+        '<div class="system-name">' + window.TeamBadge.html(o.club) + o.club + (o.stay ? " (" + window.I18n.t("career.staySuffix") + ")" : "") + "</div>" +
+        '<div class="system-desc">' + window.I18n.t("career.offerDesc", { role: o.role, salary: o.salary.toLocaleString() }) + "</div>";
       btn.addEventListener("click", function () {
         acceptContract(o);
       });
@@ -1338,18 +1349,17 @@
   }
 
   function renderContractConfirmation(o) {
-    document.getElementById("career-hub-title").textContent = "החוזה נחתם!";
+    document.getElementById("career-hub-title").textContent = window.I18n.t("career.contractSignedTitle");
     document.getElementById("career-hub-status").textContent = "";
 
     var content = document.getElementById("career-hub-content");
     content.innerHTML =
       '<div class="career-event-card">' +
-      "<p>חתמתם עם <strong>" + o.club + "</strong>" + (o.stay ? " (המשכתם אצל הקבוצה שלכם)" : " (קבוצה חדשה)") + "</p>" +
-      "<p>תפקיד: " + o.role + " &middot; משכורת: ₪" + o.salary.toLocaleString() +
-      " &middot; אורך חוזה: " + career.contract.yearsLeft + " עונות</p>" +
-      (o.stay ? "" : "<p>שיטת המאמן החדשה: " + window.PlaySystemsAPI.label(o.system) + "</p>") +
+      "<p>" + window.I18n.t("career.signedWithLine", { club: "<strong>" + o.club + "</strong>" }) + (o.stay ? " (" + window.I18n.t("career.staySuffixLong") + ")" : " (" + window.I18n.t("career.newClubSuffix") + ")") + "</p>" +
+      "<p>" + window.I18n.t("career.contractDetailsLine", { role: o.role, salary: o.salary.toLocaleString(), years: career.contract.yearsLeft }) + "</p>" +
+      (o.stay ? "" : "<p>" + window.I18n.t("career.newCoachSystemLine", { system: window.PlaySystemsAPI.label(o.system) }) + "</p>") +
       "</div>" +
-      '<div class="final-actions"><button id="btn-contract-confirm-next">המשך &raquo;</button></div>';
+      '<div class="final-actions"><button id="btn-contract-confirm-next">' + window.I18n.t("career.continueBtn") + "</button></div>";
 
     document.getElementById("btn-contract-confirm-next").addEventListener("click", renderSeasonHub);
   }
@@ -1357,14 +1367,14 @@
   // ---------- Retirement ----------
 
   function showRetirePrompt() {
-    document.getElementById("career-hub-title").textContent = "לשקול פרישה?";
+    document.getElementById("career-hub-title").textContent = window.I18n.t("career.retirePromptTitle");
     document.getElementById("career-hub-status").innerHTML = ratingHeaderHtml();
 
     var content = document.getElementById("career-hub-content");
     content.innerHTML =
-      '<div class="career-event-card"><p>האם ברצונכם לפרוש כעת ולסיים את הקריירה?</p>' +
-      '<div class="h2h-setup-buttons"><button id="btn-retire-yes">לפרוש עכשיו</button>' +
-      '<button class="secondary" id="btn-retire-no">להמשיך לשחק</button></div></div>';
+      '<div class="career-event-card"><p>' + window.I18n.t("career.retireQuestion") + "</p>" +
+      '<div class="h2h-setup-buttons"><button id="btn-retire-yes">' + window.I18n.t("career.retireYesBtn") + "</button>" +
+      '<button class="secondary" id="btn-retire-no">' + window.I18n.t("career.retireNoBtn") + "</button></div></div>";
 
     document.getElementById("btn-retire-yes").addEventListener("click", finishCareer);
     document.getElementById("btn-retire-no").addEventListener("click", renderSeasonHub);
@@ -1419,7 +1429,7 @@
       var heightPct = Math.max(8, Math.round(((r.rating - 30) / (99 - 30)) * 100));
       var isPeak = r.rating === peakRounded;
       return (
-        '<div class="chart-bar-wrap" title="גיל ' + r.age + " &middot; " + r.team + " - " + r.rating + '">' +
+        '<div class="chart-bar-wrap" title="' + window.I18n.t("career.chartBarTitle", { age: r.age, team: r.team, rating: r.rating }) + '">' +
         '<div class="chart-bar' + (isPeak ? " peak" : "") + '" style="height:' + heightPct + '%"></div>' +
         '<div class="chart-bar-label">' + r.age + "</div></div>"
       );
@@ -1429,24 +1439,24 @@
       if (r.phase === "academy") {
         return (
           '<div class="player-appearance-row">' +
-          "<span>גיל " + r.age + " &middot; " + r.team + " (אקדמיה)</span>" +
+          "<span>" + window.I18n.t("career.academyRowLabel", { age: r.age, team: r.team }) + "</span>" +
           window.RatingTag.html(r.rating) +
-          (r.breakout ? '<span class="archetype-tag">פריצת דרך</span>' : "") +
+          (r.breakout ? '<span class="archetype-tag">' + window.I18n.t("career.breakoutTag") + "</span>" : "") +
           "</div>"
         );
       }
       return (
         '<div class="player-appearance-row' + (r.champion ? " peak" : "") + '">' +
-        "<span>גיל " + r.age + " &middot; " + r.team + "</span>" +
-        "<span>" + (r.starter ? "פותח" : "ספסל") + "</span>" +
+        "<span>" + window.I18n.t("career.proRowLabel", { age: r.age, team: r.team }) + "</span>" +
+        "<span>" + (r.starter ? window.I18n.t("career.starterShortLabel") : window.I18n.t("common.bench")) + "</span>" +
         window.RatingTag.html(r.rating) +
         "<span>" + r.wins + "-" + r.losses + "</span>" +
-        "<span>" + r.ppg + " נק'</span>" +
-        (r.champion ? '<span class="archetype-tag">🏆 אלופים</span>' : "") +
-        (r.onNationalTeam ? '<span class="archetype-tag">🇪🇺 נבחרת</span>' : "") +
+        "<span>" + window.I18n.t("career.ppgSuffix", { ppg: r.ppg }) + "</span>" +
+        (r.champion ? '<span class="archetype-tag">🏆 ' + window.I18n.t("career.championsTag") + "</span>" : "") +
+        (r.onNationalTeam ? '<span class="archetype-tag">🇪🇺 ' + window.I18n.t("career.nationalTeamChipTag") + "</span>" : "") +
         (r.awards && r.awards.length
-          ? r.awards.filter(function (a) { return a !== "אלופת העונה!"; })
-              .map(function (a) { return '<span class="archetype-tag">🌟 ' + a + "</span>"; }).join("")
+          ? r.awards.filter(function (a) { return a !== "seasonChampion"; })
+              .map(function (a) { return '<span class="archetype-tag">🌟 ' + window.I18n.t("career.awards." + a) + "</span>"; }).join("")
           : "") +
         "</div>"
       );
@@ -1469,17 +1479,17 @@
     var ceremonyHtml = "";
     if (peakRounded >= 80 && mostTeam) {
       ceremonyHtml =
-        '<div class="career-event-card"><h3>🎉 טקס פרישה מיוחד</h3>' +
-        "<p>קריירה יוצאת דופן! " + mostTeam + " (" + mostCount + " עונות) תזכור אתכם לתמיד. שיא דירוג של " +
-        peakRounded + " מציב אתכם בין השחקנים הגדולים שההיסטוריה זוכרת.</p></div>";
+        '<div class="career-event-card"><h3>🎉 ' + window.I18n.t("career.ceremonyTitle") + "</h3>" +
+        "<p>" + window.I18n.t("career.ceremonyText", { team: mostTeam, count: mostCount, peak: peakRounded }) + "</p></div>";
     }
 
     content.innerHTML =
       '<h2 class="player-profile-name">' + career.name + "</h2>" +
       '<p class="player-profile-summary">' +
-      career.position + " &middot; פרש/ה בגיל " + career.retirementAge + " &middot; שיא דירוג " + peakRounded +
-      " &middot; " + summary.teams.length + " קבוצות &middot; " + summary.trophies + ' אליפויות &middot; סה"כ הכנסות: ₪' +
-      career.money.toLocaleString() +
+      window.I18n.t("career.summaryLine", {
+        position: career.position, retireAge: career.retirementAge, peak: peakRounded,
+        teams: summary.teams.length, trophies: summary.trophies, money: career.money.toLocaleString(),
+      }) +
       "</p>" +
       ceremonyHtml +
       '<div class="player-rating-chart">' + chartBars + "</div>" +

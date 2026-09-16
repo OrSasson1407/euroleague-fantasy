@@ -265,7 +265,7 @@
         window.RatingTag.html(player.rating) +
         (typeof player.offRating === "number" ? '<span class="off-tag">' + window.I18n.t("common.offAbbr") + " " + player.offRating + "</span>" : "") +
         (typeof player.defRating === "number" ? '<span class="def-tag">' + window.I18n.t("common.defAbbr") + " " + player.defRating + "</span>" : "") +
-        (player.archetype ? '<span class="archetype-tag">' + player.archetype.label + "</span>" : "") +
+        (player.archetype ? '<span class="archetype-tag">' + window.RatingArchetypesAPI.label(player.archetype) + "</span>" : "") +
         (taken ? '<span class="taken-tag">' + window.I18n.t("common.takenTag") + "</span>" : (noRoomAtAll ? '<span class="taken-tag">' + window.I18n.t("common.slotFullTag") + "</span>" : ""));
       card.appendChild(info);
 

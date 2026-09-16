@@ -7,14 +7,25 @@
   // a seeded hash, so it's stable across reloads but effectively "random for now"
   // until real per-attribute research replaces it.
 
+  // label/desc are resolved through window.I18n.t() (see RatingArchetypesAPI
+  // below) rather than stored here, so every caller that displays an
+  // archetype automatically follows the current language.
   var ARCHETYPES = [
-    { id: "sharpshooter", label: "יורה מטווח", desc: "בונוס קטן להתקפה", offBonus: 2, defBonus: 0 },
-    { id: "anchor", label: "עוגן הגנתי", desc: "בונוס קטן להגנה", offBonus: 0, defBonus: 2 },
-    { id: "playmaker", label: "פליימייקר", desc: "תורם קטן לשני הצדדים", offBonus: 1, defBonus: 1 },
-    { id: "clutch", label: "קלאץ'", desc: "יציב תחת לחץ", offBonus: 0, defBonus: 0 },
-    { id: "wildcard", label: "בלתי צפוי", desc: "יכול להפתיע לטובה ולרעה", offBonus: 0, defBonus: 0 },
-    { id: "allaround", label: "כל-סביבי", desc: "משחק מאוזן", offBonus: 0, defBonus: 0 },
+    { id: "sharpshooter", offBonus: 2, defBonus: 0 },
+    { id: "anchor", offBonus: 0, defBonus: 2 },
+    { id: "playmaker", offBonus: 1, defBonus: 1 },
+    { id: "clutch", offBonus: 0, defBonus: 0 },
+    { id: "wildcard", offBonus: 0, defBonus: 0 },
+    { id: "allaround", offBonus: 0, defBonus: 0 },
   ];
+
+  function archetypeLabel(a) {
+    return a ? window.I18n.t("archetypes." + a.id + ".label") : "";
+  }
+
+  function archetypeDesc(a) {
+    return a ? window.I18n.t("archetypes." + a.id + ".desc") : "";
+  }
 
   function hashString(str) {
     var h = 2166136261;
@@ -63,4 +74,5 @@
   });
 
   window.RatingArchetypes = ARCHETYPES;
+  window.RatingArchetypesAPI = { label: archetypeLabel, desc: archetypeDesc };
 })();

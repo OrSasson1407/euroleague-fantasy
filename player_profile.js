@@ -26,8 +26,8 @@
       resultsEl.innerHTML =
         '<div class="empty-state">' +
           '<div class="empty-state-icon" aria-hidden="true">🔍</div>' +
-          '<p class="empty-state-text">חפשו שחקן מהיסטוריית היורוליג</p>' +
-          '<p class="empty-state-hint">הקלידו לפחות 2 תווים, או סננו לפי עמדה/עידן/דירוג בלי להקליד שם</p>' +
+          '<p class="empty-state-text">' + window.I18n.t("playerSearch.emptyText") + "</p>" +
+          '<p class="empty-state-hint">' + window.I18n.t("playerSearch.emptyHint") + "</p>" +
         "</div>";
       return;
     }
@@ -40,13 +40,13 @@
     });
     if (matches.length === 0) {
       var noResultsText = trimmed.length >= 2
-        ? 'לא נמצאו שחקנים בשם "' + escapeHtml(trimmed) + '" התואמים לסינון'
-        : "לא נמצאו שחקנים התואמים לסינון שנבחר";
+        ? window.I18n.t("playerSearch.noResultsNamed", { query: escapeHtml(trimmed) })
+        : window.I18n.t("playerSearch.noResultsFiltered");
       resultsEl.innerHTML =
         '<div class="empty-state">' +
           '<div class="empty-state-icon" aria-hidden="true">🕵️</div>' +
           '<p class="empty-state-text">' + noResultsText + "</p>" +
-          '<p class="empty-state-hint">נסו להרחיב את הסינון או לבדוק את האיות</p>' +
+          '<p class="empty-state-hint">' + window.I18n.t("playerSearch.noResultsHint") + "</p>" +
         "</div>";
       return;
     }
@@ -56,8 +56,7 @@
       btn.className = "player-search-result";
       btn.innerHTML =
         '<span class="name">' + entry.name + "</span>" +
-        '<span class="meta">' + entry.seasonsCount + " עונות מתועדות &middot; שיא דירוג " +
-          (typeof entry.bestAppearance.rating === "number" ? entry.bestAppearance.rating : "-") + "</span>";
+        '<span class="meta">' + window.I18n.t("playerSearch.seasonsBestRating", { count: entry.seasonsCount, rating: (typeof entry.bestAppearance.rating === "number" ? entry.bestAppearance.rating : "-") }) + "</span>";
       btn.addEventListener("click", function () {
         renderProfile(entry);
       });
@@ -87,12 +86,12 @@
     var rows = entry.appearances.slice().reverse().map(function (a) {
       return (
         '<div class="player-appearance-row' + (a === entry.bestAppearance ? " peak" : "") + '">' +
-        "<span>" + a.team + " &middot; עונת " + formatSeason(a.season) + "</span>" +
+        "<span>" + a.team + " &middot; " + window.I18n.t("single.seasonLabel", { season: formatSeason(a.season) }) + "</span>" +
         "<span>" + (a.position || "-") + "</span>" +
         (typeof a.rating === "number" ? window.RatingTag.html(a.rating) : '<span class="rating-tag">-</span>') +
-        (typeof a.offRating === "number" ? '<span class="off-tag">התק׳ ' + a.offRating + "</span>" : "") +
-        (typeof a.defRating === "number" ? '<span class="def-tag">הג׳ ' + a.defRating + "</span>" : "") +
-        (a.archetype ? '<span class="archetype-tag">' + a.archetype.label + "</span>" : "") +
+        (typeof a.offRating === "number" ? '<span class="off-tag">' + window.I18n.t("common.offAbbr") + " " + a.offRating + "</span>" : "") +
+        (typeof a.defRating === "number" ? '<span class="def-tag">' + window.I18n.t("common.defAbbr") + " " + a.defRating + "</span>" : "") +
+        (a.archetype ? '<span class="archetype-tag">' + window.RatingArchetypesAPI.label(a.archetype) + "</span>" : "") +
         "</div>"
       );
     }).join("");
@@ -100,13 +99,16 @@
     container.innerHTML =
       '<h2 class="player-profile-name">' + entry.name + "</h2>" +
       '<p class="player-profile-summary">' +
-        entry.seasonsCount + " עונות מתועדות &middot; " + entry.teamsCount + " קבוצות שונות &middot; שיא: " +
-        '<strong>' + (typeof entry.bestAppearance.rating === "number" ? entry.bestAppearance.rating : "-") + "</strong>" +
+        window.I18n.t("playerSearch.summaryLine", {
+          seasons: entry.seasonsCount,
+          teams: entry.teamsCount,
+          rating: (typeof entry.bestAppearance.rating === "number" ? entry.bestAppearance.rating : "-"),
+        }) +
         " (" + entry.bestAppearance.team + " " + formatSeason(entry.bestAppearance.season) + ")" +
       "</p>" +
       '<div class="player-rating-chart">' + chartBars + "</div>" +
       '<div class="player-appearances-list">' + rows + "</div>" +
-      '<button class="secondary" id="btn-player-profile-back">&raquo; חזרה לתוצאות</button>';
+      '<button class="secondary" id="btn-player-profile-back">&raquo; ' + window.I18n.t("playerSearch.backToResults") + "</button>";
 
     document.getElementById("btn-player-profile-back").addEventListener("click", function () {
       container.hidden = true;

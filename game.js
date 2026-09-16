@@ -656,7 +656,7 @@
         '<div class="player-card-meta">' +
           (typeof entry.offRating === "number" ? '<span class="off-tag">' + window.I18n.t("common.offAbbr") + " " + entry.offRating + "</span>" : "") +
           (typeof entry.defRating === "number" ? '<span class="def-tag">' + window.I18n.t("common.defAbbr") + " " + entry.defRating + "</span>" : "") +
-          (entry.archetype ? '<span class="archetype-tag">' + entry.archetype.label + "</span>" : "") +
+          (entry.archetype ? '<span class="archetype-tag">' + window.RatingArchetypesAPI.label(entry.archetype) + "</span>" : "") +
           fitTag +
         "</div>";
       (entry.slot === "starter" ? startersGrid : benchGrid).appendChild(card);

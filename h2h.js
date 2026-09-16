@@ -524,7 +524,7 @@
         '<div class="meta">' +
           (typeof pick.offRating === "number" ? '<span class="off-tag">' + window.I18n.t("common.offAbbr") + " " + pick.offRating + "</span>" : "") +
           (typeof pick.defRating === "number" ? '<span class="def-tag">' + window.I18n.t("common.defAbbr") + " " + pick.defRating + "</span>" : "") +
-          (pick.archetype ? '<span class="archetype-tag">' + pick.archetype.label + "</span>" : "") +
+          (pick.archetype ? '<span class="archetype-tag">' + window.RatingArchetypesAPI.label(pick.archetype) + "</span>" : "") +
         "</div>";
       grid.appendChild(card);
     });
