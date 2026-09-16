@@ -53,21 +53,21 @@
 
 <div id="auth-gate" class="auth-gate-overlay" hidden>
   <div class="auth-gate-box" role="dialog" aria-modal="true" aria-labelledby="auth-gate-title">
-    <h2 id="auth-gate-title" tabindex="-1">ברוכים הבאים!</h2>
-    <p class="auth-gate-desc">
+    <h2 id="auth-gate-title" tabindex="-1" data-i18n="authGate.title">ברוכים הבאים!</h2>
+    <p class="auth-gate-desc" data-i18n="[html]authGate.desc">
       אפשר לשחק כאורח בלי הרשמה - אבל שימו לב: <strong>במצב אורח השיאים והשמירות לא נשמרים</strong> בשום משחקון (טבלת השיאים בבניית סגל, קריירה, באנרים).
       הרשמה עם שם משתמש שומרת את כל אלה, ותפתח בעתיד גם אפשרויות נוספות.
     </p>
     <div class="auth-gate-section">
-      <div class="auth-gate-label">הרשמה</div>
+      <div class="auth-gate-label" data-i18n="authGate.registerLabel">הרשמה</div>
       <div class="auth-register-row">
-        <input type="text" id="auth-username-input" placeholder="שם משתמש..." maxlength="24">
-        <button id="btn-auth-register-submit">הרשמה ושמירת שיאים</button>
+        <input type="text" id="auth-username-input" data-i18n-placeholder="authGate.usernamePlaceholder" placeholder="שם משתמש..." maxlength="24">
+        <button id="btn-auth-register-submit" data-i18n="authGate.registerSubmit">הרשמה ושמירת שיאים</button>
       </div>
       <p class="auth-username-error" id="auth-username-error" hidden></p>
     </div>
-    <div class="auth-gate-divider">או</div>
-    <button class="secondary" id="btn-auth-guest">היכנסו כאורח (בלי שמירה)</button>
+    <div class="auth-gate-divider" data-i18n="common.or">או</div>
+    <button class="secondary" id="btn-auth-guest" data-i18n="authGate.guestEnter">היכנסו כאורח (בלי שמירה)</button>
   </div>
 </div>
 
@@ -76,8 +76,8 @@
     <div id="onboarding-content"></div>
     <div class="onboarding-dots" id="onboarding-dots"></div>
     <div class="onboarding-actions">
-      <button class="secondary" id="btn-onboarding-skip">דלג</button>
-      <button id="btn-onboarding-next">הבא &raquo;</button>
+      <button class="secondary" id="btn-onboarding-skip" data-i18n="common.skip">דלג</button>
+      <button id="btn-onboarding-next" data-i18n="common.next">הבא &raquo;</button>
     </div>
   </div>
 </div>
@@ -124,91 +124,91 @@
 
   <section id="screen-badges" class="screen">
     <div class="center-box" style="padding-top:0;">
-      <h2 style="margin-top:0;">באנרים</h2>
+      <h2 style="margin-top:0;" data-i18n="home.modes.badges.title">🏅 באנרים</h2>
       <p class="badges-progress" id="badges-progress"></p>
     </div>
     <div class="badges-grid" id="badges-grid"></div>
     <div class="final-actions">
-      <button class="secondary" id="btn-home-from-badges">לדף הבית</button>
+      <button class="secondary" id="btn-home-from-badges" data-i18n="common.home">לדף הבית</button>
     </div>
   </section>
 
   <section id="screen-shop" class="screen">
     <div class="center-box" style="padding-top:0;">
-      <h2 style="margin-top:0;">🪙 החנות</h2>
+      <h2 style="margin-top:0;" data-i18n="shop.title">🪙 החנות</h2>
       <div class="shop-balance-display">
         <span class="shop-balance-value" id="shop-balance">0</span>
-        <span class="shop-balance-label">מטבעות</span>
+        <span class="shop-balance-label" data-i18n="shop.coinsLabel">מטבעות</span>
       </div>
-      <p class="shop-hint">מרוויחים 100 מטבעות על כל באנר שנפתח במשחק</p>
+      <p class="shop-hint" data-i18n="shop.hint">מרוויחים 100 מטבעות על כל באנר שנפתח במשחק</p>
     </div>
     <div id="shop-catalog"></div>
     <div class="final-actions">
-      <button class="secondary" id="btn-home-from-shop">לדף הבית</button>
+      <button class="secondary" id="btn-home-from-shop" data-i18n="common.home">לדף הבית</button>
     </div>
   </section>
 
   <section id="screen-profile" class="screen">
     <div class="center-box" style="padding-top:0;">
-      <h2 style="margin-top:0;">👤 הפרופיל שלי</h2>
+      <h2 style="margin-top:0;" data-i18n="profile.title">👤 הפרופיל שלי</h2>
     </div>
     <div id="profile-content"></div>
     <div class="final-actions">
-      <button class="secondary" id="btn-home-from-profile">לדף הבית</button>
+      <button class="secondary" id="btn-home-from-profile" data-i18n="common.home">לדף הבית</button>
     </div>
   </section>
 
   <section id="screen-settings" class="screen">
     <div class="center-box" style="padding-top:0;">
-      <h2 style="margin-top:0;">⚙️ הגדרות</h2>
+      <h2 style="margin-top:0;" data-i18n="settings.title">⚙️ הגדרות</h2>
     </div>
     <div id="settings-content"></div>
     <div class="final-actions">
-      <button class="secondary" id="btn-home-from-settings">לדף הבית</button>
+      <button class="secondary" id="btn-home-from-settings" data-i18n="common.home">לדף הבית</button>
     </div>
   </section>
 
   <section id="screen-about" class="screen">
     <div class="center-box" style="padding-top:0; max-width:560px; margin:0 auto;">
-      <h2 style="margin-top:0;">ℹ️ אודות</h2>
-      <p style="color:var(--text-dim); text-align:right; line-height:1.7;">
+      <h2 style="margin-top:0;" data-i18n="about.title">ℹ️ אודות</h2>
+      <p style="color:var(--text-dim); text-align:start; line-height:1.7;" data-i18n="[html]about.p1">
         <strong>הרכב כל הזמנים - יורוליג</strong> הוא משחק פנטזי חובבני שנבנה סביב היסטוריית היורוליג.
         אין לו קשר רשמי ליורוליג, לקבוצות או לשחקנים המופיעים בו - כל הנתונים משמשים לצורכי משחק בלבד.
       </p>
-      <p style="color:var(--text-dim); text-align:right; line-height:1.7;">
+      <p style="color:var(--text-dim); text-align:start; line-height:1.7;" data-i18n="about.p2">
         דירוגי השחקנים והקבוצות הם הערכה משוחקת שנבנתה במיוחד עבור המשחק, ולא נתון רשמי.
         המשחק פועל כולו בדפדפן שלכם - כל הנתונים האישיים (הישגים, שיאים, קריירה) נשמרים מקומית במכשיר, ולא נשלחים לשום שרת.
       </p>
-      <p style="color:var(--text-dim); text-align:center;">גרסה 1.2</p>
+      <p style="color:var(--text-dim); text-align:center;" data-i18n="about.version">גרסה 1.2</p>
     </div>
     <div class="final-actions">
-      <button class="secondary" id="btn-home-from-about">לדף הבית</button>
+      <button class="secondary" id="btn-home-from-about" data-i18n="common.home">לדף הבית</button>
     </div>
   </section>
 
   <section id="screen-player-search" class="screen">
     <div class="center-box" style="padding-top:0;">
-      <h2 style="margin-top:0;">פרופיל שחקן</h2>
-      <input type="text" id="player-search-input" class="player-search-input" placeholder="הקלידו שם שחקן, למשל Nikos Zisis..." />
+      <h2 style="margin-top:0;" data-i18n="playerSearch.title">פרופיל שחקן</h2>
+      <input type="text" id="player-search-input" class="player-search-input" data-i18n-placeholder="playerSearch.inputPlaceholder" placeholder="הקלידו שם שחקן, למשל Nikos Zisis..." />
     </div>
     <div class="era-filter">
-      <div class="era-filter-label">עמדה:</div>
+      <div class="era-filter-label" data-i18n="common.position">עמדה:</div>
       <div class="era-filter-buttons" id="player-search-position-buttons">
-        <button class="era-btn selected" data-pos="">הכל</button>
-        <button class="era-btn" data-pos="Guard">מגן</button>
-        <button class="era-btn" data-pos="Forward">חלוץ</button>
-        <button class="era-btn" data-pos="Center">סנטר</button>
+        <button class="era-btn selected" data-pos="" data-i18n="common.positionAll">הכל</button>
+        <button class="era-btn" data-pos="Guard" data-i18n="common.posGuard">מגן</button>
+        <button class="era-btn" data-pos="Forward" data-i18n="common.posForward">חלוץ</button>
+        <button class="era-btn" data-pos="Center" data-i18n="common.posCenter">סנטר</button>
       </div>
-      <div class="era-filter-label" style="margin-top:10px;">עידן:</div>
+      <div class="era-filter-label" style="margin-top:10px;" data-i18n="common.era">עידן:</div>
       <div class="era-filter-buttons" id="player-search-era-buttons">
-        <button class="era-btn selected" data-min="0" data-max="9999">כל הזמנים</button>
-        <button class="era-btn" data-min="2000" data-max="2009">2000-2009</button>
-        <button class="era-btn" data-min="2010" data-max="2019">2010-2019</button>
-        <button class="era-btn" data-min="2020" data-max="2026">2020-2026</button>
+        <button class="era-btn selected" data-min="0" data-max="9999" data-i18n="common.eraAll">כל הזמנים</button>
+        <button class="era-btn" data-min="2000" data-max="2009" data-i18n="common.era2000s">2000-2009</button>
+        <button class="era-btn" data-min="2010" data-max="2019" data-i18n="common.era2010s">2010-2019</button>
+        <button class="era-btn" data-min="2020" data-max="2026" data-i18n="common.era2020s">2020-2026</button>
       </div>
-      <div class="era-filter-label" style="margin-top:10px;">דירוג מינימלי:</div>
+      <div class="era-filter-label" style="margin-top:10px;" data-i18n="common.minRating">דירוג מינימלי:</div>
       <div class="era-filter-buttons" id="player-search-rating-buttons">
-        <button class="era-btn selected" data-min-rating="0">הכל</button>
+        <button class="era-btn selected" data-min-rating="0" data-i18n="common.positionAll">הכל</button>
         <button class="era-btn" data-min-rating="80">80+</button>
         <button class="era-btn" data-min-rating="85">85+</button>
         <button class="era-btn" data-min-rating="90">90+</button>
@@ -217,65 +217,65 @@
     <div class="player-search-results" id="player-search-results"></div>
     <div class="player-profile" id="player-profile" hidden></div>
     <div class="final-actions">
-      <button class="secondary" id="btn-home-from-player-search">לדף הבית</button>
+      <button class="secondary" id="btn-home-from-player-search" data-i18n="common.home">לדף הבית</button>
     </div>
   </section>
 
   <section id="screen-career-home" class="screen">
     <div class="center-box">
-      <h2 style="margin-top:0;">קריירה</h2>
+      <h2 style="margin-top:0;" data-i18n="career.home.title">קריירה</h2>
       <div id="career-continue-wrap" hidden style="margin-bottom:12px;">
-        <button id="btn-career-continue">המשך קריירה קיימת</button>
+        <button id="btn-career-continue" data-i18n="career.home.continueBtn">המשך קריירה קיימת</button>
       </div>
-      <button id="btn-career-new">קריירה חדשה</button>
+      <button id="btn-career-new" data-i18n="career.home.newBtn">קריירה חדשה</button>
       <div class="career-last-summary" id="career-last-summary" hidden></div>
-      <div style="margin-top:16px;"><button class="secondary" id="btn-home-from-career-home">חזרה לדף הבית</button></div>
+      <div style="margin-top:16px;"><button class="secondary" id="btn-home-from-career-home" data-i18n="common.backHome">חזרה לדף הבית</button></div>
     </div>
   </section>
 
   <section id="screen-career-create" class="screen">
     <div class="center-box" style="padding-top:0;">
-      <h2 style="margin-top:0;">יצירת שחקן (גיל 16)</h2>
-      <input type="text" id="career-name-input" class="player-search-input" placeholder="שם השחקן..." />
+      <h2 style="margin-top:0;" data-i18n="career.create.title">יצירת שחקן (גיל 16)</h2>
+      <input type="text" id="career-name-input" class="player-search-input" data-i18n-placeholder="career.create.namePlaceholder" placeholder="שם השחקן..." />
     </div>
     <div class="era-filter">
-      <div class="era-filter-label">עמדה:</div>
+      <div class="era-filter-label" data-i18n="common.position">עמדה:</div>
       <div class="era-filter-buttons" id="career-position-buttons">
-        <button class="era-btn selected" data-pos="Guard">מגן</button>
-        <button class="era-btn" data-pos="Forward">חלוץ</button>
-        <button class="era-btn" data-pos="Center">סנטר</button>
+        <button class="era-btn selected" data-pos="Guard" data-i18n="common.posGuard">מגן</button>
+        <button class="era-btn" data-pos="Forward" data-i18n="common.posForward">חלוץ</button>
+        <button class="era-btn" data-pos="Center" data-i18n="common.posCenter">סנטר</button>
       </div>
     </div>
     <div class="era-filter">
-      <div class="era-filter-label">אקדמיה:</div>
+      <div class="era-filter-label" data-i18n="career.create.academyLabel">אקדמיה:</div>
       <div class="system-select-grid" id="career-academy-grid"></div>
     </div>
     <div class="era-filter">
-      <div class="era-filter-label">תכונת אופי התחלתית:</div>
+      <div class="era-filter-label" data-i18n="career.create.archetypeLabel">תכונת אופי התחלתית:</div>
       <div class="system-select-grid" id="career-archetype-grid"></div>
     </div>
     <div class="era-filter">
-      <div class="era-filter-label">רקע:</div>
+      <div class="era-filter-label" data-i18n="career.create.backgroundLabel">רקע:</div>
       <div class="system-select-grid" id="career-background-grid"></div>
     </div>
     <div class="era-filter">
-      <div class="era-filter-label">מצב קושי:</div>
+      <div class="era-filter-label" data-i18n="career.create.difficultyLabel">מצב קושי:</div>
       <div class="system-select-grid" id="career-difficulty-grid"></div>
     </div>
     <div class="era-filter">
-      <div class="era-filter-label">חלוקת נקודות התחלתיות:</div>
+      <div class="era-filter-label" data-i18n="career.create.pointsLabel">חלוקת נקודות התחלתיות:</div>
       <div class="career-points-row">
-        <button class="secondary" id="btn-career-def-plus">⬅ עוד הגנה</button>
+        <button class="secondary" id="btn-career-def-plus" data-i18n="career.create.moreDefense">⬅ עוד הגנה</button>
         <div class="career-points-item">
-          <span>התקפה: <strong id="career-off-points">50</strong></span>
-          <span>הגנה: <strong id="career-def-points">50</strong></span>
+          <span data-i18n="[html]career.create.offensePoints">התקפה: <strong id="career-off-points">50</strong></span>
+          <span data-i18n="[html]career.create.defensePoints">הגנה: <strong id="career-def-points">50</strong></span>
         </div>
-        <button class="secondary" id="btn-career-off-plus">עוד התקפה ➡</button>
+        <button class="secondary" id="btn-career-off-plus" data-i18n="career.create.moreOffense">עוד התקפה ➡</button>
       </div>
     </div>
     <div class="final-actions">
-      <button id="btn-career-start">התחילו קריירה &raquo;</button>
-      <button class="secondary" id="btn-home-from-career-create">לדף הבית</button>
+      <button id="btn-career-start" data-i18n="career.create.startBtn">התחילו קריירה &raquo;</button>
+      <button class="secondary" id="btn-home-from-career-create" data-i18n="common.home">לדף הבית</button>
     </div>
   </section>
 
@@ -286,55 +286,55 @@
     </div>
     <div id="career-hub-content"></div>
     <div class="final-actions">
-      <button class="secondary" id="btn-home-from-career-hub">לדף הבית</button>
+      <button class="secondary" id="btn-home-from-career-hub" data-i18n="common.home">לדף הבית</button>
     </div>
   </section>
 
   <section id="screen-career-summary" class="screen">
     <div class="center-box" style="padding-top:0;">
-      <h2 style="margin-top:0;">סיכום קריירה</h2>
+      <h2 style="margin-top:0;" data-i18n="career.summary.title">סיכום קריירה</h2>
     </div>
     <div id="career-summary-content"></div>
     <div class="final-actions">
-      <button id="btn-career-new-2">קריירה חדשה</button>
-      <button class="secondary" id="btn-home-from-career-summary">לדף הבית</button>
+      <button id="btn-career-new-2" data-i18n="career.home.newBtn">קריירה חדשה</button>
+      <button class="secondary" id="btn-home-from-career-summary" data-i18n="common.home">לדף הבית</button>
     </div>
   </section>
 
   <section id="screen-start" class="screen">
     <div class="center-box">
       <div class="era-filter">
-        <div class="era-filter-label">טווח עידן להרכב:</div>
+        <div class="era-filter-label" data-i18n="single.eraLabel">טווח עידן להרכב:</div>
         <div class="era-filter-buttons" id="era-filter-buttons">
-          <button class="era-btn selected" data-min="0" data-max="9999">כל הזמנים</button>
-          <button class="era-btn" data-min="2000" data-max="2009">2000-2009</button>
-          <button class="era-btn" data-min="2010" data-max="2019">2010-2019</button>
-          <button class="era-btn" data-min="2020" data-max="2026">2020-2026</button>
+          <button class="era-btn selected" data-min="0" data-max="9999" data-i18n="common.eraAll">כל הזמנים</button>
+          <button class="era-btn" data-min="2000" data-max="2009" data-i18n="common.era2000s">2000-2009</button>
+          <button class="era-btn" data-min="2010" data-max="2019" data-i18n="common.era2010s">2010-2019</button>
+          <button class="era-btn" data-min="2020" data-max="2026" data-i18n="common.era2020s">2020-2026</button>
         </div>
       </div>
       <div class="era-filter">
-        <div class="era-filter-label">שיטת משחק (תצוגתית - מראה איזה שחקנים מתאימים להרכב):</div>
+        <div class="era-filter-label" data-i18n="single.systemLabel">שיטת משחק (תצוגתית - מראה איזה שחקנים מתאימים להרכב):</div>
         <div class="system-select-grid" id="single-system-grid"></div>
       </div>
       <div class="era-filter">
-        <div class="era-filter-label">מצב תקציב:</div>
+        <div class="era-filter-label" data-i18n="single.budgetLabel">מצב תקציב:</div>
         <div class="era-filter-buttons" id="budget-mode-buttons">
-          <button class="era-btn selected" data-budget="0">רגיל (בלי מגבלה)</button>
-          <button class="era-btn" data-budget="650">תקציב מוגבל ($650M)</button>
+          <button class="era-btn selected" data-budget="0" data-i18n="single.budgetNormal">רגיל (בלי מגבלה)</button>
+          <button class="era-btn" data-budget="650" data-i18n="single.budgetLimited">תקציב מוגבל ($650M)</button>
         </div>
       </div>
       <div class="era-filter" id="legends-mode-section" hidden>
-        <div class="era-filter-label">🌟 דראפט אגדות (פריט חנות):</div>
+        <div class="era-filter-label" data-i18n="single.legendsLabel">🌟 דראפט אגדות (פריט חנות):</div>
         <div class="era-filter-buttons" id="legends-mode-buttons">
-          <button class="era-btn selected" data-legends="0">רגיל</button>
-          <button class="era-btn" data-legends="1">רק 90+ (אגדות)</button>
+          <button class="era-btn selected" data-legends="0" data-i18n="single.legendsOff">רגיל</button>
+          <button class="era-btn" data-legends="1" data-i18n="single.legendsOn">רק 90+ (אגדות)</button>
         </div>
       </div>
       <p class="career-last-summary" id="single-best-display" hidden></p>
-      <button id="btn-start">התחלת משחק</button>
+      <button id="btn-start" data-i18n="single.startBtn">התחלת משחק</button>
       <div style="margin-top:16px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-        <button class="secondary" id="btn-single-leaderboard">🏆 טבלת השיאים</button>
-        <button class="secondary" id="btn-home-from-start">חזרה לדף הבית</button>
+        <button class="secondary" id="btn-single-leaderboard" data-i18n="single.leaderboardBtn">🏆 טבלת השיאים</button>
+        <button class="secondary" id="btn-home-from-start" data-i18n="common.backHome">חזרה לדף הבית</button>
       </div>
     </div>
   </section>
@@ -344,76 +344,76 @@
     <div class="round-meta" id="round-meta"></div>
     <div class="h2h-status">
       <div class="h2h-player-panel" id="round-starters-panel">
-        <div class="h2h-player-name">חמישייה פותחת</div>
+        <div class="h2h-player-name" data-i18n="common.starters">חמישייה פותחת</div>
         <div class="h2h-slots" id="round-starters-slots"></div>
       </div>
       <div class="h2h-player-panel" id="round-bench-panel">
-        <div class="h2h-player-name">ספסל</div>
+        <div class="h2h-player-name" data-i18n="common.bench">ספסל</div>
         <div class="h2h-slots" id="round-bench-slots"></div>
       </div>
     </div>
     <div class="team-card">
       <div class="team-name" id="round-team"></div>
       <div class="team-season" id="round-season"></div>
-      <button class="secondary reroll-btn" id="btn-reroll">🔄 הגרלה מחדש (<span id="reroll-count">2</span>)</button>
+      <button class="secondary reroll-btn" id="btn-reroll" data-i18n="[html]single.rerollBtn">🔄 הגרלה מחדש (<span id="reroll-count">2</span>)</button>
     </div>
     <div class="players-grid" id="players-grid"></div>
   </section>
 
   <section id="screen-single-lineup" class="screen">
     <div class="center-box" style="padding-top:0;">
-      <h2 style="margin-top:0;">סדרו את ההרכב</h2>
+      <h2 style="margin-top:0;" data-i18n="common.arrangeLineup">סדרו את ההרכב</h2>
     </div>
     <div class="h2h-status">
       <div class="h2h-player-panel" id="single-lineup-starters-panel">
-        <div class="h2h-player-name">חמישייה פותחת</div>
+        <div class="h2h-player-name" data-i18n="common.starters">חמישייה פותחת</div>
         <div class="h2h-slots" id="single-lineup-starters"></div>
       </div>
       <div class="h2h-player-panel" id="single-lineup-bench-panel">
-        <div class="h2h-player-name">ספסל</div>
+        <div class="h2h-player-name" data-i18n="common.bench">ספסל</div>
         <div class="h2h-slots" id="single-lineup-bench"></div>
       </div>
     </div>
     <div class="final-actions">
-      <button id="btn-single-lineup-continue">המשך למסחר &raquo;</button>
-      <button class="secondary" id="btn-home-from-single-lineup">לדף הבית</button>
+      <button id="btn-single-lineup-continue" data-i18n="single.continueToTrade">המשך למסחר &raquo;</button>
+      <button class="secondary" id="btn-home-from-single-lineup" data-i18n="common.home">לדף הבית</button>
     </div>
   </section>
 
   <section id="screen-single-trade" class="screen">
     <div class="center-box" style="padding-top:0;">
-      <h2 style="margin-top:0;">מסחר אחרון</h2>
+      <h2 style="margin-top:0;" data-i18n="single.tradeTitle">מסחר אחרון</h2>
       <p class="career-last-summary" id="single-trade-count"></p>
       <p class="career-last-summary" id="single-trade-note"></p>
     </div>
     <div class="squad-grid" id="single-trade-grid"></div>
     <div class="final-actions" id="single-trade-offer-actions" hidden>
-      <button class="secondary" id="btn-single-trade-cancel">❌ בטל, השאירו את השחקן הנוכחי</button>
+      <button class="secondary" id="btn-single-trade-cancel" data-i18n="single.tradeCancel">❌ בטל, השאירו את השחקן הנוכחי</button>
     </div>
     <div class="final-actions">
-      <button id="btn-single-trade-continue">המשך לסיכום &raquo;</button>
-      <button class="secondary" id="btn-home-from-single-trade">לדף הבית</button>
+      <button id="btn-single-trade-continue" data-i18n="single.continueToSummary">המשך לסיכום &raquo;</button>
+      <button class="secondary" id="btn-home-from-single-trade" data-i18n="common.home">לדף הבית</button>
     </div>
   </section>
 
   <section id="screen-final" class="screen">
     <div class="center-box" style="padding-top:0;">
-      <h2 style="margin-top:0;">ההרכב שלכם מוכן!</h2>
+      <h2 style="margin-top:0;" data-i18n="single.finalTitle">ההרכב שלכם מוכן!</h2>
       <div class="squad-rating-summary" id="squad-rating-summary"></div>
     </div>
     <div class="squad-section">
-      <h2>חמישייה פותחת</h2>
+      <h2 data-i18n="common.starters">חמישייה פותחת</h2>
       <div class="squad-grid" id="starters-grid"></div>
     </div>
     <div class="squad-section">
-      <h2>ספסל</h2>
+      <h2 data-i18n="common.bench">ספסל</h2>
       <div class="squad-grid" id="bench-grid"></div>
     </div>
     <div class="final-actions">
-      <button id="btn-single-share">🖼️ כרטיס לשיתוף</button>
-      <button id="btn-single-exhibition">🏀 משחק תערוכה</button>
-      <button id="btn-restart">משחק חדש</button>
-      <button class="secondary" id="btn-home-from-final">לדף הבית</button>
+      <button id="btn-single-share" data-i18n="single.shareBtn">🖼️ כרטיס לשיתוף</button>
+      <button id="btn-single-exhibition" data-i18n="single.exhibitionBtn">🏀 משחק תערוכה</button>
+      <button id="btn-restart" data-i18n="common.newGame">משחק חדש</button>
+      <button class="secondary" id="btn-home-from-final" data-i18n="common.home">לדף הבית</button>
     </div>
   </section>
 
@@ -422,73 +422,73 @@
       <div class="single-share-card" id="single-share-card"></div>
     </div>
     <div class="final-actions">
-      <button class="secondary" id="btn-single-share-back">חזרה &raquo;</button>
+      <button class="secondary" id="btn-single-share-back" data-i18n="common.back">חזרה &raquo;</button>
     </div>
   </section>
 
   <section id="screen-single-exhibition" class="screen">
     <div class="center-box" style="padding-top:0;">
-      <h2 style="margin-top:0;">משחק תערוכה</h2>
+      <h2 style="margin-top:0;" data-i18n="single.exhibitionTitle">משחק תערוכה</h2>
     </div>
     <div id="single-exhibition-content"></div>
     <div class="final-actions">
-      <button class="secondary" id="btn-single-exhibition-back">חזרה &raquo;</button>
+      <button class="secondary" id="btn-single-exhibition-back" data-i18n="common.back">חזרה &raquo;</button>
     </div>
   </section>
 
   <section id="screen-single-leaderboard" class="screen">
     <div class="center-box" style="padding-top:0;">
-      <h2 style="margin-top:0;">🏆 טבלת השיאים</h2>
+      <h2 style="margin-top:0;" data-i18n="single.leaderboardBtn">🏆 טבלת השיאים</h2>
     </div>
     <div id="single-leaderboard-list"></div>
     <div class="final-actions">
-      <button class="secondary" id="btn-home-from-single-leaderboard">לדף הבית</button>
+      <button class="secondary" id="btn-home-from-single-leaderboard" data-i18n="common.home">לדף הבית</button>
     </div>
   </section>
 
   <section id="screen-h2h-setup" class="screen">
     <div class="center-box">
-      <h2 style="margin-top:0;">1 על 1</h2>
+      <h2 style="margin-top:0;" data-i18n="home.modes.h2h.title">1 על 1</h2>
       <div class="era-filter">
-        <div class="era-filter-label">פורמט הסדרה:</div>
+        <div class="era-filter-label" data-i18n="h2h.formatLabel">פורמט הסדרה:</div>
         <div class="era-filter-buttons" id="h2h-format-buttons">
-          <button class="era-btn selected" data-games-to-win="2">Bo3 (עד 2 ניצחונות)</button>
-          <button class="era-btn" data-games-to-win="3">Bo5 (עד 3 ניצחונות)</button>
+          <button class="era-btn selected" data-games-to-win="2" data-i18n="h2h.bo3">Bo3 (עד 2 ניצחונות)</button>
+          <button class="era-btn" data-games-to-win="3" data-i18n="h2h.bo5">Bo5 (עד 3 ניצחונות)</button>
         </div>
       </div>
       <div class="era-filter">
-        <div class="era-filter-label">שיטת בחירת שחקנים:</div>
+        <div class="era-filter-label" data-i18n="h2h.draftModeLabel">שיטת בחירת שחקנים:</div>
         <div class="era-filter-buttons" id="h2h-draftmode-buttons">
-          <button class="era-btn selected" data-draft-mode="turns">בחירה בתורות</button>
-          <button class="era-btn" data-draft-mode="auction">מכרז שחקנים</button>
+          <button class="era-btn selected" data-draft-mode="turns" data-i18n="h2h.draftModeTurns">בחירה בתורות</button>
+          <button class="era-btn" data-draft-mode="auction" data-i18n="h2h.draftModeAuction">מכרז שחקנים</button>
         </div>
       </div>
       <div class="era-filter" id="h2h-auction-filters" hidden>
-        <div class="era-filter-label">תקציב למכרז:</div>
+        <div class="era-filter-label" data-i18n="h2h.auctionBudgetLabel">תקציב למכרז:</div>
         <div class="era-filter-buttons" id="h2h-auction-budget-buttons">
-          <button class="era-btn" data-budget="15">$15 - הדוק</button>
-          <button class="era-btn selected" data-budget="25">$25 - רגיל</button>
-          <button class="era-btn" data-budget="40">$40 - נדיב</button>
+          <button class="era-btn" data-budget="15" data-i18n="h2h.budgetTight">$15 - הדוק</button>
+          <button class="era-btn selected" data-budget="25" data-i18n="h2h.budgetNormal">$25 - רגיל</button>
+          <button class="era-btn" data-budget="40" data-i18n="h2h.budgetGenerous">$40 - נדיב</button>
         </div>
-        <div class="era-filter-label" style="margin-top:14px;">טווח עידן לשחקנים במכרז:</div>
+        <div class="era-filter-label" style="margin-top:14px;" data-i18n="common.era">טווח עידן לשחקנים במכרז:</div>
         <div class="era-filter-buttons" id="h2h-auction-era-buttons">
-          <button class="era-btn selected" data-min="0" data-max="9999">כל הזמנים</button>
-          <button class="era-btn" data-min="2000" data-max="2009">2000-2009</button>
-          <button class="era-btn" data-min="2010" data-max="2019">2010-2019</button>
-          <button class="era-btn" data-min="2020" data-max="2026">2020-2026</button>
+          <button class="era-btn selected" data-min="0" data-max="9999" data-i18n="common.eraAll">כל הזמנים</button>
+          <button class="era-btn" data-min="2000" data-max="2009" data-i18n="common.era2000s">2000-2009</button>
+          <button class="era-btn" data-min="2010" data-max="2019" data-i18n="common.era2010s">2010-2019</button>
+          <button class="era-btn" data-min="2020" data-max="2026" data-i18n="common.era2020s">2020-2026</button>
         </div>
-        <div class="era-filter-label" style="margin-top:14px;">מאגר שחקנים למכרז:</div>
+        <div class="era-filter-label" style="margin-top:14px;" data-i18n="h2h.auctionPoolLabel">מאגר שחקנים למכרז:</div>
         <div class="era-filter-buttons" id="h2h-auction-pool-buttons">
-          <button class="era-btn selected" data-pool="all">כל הקבוצות</button>
-          <button class="era-btn" data-pool="team">קבוצה אחת בלבד</button>
+          <button class="era-btn selected" data-pool="all" data-i18n="h2h.poolAll">כל הקבוצות</button>
+          <button class="era-btn" data-pool="team" data-i18n="h2h.poolOneTeam">קבוצה אחת בלבד</button>
         </div>
         <div class="team-select-grid" id="h2h-auction-team-grid" hidden></div>
       </div>
       <div class="h2h-setup-buttons">
-        <button id="btn-h2h-vs-friend">נגד חבר (באותו מחשב)</button>
-        <button id="btn-h2h-vs-computer">נגד המחשב</button>
+        <button id="btn-h2h-vs-friend" data-i18n="h2h.vsFriend">נגד חבר (באותו מחשב)</button>
+        <button id="btn-h2h-vs-computer" data-i18n="h2h.vsComputer">נגד המחשב</button>
       </div>
-      <div style="margin-top:16px;"><button class="secondary" id="btn-home-from-h2hsetup">חזרה לדף הבית</button></div>
+      <div style="margin-top:16px;"><button class="secondary" id="btn-home-from-h2hsetup" data-i18n="common.backHome">חזרה לדף הבית</button></div>
     </div>
   </section>
 
@@ -507,7 +507,7 @@
     <div class="team-card">
       <div class="team-name" id="h2h-round-team"></div>
       <div class="team-season" id="h2h-round-season"></div>
-      <button class="secondary reroll-btn" id="btn-h2h-reroll">🔄 הגרלה מחדש (<span id="h2h-reroll-count">2</span>)</button>
+      <button class="secondary reroll-btn" id="btn-h2h-reroll" data-i18n="[html]h2h.rerollBtn">🔄 הגרלה מחדש (<span id="h2h-reroll-count">2</span>)</button>
     </div>
     <div class="players-grid" id="h2h-players-grid"></div>
   </section>
@@ -532,16 +532,16 @@
     </div>
     <div class="center-box" style="padding-top:0;">
       <div class="h2h-setup-buttons" id="h2h-auction-actions">
-        <button id="btn-h2h-auction-agree">✅ מוכן לשלם</button>
-        <button class="secondary" id="btn-h2h-auction-refuse">❌ ותרו</button>
+        <button id="btn-h2h-auction-agree" data-i18n="h2h.auctionAgree">✅ מוכן לשלם</button>
+        <button class="secondary" id="btn-h2h-auction-refuse" data-i18n="h2h.auctionRefuse">❌ ותרו</button>
       </div>
-      <div style="margin-top:16px;"><button class="secondary" id="btn-home-from-h2hauction">חזרה לדף הבית</button></div>
+      <div style="margin-top:16px;"><button class="secondary" id="btn-home-from-h2hauction" data-i18n="common.backHome">חזרה לדף הבית</button></div>
     </div>
   </section>
 
   <section id="screen-h2h-auction-summary" class="screen">
     <div class="center-box" style="padding-top:0;">
-      <h2 style="margin-top:0;">תוצאות המכרז</h2>
+      <h2 style="margin-top:0;" data-i18n="h2h.auctionResultsTitle">תוצאות המכרז</h2>
     </div>
     <div class="h2h-final-rosters">
       <div class="h2h-final-team">
@@ -554,31 +554,31 @@
       </div>
     </div>
     <div class="final-actions">
-      <button id="btn-h2h-auction-summary-continue">המשך לבחירת שיטה &raquo;</button>
-      <button class="secondary" id="btn-home-from-h2hauctionsummary">לדף הבית</button>
+      <button id="btn-h2h-auction-summary-continue" data-i18n="h2h.continueToSystem">המשך לבחירת שיטה &raquo;</button>
+      <button class="secondary" id="btn-home-from-h2hauctionsummary" data-i18n="common.home">לדף הבית</button>
     </div>
   </section>
 
   <section id="screen-h2h-system" class="screen">
     <div class="center-box" style="padding-top:0;">
-      <h2 style="margin-top:0;" id="h2h-system-title">בחרו שיטת משחק</h2>
+      <h2 style="margin-top:0;" id="h2h-system-title" data-i18n="common.chooseSystem">בחרו שיטת משחק</h2>
     </div>
     <div class="system-select-grid" id="h2h-system-grid"></div>
     <div class="final-actions">
-      <button class="secondary" id="btn-home-from-h2hsystem">לדף הבית</button>
+      <button class="secondary" id="btn-home-from-h2hsystem" data-i18n="common.home">לדף הבית</button>
     </div>
   </section>
 
   <section id="screen-h2h-game" class="screen">
     <div class="center-box" style="padding-top:0;">
-      <h2 style="margin-top:0;">משחק בסדרה</h2>
+      <h2 style="margin-top:0;" data-i18n="h2h.gameInSeries">משחק בסדרה</h2>
       <div class="round-meta" id="h2h-game-status"></div>
     </div>
     <div class="h2h-series-log" id="h2h-series-log-live"></div>
     <div class="h2h-game-preview" id="h2h-game-preview"></div>
     <div class="final-actions">
-      <button id="btn-h2h-game-next">הצג תוצאה &raquo;</button>
-      <button class="secondary" id="btn-home-from-h2hgame">לדף הבית</button>
+      <button id="btn-h2h-game-next" data-i18n="h2h.showResult">הצג תוצאה &raquo;</button>
+      <button class="secondary" id="btn-home-from-h2hgame" data-i18n="common.home">לדף הבית</button>
     </div>
   </section>
 
@@ -599,10 +599,10 @@
       </div>
     </div>
     <div class="final-actions">
-      <button id="btn-h2h-share">🖼️ כרטיס בוקס סקור</button>
-      <button id="btn-h2h-rematch">משחק חוזר (אותם הרכבים)</button>
-      <button id="btn-h2h-restart">משחק חדש</button>
-      <button class="secondary" id="btn-home-from-h2hresult">לדף הבית</button>
+      <button id="btn-h2h-share" data-i18n="h2h.boxScoreBtn">🖼️ כרטיס בוקס סקור</button>
+      <button id="btn-h2h-rematch" data-i18n="h2h.rematch">משחק חוזר (אותם הרכבים)</button>
+      <button id="btn-h2h-restart" data-i18n="common.newGame">משחק חדש</button>
+      <button class="secondary" id="btn-home-from-h2hresult" data-i18n="common.home">לדף הבית</button>
     </div>
   </section>
 
@@ -611,22 +611,22 @@
       <div class="single-share-card" id="h2h-share-card"></div>
     </div>
     <div class="final-actions">
-      <button class="secondary" id="btn-h2h-share-back">חזרה &raquo;</button>
+      <button class="secondary" id="btn-h2h-share-back" data-i18n="common.back">חזרה &raquo;</button>
     </div>
   </section>
 
   <section id="screen-league-team-select" class="screen">
     <div class="center-box">
-      <h2 style="margin-top:0;">בחרו קבוצה</h2>
+      <h2 style="margin-top:0;" data-i18n="league.chooseTeam">בחרו קבוצה</h2>
       <div class="era-filter">
-        <div class="era-filter-label">פורמט הליגה:</div>
+        <div class="era-filter-label" data-i18n="league.formatLabel">פורמט הליגה:</div>
         <div class="era-filter-buttons" id="league-format-buttons">
-          <button class="era-btn selected" data-league-size="20">עונה מלאה (20 קבוצות)</button>
-          <button class="era-btn" data-league-size="8">מיני-ליגה (8 קבוצות)</button>
+          <button class="era-btn selected" data-league-size="20" data-i18n="league.fullSeason">עונה מלאה (20 קבוצות)</button>
+          <button class="era-btn" data-league-size="8" data-i18n="league.miniLeague">מיני-ליגה (8 קבוצות)</button>
         </div>
       </div>
       <div class="team-select-grid" id="league-team-grid"></div>
-      <div style="margin-top:16px;"><button class="secondary" id="btn-home-from-league-teamselect">חזרה לדף הבית</button></div>
+      <div style="margin-top:16px;"><button class="secondary" id="btn-home-from-league-teamselect" data-i18n="common.backHome">חזרה לדף הבית</button></div>
     </div>
   </section>
 
@@ -635,86 +635,86 @@
     <div class="round-meta" id="league-round-meta"></div>
     <div class="h2h-status">
       <div class="h2h-player-panel" id="league-squad-panel-1">
-        <div class="h2h-player-name">חמישייה פותחת</div>
+        <div class="h2h-player-name" data-i18n="common.starters">חמישייה פותחת</div>
         <div class="h2h-slots" id="league-squad-slots-1"></div>
       </div>
       <div class="h2h-player-panel" id="league-squad-panel-2">
-        <div class="h2h-player-name">ספסל</div>
+        <div class="h2h-player-name" data-i18n="common.bench">ספסל</div>
         <div class="h2h-slots" id="league-squad-slots-2"></div>
       </div>
     </div>
     <div class="team-card">
       <div class="team-name" id="league-round-team"></div>
       <div class="team-season" id="league-round-season"></div>
-      <button class="secondary reroll-btn" id="btn-league-reroll">🔄 הגרלה מחדש (<span id="league-reroll-count">2</span>)</button>
+      <button class="secondary reroll-btn" id="btn-league-reroll" data-i18n="[html]league.rerollBtn">🔄 הגרלה מחדש (<span id="league-reroll-count">2</span>)</button>
     </div>
     <div class="players-grid" id="league-players-grid"></div>
   </section>
 
   <section id="screen-league-lineup" class="screen">
     <div class="center-box" style="padding-top:0;">
-      <h2 style="margin-top:0;">סדרו את ההרכב</h2>
+      <h2 style="margin-top:0;" data-i18n="common.arrangeLineup">סדרו את ההרכב</h2>
     </div>
     <div class="h2h-status">
       <div class="h2h-player-panel" id="league-lineup-starters-panel">
-        <div class="h2h-player-name">חמישייה פותחת</div>
+        <div class="h2h-player-name" data-i18n="common.starters">חמישייה פותחת</div>
         <div class="h2h-slots" id="league-lineup-starters"></div>
       </div>
       <div class="h2h-player-panel" id="league-lineup-bench-panel">
-        <div class="h2h-player-name">ספסל</div>
+        <div class="h2h-player-name" data-i18n="common.bench">ספסל</div>
         <div class="h2h-slots" id="league-lineup-bench"></div>
       </div>
     </div>
     <div class="final-actions">
-      <button class="secondary" id="btn-league-freeagent-open" hidden>✍️ חתימת שחקן חופשי</button>
-      <button id="btn-league-lineup-continue">המשך לליגה &raquo;</button>
-      <button class="secondary" id="btn-home-from-league-lineup">לדף הבית</button>
+      <button class="secondary" id="btn-league-freeagent-open" hidden data-i18n="league.freeAgentBtn">✍️ חתימת שחקן חופשי</button>
+      <button id="btn-league-lineup-continue" data-i18n="league.continueToLeague">המשך לליגה &raquo;</button>
+      <button class="secondary" id="btn-home-from-league-lineup" data-i18n="common.home">לדף הבית</button>
     </div>
   </section>
 
   <section id="screen-league-freeagent" class="screen">
     <div class="center-box" style="padding-top:0;">
-      <h2 style="margin-top:0;">✍️ חתימת שחקן חופשי</h2>
-      <p style="color:var(--text-dim); text-align:center;">פעם אחת בעונה - בחרו כל שחקן מההיסטוריה והחתימו אותו ישירות להרכב</p>
-      <input type="text" id="league-freeagent-search" class="player-search-input" placeholder="הקלידו שם שחקן..." />
+      <h2 style="margin-top:0;" data-i18n="league.freeAgentBtn">✍️ חתימת שחקן חופשי</h2>
+      <p style="color:var(--text-dim); text-align:center;" data-i18n="league.freeAgentDesc">פעם אחת בעונה - בחרו כל שחקן מההיסטוריה והחתימו אותו ישירות להרכב</p>
+      <input type="text" id="league-freeagent-search" class="player-search-input" data-i18n-placeholder="playerSearch.inputPlaceholderShort" placeholder="הקלידו שם שחקן..." />
     </div>
     <div id="league-freeagent-results"></div>
     <div class="h2h-status" id="league-freeagent-slots-wrap" hidden>
       <div class="h2h-player-panel" style="flex-basis:100%;">
-        <div class="h2h-player-name">בחרו את מי להחליף (אותה עמדה)</div>
+        <div class="h2h-player-name" data-i18n="league.freeAgentPickSlot">בחרו את מי להחליף (אותה עמדה)</div>
         <div class="h2h-slots" id="league-freeagent-slots"></div>
       </div>
     </div>
     <div class="final-actions">
-      <button class="secondary" id="btn-league-freeagent-back">חזרה &raquo;</button>
-      <button class="secondary" id="btn-home-from-league-freeagent">לדף הבית</button>
+      <button class="secondary" id="btn-league-freeagent-back" data-i18n="common.back">חזרה &raquo;</button>
+      <button class="secondary" id="btn-home-from-league-freeagent" data-i18n="common.home">לדף הבית</button>
     </div>
   </section>
 
   <section id="screen-league-system" class="screen">
     <div class="center-box" style="padding-top:0;">
-      <h2 style="margin-top:0;">בחרו שיטת משחק</h2>
+      <h2 style="margin-top:0;" data-i18n="common.chooseSystem">בחרו שיטת משחק</h2>
     </div>
     <div class="system-select-grid" id="league-system-grid"></div>
     <div class="final-actions">
-      <button class="secondary" id="btn-home-from-league-system">לדף הבית</button>
+      <button class="secondary" id="btn-home-from-league-system" data-i18n="common.home">לדף הבית</button>
     </div>
   </section>
 
   <section id="screen-league-simchoice" class="screen">
     <div class="center-box">
-      <h2 style="margin-top:0;">איך תרצו לצפות בליגה?</h2>
+      <h2 style="margin-top:0;" data-i18n="league.howToWatch">איך תרצו לצפות בליגה?</h2>
       <div class="h2h-setup-buttons">
-        <button id="btn-league-sim-all">סימולציה מלאה (מיידית)</button>
-        <button id="btn-league-sim-live">משחק אחר משחק</button>
+        <button id="btn-league-sim-all" data-i18n="league.simAll">סימולציה מלאה (מיידית)</button>
+        <button id="btn-league-sim-live" data-i18n="league.simLive">משחק אחר משחק</button>
       </div>
-      <div style="margin-top:16px;"><button class="secondary" id="btn-home-from-league-simchoice">חזרה לדף הבית</button></div>
+      <div style="margin-top:16px;"><button class="secondary" id="btn-home-from-league-simchoice" data-i18n="common.backHome">חזרה לדף הבית</button></div>
     </div>
   </section>
 
   <section id="screen-league-live" class="screen">
     <div class="center-box" style="padding-top:0;">
-      <h2 style="margin-top:0;">המשחקים של ההרכב שלכם</h2>
+      <h2 style="margin-top:0;" data-i18n="league.yourGamesTitle">המשחקים של ההרכב שלכם</h2>
       <div class="round-meta" id="league-live-status"></div>
       <div class="round-meta" id="league-live-record"></div>
       <div class="round-meta" id="league-live-rank"></div>
@@ -722,28 +722,28 @@
     <div class="h2h-game-preview" id="league-live-momentum" hidden></div>
     <div class="league-live-log" id="league-live-log"></div>
     <div class="final-actions">
-      <button id="btn-league-live-next">המשחק הבא &raquo;</button>
-      <button class="secondary" id="btn-home-from-league-live">לדף הבית</button>
+      <button id="btn-league-live-next" data-i18n="league.nextGame">המשחק הבא &raquo;</button>
+      <button class="secondary" id="btn-home-from-league-live" data-i18n="common.home">לדף הבית</button>
     </div>
   </section>
 
   <section id="screen-league-trade" class="screen">
     <div class="center-box" style="padding-top:0;">
-      <h2 style="margin-top:0;" id="league-trade-title">חלון העברות</h2>
+      <h2 style="margin-top:0;" id="league-trade-title" data-i18n="league.tradeWindow">חלון העברות</h2>
     </div>
     <div class="h2h-status">
       <div class="h2h-player-panel" id="league-trade-current-panel" style="flex-basis:100%;">
-        <div class="h2h-player-name">ההרכב הנוכחי - בחרו שחקן להחלפה</div>
+        <div class="h2h-player-name" data-i18n="league.tradeCurrentRoster">ההרכב הנוכחי - בחרו שחקן להחלפה</div>
         <div class="h2h-slots" id="league-trade-current"></div>
       </div>
     </div>
     <div class="team-card" id="league-trade-candidates-card" style="display:none;">
-      <div class="team-name">מחליפים אפשריים באותה עמדה</div>
+      <div class="team-name" data-i18n="league.tradeCandidates">מחליפים אפשריים באותה עמדה</div>
       <div class="players-grid" id="league-trade-candidates"></div>
     </div>
     <div class="final-actions">
-      <button class="secondary" id="btn-league-trade-skip">להמשיך בלי החלפה &raquo;</button>
-      <button class="secondary" id="btn-home-from-league-trade">לדף הבית</button>
+      <button class="secondary" id="btn-league-trade-skip" data-i18n="league.tradeSkip">להמשיך בלי החלפה &raquo;</button>
+      <button class="secondary" id="btn-home-from-league-trade" data-i18n="common.home">לדף הבית</button>
     </div>
   </section>
 
@@ -755,15 +755,15 @@
     <div class="league-table-wrap">
       <table class="league-table">
         <thead>
-          <tr><th>#</th><th>קבוצה</th><th>דירוג</th><th>נצ'</th><th>הפ'</th><th>הפרש</th></tr>
+          <tr><th>#</th><th data-i18n="league.colClub">קבוצה</th><th data-i18n="league.colRating">דירוג</th><th data-i18n="league.colWins">נצ'</th><th data-i18n="league.colLosses">הפ'</th><th data-i18n="league.colDiff">הפרש</th></tr>
         </thead>
         <tbody id="league-table-body"></tbody>
       </table>
     </div>
     <div class="final-actions">
-      <button id="btn-league-playoffs">המשך לפלייאוף (8 גדולות) &raquo;</button>
-      <button class="secondary" id="btn-league-restart">משחק חדש</button>
-      <button class="secondary" id="btn-home-from-league-table">לדף הבית</button>
+      <button id="btn-league-playoffs" data-i18n="league.continueToPlayoffs">המשך לפלייאוף (8 גדולות) &raquo;</button>
+      <button class="secondary" id="btn-league-restart" data-i18n="common.newGame">משחק חדש</button>
+      <button class="secondary" id="btn-home-from-league-table" data-i18n="common.home">לדף הבית</button>
     </div>
   </section>
 
@@ -773,24 +773,24 @@
     </div>
     <div class="playoffs-bracket" id="playoffs-bracket"></div>
     <div class="final-actions">
-      <button id="btn-league-restart-2">משחק חדש</button>
-      <button class="secondary" id="btn-home-from-league-playoffs">לדף הבית</button>
+      <button id="btn-league-restart-2" data-i18n="common.newGame">משחק חדש</button>
+      <button class="secondary" id="btn-home-from-league-playoffs" data-i18n="common.home">לדף הבית</button>
     </div>
   </section>
 
   <section id="screen-trivia-select" class="screen">
     <div class="center-box">
-      <h2 style="margin-top:0;">טריוויה</h2>
+      <h2 style="margin-top:0;" data-i18n="home.modes.trivia.title">טריוויה</h2>
       <div class="era-filter">
         <div class="era-filter-buttons">
-          <button class="era-btn" id="btn-trivia-timed-toggle">⏱ מצב מתוזמן: כבוי</button>
+          <button class="era-btn" id="btn-trivia-timed-toggle" data-i18n="trivia.timedOff">⏱ מצב מתוזמן: כבוי</button>
         </div>
       </div>
       <div class="h2h-setup-buttons">
-        <button id="btn-trivia-team">זהו את הקבוצה</button>
-        <button id="btn-trivia-season">זהו את העונה</button>
+        <button id="btn-trivia-team" data-i18n="trivia.identifyClub">זהו את הקבוצה</button>
+        <button id="btn-trivia-season" data-i18n="trivia.identifySeason">זהו את העונה</button>
       </div>
-      <div style="margin-top:16px;"><button class="secondary" id="btn-home-from-trivia-select">חזרה לדף הבית</button></div>
+      <div style="margin-top:16px;"><button class="secondary" id="btn-home-from-trivia-select" data-i18n="common.backHome">חזרה לדף הבית</button></div>
     </div>
   </section>
 
@@ -806,7 +806,7 @@
     <div class="trivia-options" id="trivia-options"></div>
     <div class="trivia-feedback" id="trivia-feedback"></div>
     <div style="text-align:center; margin-top:16px;">
-      <button id="btn-trivia-next" style="display:none;">השאלה הבאה &raquo;</button>
+      <button id="btn-trivia-next" style="display:none;" data-i18n="trivia.nextQuestion">השאלה הבאה &raquo;</button>
     </div>
   </section>
 
@@ -815,12 +815,12 @@
       <h2 id="trivia-final-title" style="margin-top:0;"></h2>
       <p id="trivia-final-sub" style="color:var(--text-dim);"></p>
       <div class="trivia-mistakes" id="trivia-mistakes"></div>
-      <button id="btn-trivia-restart">משחק חדש</button>
-      <div style="margin-top:16px;"><button class="secondary" id="btn-home-from-trivia-final">לדף הבית</button></div>
+      <button id="btn-trivia-restart" data-i18n="common.newGame">משחק חדש</button>
+      <div style="margin-top:16px;"><button class="secondary" id="btn-home-from-trivia-final" data-i18n="common.home">לדף הבית</button></div>
     </div>
   </section>
 
-  <footer>גרסה 1.2 &middot; נתוני סגלים היסטוריים לצורך משחק בלבד &middot; <button class="link-btn" id="btn-footer-about">אודות</button></footer>
+  <footer><span data-i18n="footer.version">גרסה 1.2</span> &middot; <span data-i18n="footer.dataNote">נתוני סגלים היסטוריים לצורך משחק בלבד</span> &middot; <button class="link-btn" id="btn-footer-about" data-i18n="about.linkText">אודות</button></footer>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/i18next@23.11.5/dist/umd/i18next.min.js"></script>

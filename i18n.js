@@ -71,9 +71,18 @@
   // Applies every static index.html label in one pass - dynamic per-mode
   // screens call t() directly inside their own render functions instead,
   // since their markup doesn't exist until each screen is first rendered.
+  // A key prefixed "[html]" (matching the i18next-dom plugin's own
+  // convention) is applied as innerHTML instead of textContent, for the
+  // rare string that legitimately needs inline markup (e.g. a <strong>);
+  // plain keys stay textContent so nothing else can inject markup by accident.
   function applyStaticDom() {
     document.querySelectorAll("[data-i18n]").forEach(function (el) {
-      el.textContent = t(el.getAttribute("data-i18n"));
+      var key = el.getAttribute("data-i18n");
+      if (key.indexOf("[html]") === 0) {
+        el.innerHTML = t(key.slice(6));
+      } else {
+        el.textContent = t(key);
+      }
     });
     document.querySelectorAll("[data-i18n-placeholder]").forEach(function (el) {
       el.setAttribute("placeholder", t(el.getAttribute("data-i18n-placeholder")));

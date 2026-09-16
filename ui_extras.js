@@ -21,7 +21,7 @@
     var svgPts = pts.map(function (p) { return p.x + "," + toY(p.diff); }).join(" ");
     var last = pts[pts.length - 1];
     var leadingColor = last.diff > 0 ? "var(--accent-2)" : (last.diff < 0 ? "var(--accent)" : "var(--text-dim)");
-    var labels = ["התחלה", "רבע 1", "רבע 2", "רבע 3", "רבע 4"];
+    var labels = window.I18n ? window.I18n.t("common.momentumLabels", { returnObjects: true }) : ["התחלה", "רבע 1", "רבע 2", "רבע 3", "רבע 4"];
     var labelsHtml = labels.map(function (lab, i) {
       return '<span class="momentum-label' + (i <= revealCount ? " revealed" : "") + '">' + lab + "</span>";
     }).join("");
@@ -379,7 +379,7 @@
       '<div class="info-toast-box">' +
       '<div class="info-toast-icon" aria-hidden="true">💡</div>' +
       '<div class="info-toast-text">' + html + "</div>" +
-      '<button class="info-toast-dismiss">הבנתי</button>' +
+      '<button class="info-toast-dismiss">' + (window.I18n ? window.I18n.t("common.gotIt") : "הבנתי") + "</button>" +
       "</div>";
     document.body.appendChild(overlay);
     requestAnimationFrame(function () {

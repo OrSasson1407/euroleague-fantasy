@@ -98,14 +98,14 @@
 
     if (isRegistered()) {
       el.innerHTML =
-        '<span class="auth-chip registered" title="מחוברים כמשתמש רשום">' + escapeHtml(getUsername()) + "</span>" +
-        '<button class="auth-chip-btn" id="btn-auth-signout">התנתקות</button>';
+        '<span class="auth-chip registered" title="' + window.I18n.t("authGate.registeredTitle") + '">' + escapeHtml(getUsername()) + "</span>" +
+        '<button class="auth-chip-btn" id="btn-auth-signout">' + window.I18n.t("authGate.signOut") + "</button>";
       var signoutBtn = document.getElementById("btn-auth-signout");
       if (signoutBtn) signoutBtn.addEventListener("click", signOut);
     } else if (isGuest()) {
       el.innerHTML =
-        '<span class="auth-chip guest" title="במצב אורח השיאים והשמירות לא נשמרים">🕶️ אורח</span>' +
-        '<button class="auth-chip-btn" id="btn-auth-register-from-guest">הרשמה</button>';
+        '<span class="auth-chip guest" title="' + window.I18n.t("authGate.guestTitle") + '">🕶️ ' + window.I18n.t("authGate.guestLabel") + "</span>" +
+        '<button class="auth-chip-btn" id="btn-auth-register-from-guest">' + window.I18n.t("authGate.registerLabel") + "</button>";
       var regBtn = document.getElementById("btn-auth-register-from-guest");
       if (regBtn) regBtn.addEventListener("click", showGate);
     } else {
@@ -118,7 +118,7 @@
     var errorEl = document.getElementById("auth-username-error");
     var name = (input.value || "").trim();
     if (name.length < 2) {
-      errorEl.textContent = "השם חייב להכיל לפחות 2 תווים";
+      errorEl.textContent = window.I18n.t("authGate.usernameTooShortError");
       errorEl.hidden = false;
       return;
     }
