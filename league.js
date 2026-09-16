@@ -4,7 +4,7 @@
   var TOTAL_PICKS = 10;
   var MAX_REROLLS = 2;
   var SLOT_TEMPLATE = ["Guard", "Guard", "Forward", "Forward", "Center"];
-  var POS_LABEL = { Guard: "מגן", Forward: "חלוץ", Center: "סנטר" };
+  var POS_LABEL = { Guard: window.I18n.t("common.posGuard"), Forward: window.I18n.t("common.posForward"), Center: window.I18n.t("common.posCenter") };
 
   var state = {
     myTeamClub: null,
@@ -61,6 +61,24 @@
 
   function formatSeason(season) {
     return season.replace("-", "/");
+  }
+
+  function seasonLabel(season) {
+    return window.I18n.t("single.seasonLabel", { season: formatSeason(season) });
+  }
+
+  // Hebrew's "מקום ה-3" construct needs no suffix, but English needs
+  // "3rd" - only English gets the ordinal suffix appended here.
+  function rankDisplay(n) {
+    if (window.I18n.getLang() !== "en") return n;
+    var mod100 = n % 100;
+    if (mod100 >= 11 && mod100 <= 13) return n + "th";
+    switch (n % 10) {
+      case 1: return n + "st";
+      case 2: return n + "nd";
+      case 3: return n + "rd";
+      default: return n + "th";
+    }
   }
 
   function getAllCombos() {
@@ -222,10 +240,10 @@
     renderDraftProgress(pickNumber);
     renderSlotsPanels();
     document.getElementById("league-round-meta").textContent =
-      "בחירה " + pickNumber + " מתוך " + TOTAL_PICKS + " · " + state.myTeamClub;
+      window.I18n.t("league.pickOf", { n: pickNumber, total: TOTAL_PICKS, club: state.myTeamClub });
 
     document.getElementById("league-round-team").innerHTML = window.TeamBadge.html(picked.combo.team) + picked.combo.team;
-    document.getElementById("league-round-season").textContent = "עונת " + formatSeason(picked.combo.season);
+    document.getElementById("league-round-season").textContent = seasonLabel(picked.combo.season);
 
     var grid = document.getElementById("league-players-grid");
     grid.innerHTML = "";
@@ -245,10 +263,10 @@
       info.innerHTML = player.name +
         (player.position ? '<span class="pos-tag">' + player.position + "</span>" : "") +
         window.RatingTag.html(player.rating) +
-        (typeof player.offRating === "number" ? '<span class="off-tag">התק׳ ' + player.offRating + "</span>" : "") +
-        (typeof player.defRating === "number" ? '<span class="def-tag">הג׳ ' + player.defRating + "</span>" : "") +
+        (typeof player.offRating === "number" ? '<span class="off-tag">' + window.I18n.t("common.offAbbr") + " " + player.offRating + "</span>" : "") +
+        (typeof player.defRating === "number" ? '<span class="def-tag">' + window.I18n.t("common.defAbbr") + " " + player.defRating + "</span>" : "") +
         (player.archetype ? '<span class="archetype-tag">' + player.archetype.label + "</span>" : "") +
-        (taken ? '<span class="taken-tag">כבר נבחר</span>' : (noRoomAtAll ? '<span class="taken-tag">המשבצת מלאה</span>' : ""));
+        (taken ? '<span class="taken-tag">' + window.I18n.t("common.takenTag") + "</span>" : (noRoomAtAll ? '<span class="taken-tag">' + window.I18n.t("common.slotFullTag") + "</span>" : ""));
       card.appendChild(info);
 
       if (!taken && !noRoomAtAll && player.position) {
@@ -258,7 +276,7 @@
           var hasRoom = half === 1 ? room1 : room2;
           var btn = document.createElement("button");
           btn.className = "player-dual-btn";
-          btn.textContent = half === 1 ? "לחמישייה הפותחת" : "לספסל";
+          btn.textContent = half === 1 ? window.I18n.t("common.toStarters") : window.I18n.t("common.toBench");
           btn.disabled = !hasRoom;
           if (hasRoom) {
             btn.addEventListener("click", function () {
@@ -552,7 +570,7 @@
 
     var teams = [];
     teams.push({
-      label: "ההרכב שלי (" + state.myTeamClub + ")",
+      label: window.I18n.t("league.myTeamLabel", { club: state.myTeamClub }),
       isMine: true,
       rating: myRating,
       offense: offenseForMyRoster(state.myRoster, state.playSystem),
@@ -705,9 +723,9 @@
       var row = document.createElement("div");
       row.className = "live-game-row " + (g.won ? "win" : "loss");
       row.innerHTML =
-        "<span>מול " + g.opponent.label + "</span>" +
+        "<span>" + window.I18n.t("league.vsOpponent", { opponent: g.opponent.label }) + "</span>" +
         "<span>" + g.myScore + " - " + g.oppScore + "</span>" +
-        "<span>" + (g.won ? "ניצחון" : "הפסד") + "</span>";
+        "<span>" + (g.won ? window.I18n.t("league.winLabel") : window.I18n.t("league.lossLabel")) + "</span>";
       log.appendChild(row);
     });
 
@@ -716,14 +734,14 @@
     if (lastGame) {
       momentumEl.hidden = false;
       momentumEl.innerHTML =
-        "<div>המשחק האחרון מול " + lastGame.opponent.label + "</div>" +
+        "<div>" + window.I18n.t("league.lastGameVs", { opponent: lastGame.opponent.label }) + "</div>" +
         '<div class="final-score">' + lastGame.myScore + " - " + lastGame.oppScore + "</div>" +
         window.MomentumGraph.html(cumulativeLine(lastGame.myQuarters), cumulativeLine(lastGame.oppQuarters), 4);
     } else {
       momentumEl.hidden = true;
     }
 
-    document.getElementById("league-live-record").textContent = "מאזן עד כה: " + wins + " נצחונות, " + losses + " הפסדים";
+    document.getElementById("league-live-record").textContent = window.I18n.t("league.recordSoFar", { wins: wins, losses: losses });
 
     var rankEl = document.getElementById("league-live-rank");
     if (lastMyGames.length === 0) {
@@ -735,19 +753,19 @@
         if (rank < lastKnownRank) arrow = "⬆";
         else if (rank > lastKnownRank) arrow = "⬇";
       }
-      rankEl.textContent = "מיקום זמני בטבלה: " + rank + " " + arrow;
+      rankEl.textContent = window.I18n.t("league.provisionalRank", { rank: rank }) + " " + arrow;
       lastKnownRank = rank;
     }
 
     var btn = document.getElementById("btn-league-live-next");
     var statusEl = document.getElementById("league-live-status");
     if (liveIndex >= myOpponents.length) {
-      statusEl.textContent = "כל " + myOpponents.length + " המשחקים הסתיימו!";
-      btn.textContent = "לצפייה בטבלה המלאה »";
+      statusEl.textContent = window.I18n.t("league.allGamesFinished", { count: myOpponents.length });
+      btn.textContent = window.I18n.t("league.viewFullTableBtn");
       window.Achievements.unlock("live_watch_full");
     } else {
-      statusEl.textContent = "משחק " + (liveIndex + 1) + " מתוך " + myOpponents.length;
-      btn.textContent = "המשחק הבא »";
+      statusEl.textContent = window.I18n.t("league.gameOfTotal", { n: liveIndex + 1, total: myOpponents.length });
+      btn.textContent = window.I18n.t("h2h.nextGameBtn");
     }
   }
 
@@ -793,7 +811,7 @@
       var chip = document.createElement("div");
       chip.className = "h2h-slot-chip filled swappable" + (entry === tradeSelection ? " selected-swap" : "");
       chip.innerHTML =
-        '<span class="h2h-slot-type">' + (entry.half === 1 ? "פותחת" : "ספסל") + " · " + POS_LABEL[entry.position] + "</span>" +
+        '<span class="h2h-slot-type">' + (entry.half === 1 ? window.I18n.t("league.startersShort") : window.I18n.t("common.bench")) + " · " + POS_LABEL[entry.position] + "</span>" +
         '<span class="h2h-slot-player">' + entry.player +
           window.RatingTag.html(entry.rating) +
           "</span>";
@@ -818,7 +836,7 @@
     var candidates = shuffle(pool).slice(0, 3);
     card.style.display = "";
     if (candidates.length === 0) {
-      grid.innerHTML = '<p style="color:var(--text-dim);">אין מחליפים זמינים בעמדה הזו כרגע.</p>';
+      grid.innerHTML = '<p style="color:var(--text-dim);">' + window.I18n.t("league.noTradeCandidates") + "</p>";
       return;
     }
     candidates.forEach(function (entry) {
@@ -879,7 +897,7 @@
       return !currentNames[normalizeName(entry.name)];
     });
     if (matches.length === 0) {
-      resultsEl.innerHTML = '<p class="player-search-hint">לא נמצאו שחקנים זמינים בשם הזה</p>';
+      resultsEl.innerHTML = '<p class="player-search-hint">' + window.I18n.t("league.noFreeAgentsFound") + "</p>";
       return;
     }
     matches.slice(0, 10).forEach(function (entry) {
@@ -904,13 +922,13 @@
     var position = freeAgentTargetEntry.bestAppearance.position;
     var matchingSlots = state.myRoster.filter(function (e) { return e.position === position; });
     if (matchingSlots.length === 0) {
-      slotsEl.innerHTML = '<p style="color:var(--text-dim);">אין משבצת בעמדת ' + (POS_LABEL[position] || position) + " להחלפה.</p>";
+      slotsEl.innerHTML = '<p style="color:var(--text-dim);">' + window.I18n.t("league.noSlotForPosition", { position: POS_LABEL[position] || position }) + "</p>";
     } else {
       matchingSlots.forEach(function (entry) {
         var chip = document.createElement("div");
         chip.className = "h2h-slot-chip filled swappable";
         chip.innerHTML =
-          '<span class="h2h-slot-type">' + (entry.half === 1 ? "פותחת" : "ספסל") + " · " + POS_LABEL[entry.position] + "</span>" +
+          '<span class="h2h-slot-type">' + (entry.half === 1 ? window.I18n.t("league.startersShort") : window.I18n.t("common.bench")) + " · " + POS_LABEL[entry.position] + "</span>" +
           '<span class="h2h-slot-player">' + entry.player + window.RatingTag.html(entry.rating) + "</span>";
         chip.addEventListener("click", function () {
           signFreeAgent(entry);
@@ -956,7 +974,7 @@
     document.getElementById("league-trade-candidates-card").style.display = "none";
     var isFirst = checkpoint === tradeCheckpoints[0];
     document.getElementById("league-trade-title").textContent =
-      isFirst ? "חלון העברות ראשון (אמצע העונה)" : "חלון העברות שני (סוף העונה)";
+      isFirst ? window.I18n.t("league.tradeWindowFirst") : window.I18n.t("league.tradeWindowSecond");
     window.AppNav.showScreen("leagueTrade");
   }
 
@@ -993,18 +1011,17 @@
 
     var titleEl = document.getElementById("league-result-title");
     if (myRank === 1) {
-      titleEl.textContent = "מזל טוב! ההרכב שלכם אלוף הליגה!";
+      titleEl.textContent = window.I18n.t("league.championTitle");
     } else {
-      titleEl.textContent = "ההרכב שלכם סיים במקום ה-" + myRank + " מתוך " + teams.length;
+      titleEl.textContent = window.I18n.t("league.finishedRankTitle", { rank: rankDisplay(myRank), total: teams.length });
     }
 
     var mvp = seasonMvp(state.myRoster);
     var systemLine = state.playSystem
-      ? "<br>שיטת המשחק שלכם: <strong>" + state.playSystem.label + "</strong>"
+      ? "<br>" + window.I18n.t("league.playSystemLine", { system: window.PlaySystemsAPI.label(state.playSystem) })
       : "";
     document.getElementById("league-mvp").innerHTML =
-      "כוכב העונה של ההרכב שלכם: <strong>" + mvp.player + "</strong> (" + POS_LABEL[mvp.position] +
-      ", דירוג " + mvp.rating + ")" + systemLine;
+      window.I18n.t("league.mvpLine", { name: mvp.player, position: POS_LABEL[mvp.position], rating: mvp.rating }) + systemLine;
 
     window.Achievements.markPlayed("league");
     window.Achievements.unlock("league_first");
@@ -1020,7 +1037,7 @@
       mode: "league",
       icon: "🏆",
       title: state.myTeamClub,
-      detail: "מקום " + myRank + " מתוך " + teams.length + " · " + mine.wins + "-" + mine.losses,
+      detail: window.I18n.t("league.historyDetail", { rank: myRank, total: teams.length, wins: mine.wins, losses: mine.losses }),
       outcome: myRank === 1 ? "win" : (myRank <= playoffSizeFor(state.leagueSize) ? "neutral" : "loss"),
     });
 
@@ -1042,7 +1059,7 @@
 
     var playoffSize = playoffSizeFor(state.leagueSize);
     document.getElementById("btn-league-playoffs").textContent =
-      "המשך לפלייאוף (" + playoffSize + " גדולות) »";
+      window.I18n.t("league.continueToPlayoffsDynamic", { size: playoffSize });
 
     window.AppNav.showScreen("leagueTable");
   }
@@ -1114,9 +1131,9 @@
 
   function describeMyRun(data) {
     var rounds = [
-      { name: "רבע הגמר", matches: data.qf || [] },
-      { name: "חצי הגמר", matches: data.sf },
-      { name: "הגמר", matches: [data.final] },
+      { name: window.I18n.t("league.roundQF"), matches: data.qf || [] },
+      { name: window.I18n.t("league.roundSF"), matches: data.sf },
+      { name: window.I18n.t("league.roundFinal"), matches: [data.final] },
     ];
     var lastRoundName = null;
     var won = false;
@@ -1134,23 +1151,23 @@
   function renderPlayoffs(data) {
     var container = document.getElementById("playoffs-bracket");
     container.innerHTML =
-      (data.qf ? '<div class="playoff-round"><h3>רבע גמר</h3>' + data.qf.map(matchHtml).join("") + "</div>" : "") +
-      '<div class="playoff-round"><h3>חצי גמר</h3>' + data.sf.map(matchHtml).join("") + "</div>" +
-      '<div class="playoff-round"><h3>גמר</h3>' + matchHtml(data.final) + "</div>";
+      (data.qf ? '<div class="playoff-round"><h3>' + window.I18n.t("league.headerQF") + "</h3>" + data.qf.map(matchHtml).join("") + "</div>" : "") +
+      '<div class="playoff-round"><h3>' + window.I18n.t("league.headerSF") + "</h3>" + data.sf.map(matchHtml).join("") + "</div>" +
+      '<div class="playoff-round"><h3>' + window.I18n.t("league.headerFinal") + "</h3>" + matchHtml(data.final) + "</div>";
 
     var titleEl = document.getElementById("playoffs-result-title");
     var myInTop8 = data.top8.some(function (t) { return t.isMine; });
 
     if (data.champion.isMine) {
-      titleEl.textContent = "מזל טוב! ההרכב שלכם אלופת הפלייאוף! 🏆";
+      titleEl.textContent = "🏆 " + window.I18n.t("league.playoffChampionTitle");
       window.Achievements.unlock("league_playoff_champion");
       window.Effects.confetti();
     } else if (myInTop8) {
       var run = describeMyRun(data);
-      titleEl.textContent = "ההרכב שלכם הודח ב" + run.roundName + ". אלופת הפלייאוף: " + data.champion.label;
+      titleEl.textContent = window.I18n.t("league.eliminatedTitle", { round: run.roundName, champion: data.champion.label });
     } else {
-      var missedText = data.qf ? "לשמינית הפלייאוף" : "לפלייאוף";
-      titleEl.textContent = "ההרכב שלכם לא הגיע " + missedText + ". אלופת הפלייאוף: " + data.champion.label;
+      var missedKey = data.qf ? "league.missedQuarterfinals" : "league.missedPlayoffs";
+      titleEl.textContent = window.I18n.t("league.notReachedTitle", { missed: window.I18n.t(missedKey), champion: data.champion.label });
     }
 
     window.AppNav.showScreen("leaguePlayoffs");
@@ -1193,8 +1210,8 @@
       var card = document.createElement("button");
       card.className = "system-card" + (state.playSystem === sys ? " selected" : "");
       card.innerHTML =
-        '<div class="system-name">' + sys.label + "</div>" +
-        '<div class="system-desc">' + sys.desc + "</div>";
+        '<div class="system-name">' + window.PlaySystemsAPI.label(sys) + "</div>" +
+        '<div class="system-desc">' + window.PlaySystemsAPI.desc(sys) + "</div>";
       card.addEventListener("click", function () {
         state.playSystem = sys;
         window.AppNav.showScreen("leagueSimChoice");
