@@ -578,6 +578,40 @@
     window.AppNav.showScreen("h2hResult");
   }
 
+  function topPlayerRowHtml(picks) {
+    var top = null;
+    picks.forEach(function (p) {
+      if (!top || (typeof p.rating === "number" && p.rating > (top.rating || 0))) top = p;
+    });
+    if (!top) return "";
+    return (
+      '<div class="share-player-row"><span class="name">' + top.player + " (" + (POS_LABEL[top.position] || "") + ")</span>" +
+      '<span class="rating">' + (typeof top.rating === "number" ? top.rating : "-") + "</span></div>"
+    );
+  }
+
+  function renderShareCard() {
+    var lastGame = seriesGames[seriesGames.length - 1];
+    var seriesWinnerIndex = seriesWins[0] > seriesWins[1] ? 0 : 1;
+    var cum1 = cumulativeLine(lastGame.quarters1);
+    var cum2 = cumulativeLine(lastGame.quarters2);
+
+    var card = document.getElementById("h2h-share-card");
+    card.innerHTML =
+      "<h2>" + state.sides[0].label + " נגד " + state.sides[1].label + "</h2>" +
+      '<div class="share-tagline">1 על 1 &middot; יורוליג פנטזי</div>' +
+      '<div class="share-rating">' + seriesWins[0] + "-" + seriesWins[1] + "</div>" +
+      '<div class="share-rating-label">תוצאת הסדרה &middot; משחק אחרון: ' + lastGame.score1 + "-" + lastGame.score2 + "</div>" +
+      momentumGraphHtml(cum1, cum2, 4) +
+      '<div class="share-player-list"><h4>' + state.sides[0].label + (seriesWinnerIndex === 0 ? " 🏆" : "") + "</h4>" +
+        topPlayerRowHtml(state.sides[0].picks) + "</div>" +
+      '<div class="share-player-list"><h4>' + state.sides[1].label + (seriesWinnerIndex === 1 ? " 🏆" : "") + "</h4>" +
+        topPlayerRowHtml(state.sides[1].picks) + "</div>" +
+      '<div class="share-footer">נוצר ביורוליג פנטזי</div>';
+
+    window.AppNav.showScreen("h2hShare");
+  }
+
   function onGameNext() {
     if (revealSkip) {
       revealSkip();
@@ -940,6 +974,10 @@
   });
   document.getElementById("btn-h2h-reroll").addEventListener("click", reroll);
   document.getElementById("btn-h2h-game-next").addEventListener("click", onGameNext);
+  document.getElementById("btn-h2h-share").addEventListener("click", renderShareCard);
+  document.getElementById("btn-h2h-share-back").addEventListener("click", function () {
+    window.AppNav.showScreen("h2hResult");
+  });
 
   document.querySelectorAll("#h2h-format-buttons .era-btn").forEach(function (btn) {
     btn.addEventListener("click", function () {

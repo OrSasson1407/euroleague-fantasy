@@ -38,10 +38,25 @@
       teamInitials(teamName) + "</span>";
   }
 
+  // A "club identity" accent for whichever mode has one persistent club for
+  // the whole playthrough (currently league mode) - reuses the same
+  // deterministic per-team color as the badge, kept to low-risk decorative
+  // uses only (a border stripe, never text) since some hashed colors don't
+  // have reliable contrast as foreground text against either theme's bg.
+  function setTeamAccent(teamName) {
+    document.documentElement.style.setProperty("--team-accent", teamColor(teamName));
+  }
+
+  function clearTeamAccent() {
+    document.documentElement.style.removeProperty("--team-accent");
+  }
+
   window.TeamBadge = {
     html: badgeHtml,
     color: teamColor,
     initials: teamInitials,
+    setAccent: setTeamAccent,
+    clearAccent: clearTeamAccent,
   };
 
   // ---------- Rating tag, colored by tier ----------

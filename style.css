@@ -547,11 +547,12 @@ button.secondary {
 .team-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-inline-start: 4px solid var(--accent);
+  border-inline-start: 4px solid var(--team-accent, var(--accent));
   border-radius: 8px;
   padding: 24px;
   margin-bottom: 20px;
   text-align: center;
+  transition: border-inline-start-color .3s ease;
 }
 
 .team-card .team-name {

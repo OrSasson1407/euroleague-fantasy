@@ -85,6 +85,7 @@
   }
 
   function showTeamSelect() {
+    window.TeamBadge.clearAccent();
     var grid = document.getElementById("league-team-grid");
     grid.innerHTML = "";
     uniqueClubs().forEach(function (club) {
@@ -100,6 +101,7 @@
   }
 
   function chooseClub(club) {
+    window.TeamBadge.setAccent(club);
     state.myTeamClub = club;
     state.usedComboIndexes = [];
     state.pickedNames = new Set();

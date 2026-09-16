@@ -18,6 +18,7 @@
     h2hSystem: "screen-h2h-system",
     h2hGame: "screen-h2h-game",
     h2hResult: "screen-h2h-result",
+    h2hShare: "screen-h2h-share",
     leagueTeamSelect: "screen-league-team-select",
     leagueDraft: "screen-league-draft",
     leagueLineup: "screen-league-lineup",
@@ -65,6 +66,7 @@
   var lastScreen = null;
 
   function showScreen(name) {
+    if (name === "home" && window.TeamBadge) window.TeamBadge.clearAccent();
     Object.keys(idMap).forEach(function (key) {
       var el = document.getElementById(idMap[key]);
       if (el) el.classList.toggle("active", key === name);
