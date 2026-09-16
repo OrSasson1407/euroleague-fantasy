@@ -88,14 +88,20 @@
     if (raw) {
       try {
         var parsed = JSON.parse(raw);
-        return { effectsEnabled: parsed.effectsEnabled !== false };
+        return {
+          effectsEnabled: parsed.effectsEnabled !== false,
+          theme: parsed.theme === "light" ? "light" : "dark",
+        };
       } catch (e) {
         // fall through to the system-preference default below
       }
     }
     // No explicit choice saved yet - default to the OS's reduced-motion
-    // preference instead of always defaulting effects on.
-    return { effectsEnabled: !prefersReducedMotion() };
+    // preference instead of always defaulting effects on. The dark
+    // broadcast look is this app's actual identity, though, not just a
+    // neutral default, so theme always starts dark regardless of the
+    // device's own light/dark preference - light is an opt-in choice.
+    return { effectsEnabled: !prefersReducedMotion(), theme: "dark" };
   }
 
   var settings = loadSettings();
@@ -108,9 +114,7 @@
     return settings.effectsEnabled;
   }
 
-  function setEffectsEnabled(enabled) {
-    settings.effectsEnabled = !!enabled;
-    applyEffectsClass();
+  function saveSettings() {
     try {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
     } catch (e) {
@@ -118,7 +122,28 @@
     }
   }
 
+  function setEffectsEnabled(enabled) {
+    settings.effectsEnabled = !!enabled;
+    applyEffectsClass();
+    saveSettings();
+  }
+
+  function applyTheme() {
+    document.documentElement.setAttribute("data-theme", settings.theme);
+  }
+
+  function getTheme() {
+    return settings.theme;
+  }
+
+  function setTheme(theme) {
+    settings.theme = theme === "light" ? "light" : "dark";
+    applyTheme();
+    saveSettings();
+  }
+
   applyEffectsClass();
+  applyTheme();
 
   // ---------- Splash screen ----------
   // The CSS animation handles the actual fade; this just cleans the
@@ -420,6 +445,8 @@
     flipCard: flipCard,
     isEnabled: isEffectsEnabled,
     setEnabled: setEffectsEnabled,
+    getTheme: getTheme,
+    setTheme: setTheme,
   };
 
   // ---------- Toggle-button accessibility state ----------

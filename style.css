@@ -13,6 +13,24 @@
   --font-body: "Assistant", "Segoe UI", Arial, sans-serif;
 }
 
+/* Light theme - opt-in via Settings (the dark broadcast look above is this
+   app's actual identity and stays the default). --accent-2/--danger/--success
+   are darkened from their dark-theme values because those were chosen for
+   contrast against a near-black background and would be too washed out to
+   read as text on a light one; --accent already has enough contrast on both
+   and is left as-is. */
+:root[data-theme="light"] {
+  --bg: #F4F1EC;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #ECE7DF;
+  --accent-2: #A66A00;
+  --text: #201D1A;
+  --text-dim: #6B6459;
+  --border: #DCD5C9;
+  --danger: #C0392B;
+  --success: #1E8449;
+}
+
 * { box-sizing: border-box; }
 
 :focus-visible {

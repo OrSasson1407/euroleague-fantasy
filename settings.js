@@ -21,8 +21,18 @@
     if (!container) return;
 
     var effectsOn = window.Effects ? window.Effects.isEnabled() : true;
+    var theme = window.Effects ? window.Effects.getTheme() : "dark";
 
     var html = "";
+
+    html += '<div class="settings-section"><div class="settings-row">' +
+      '<div><div class="settings-row-title">ערכת עיצוב</div>' +
+      '<div class="settings-row-desc">הלוק הכהה של שידור ספורט הוא ברירת המחדל של האפליקציה, אבל אפשר גם בהיר</div></div>' +
+      '<div class="era-filter-buttons" id="settings-theme-buttons">' +
+      '<button class="era-btn' + (theme === "dark" ? " selected" : "") + '" data-theme-choice="dark">🌙 כהה</button>' +
+      '<button class="era-btn' + (theme === "light" ? " selected" : "") + '" data-theme-choice="light">☀️ בהיר</button>' +
+      "</div>" +
+      "</div></div>";
 
     html += '<div class="settings-section"><div class="settings-row">' +
       '<div><div class="settings-row-title">אפקטים וצלילים</div>' +
@@ -48,6 +58,17 @@
       "</div></div>";
 
     container.innerHTML = html;
+
+    var themeButtons = document.getElementById("settings-theme-buttons");
+    if (themeButtons) {
+      window.UiSelect.sync(themeButtons);
+      Array.from(themeButtons.querySelectorAll(".era-btn")).forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          window.Effects.setTheme(btn.dataset.themeChoice);
+          renderSettingsScreen();
+        });
+      });
+    }
 
     var effectsBtn = document.getElementById("btn-settings-toggle-effects");
     if (effectsBtn) {
