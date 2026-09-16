@@ -238,7 +238,13 @@
       state.correctCount++;
       if (state.timedMode) {
         var elapsedSec = (Date.now() - state.questionStartTime) / 1000;
-        if (elapsedSec <= TIME_LIMIT / 2) speedBonus = 1;
+        var remainingFrac = Math.max(0, (TIME_LIMIT - elapsedSec) / TIME_LIMIT);
+        // Graduated instead of a single all-or-nothing cliff at half the
+        // clock: answering in the first quarter of the time is rewarded
+        // more than just beating the halfway mark, which used to score
+        // identically to an answer that came in at 5.01s vs 9.99s.
+        if (remainingFrac >= 0.75) speedBonus = 2;
+        else if (remainingFrac >= 0.5) speedBonus = 1;
       }
       state.score += 1 + speedBonus;
     } else {
@@ -270,7 +276,7 @@
       feedback.textContent = "⏱ הזמן נגמר! התשובה הנכונה: " + correctLabel;
       feedback.className = "trivia-feedback wrong-text";
     } else if (correct) {
-      feedback.textContent = "✔ נכון!" + (speedBonus ? " (+2, בונוס מהירות)" : " (+1)");
+      feedback.textContent = "✔ נכון!" + (speedBonus > 0 ? " (+" + (1 + speedBonus) + ", בונוס מהירות)" : " (+1)");
       feedback.className = "trivia-feedback correct-text";
     } else {
       feedback.textContent = "✘ טעות - התשובה הנכונה: " + correctLabel;
