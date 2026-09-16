@@ -339,36 +339,6 @@
     });
   }
 
-  // Live "game flow" graph: plots the running score gap (side1 - side2) at
-  // tip-off and after each quarter, revealing one more point per tick so it
-  // draws itself as the game plays out. Gold = side1 leading, red = side2.
-  function momentumGraphHtml(cum1, cum2, revealCount) {
-    var maxDiff = 30;
-    var pts = [{ x: 0, diff: 0 }];
-    for (var i = 0; i < revealCount; i++) {
-      pts.push({ x: (i + 1) * 75, diff: cum1[i] - cum2[i] });
-    }
-    var toY = function (diff) {
-      var clamped = Math.max(-1, Math.min(1, diff / maxDiff));
-      return (50 - clamped * 40).toFixed(1);
-    };
-    var svgPts = pts.map(function (p) { return p.x + "," + toY(p.diff); }).join(" ");
-    var last = pts[pts.length - 1];
-    var leadingColor = last.diff > 0 ? "var(--accent-2)" : (last.diff < 0 ? "var(--accent)" : "var(--text-dim)");
-    var labels = ["התחלה", "רבע 1", "רבע 2", "רבע 3", "רבע 4"];
-    var labelsHtml = labels.map(function (lab, i) {
-      return '<span class="momentum-label' + (i <= revealCount ? " revealed" : "") + '">' + lab + "</span>";
-    }).join("");
-    return (
-      '<svg class="momentum-graph" viewBox="0 0 300 100" preserveAspectRatio="none" aria-hidden="true">' +
-        '<line x1="0" y1="50" x2="300" y2="50" class="momentum-baseline"></line>' +
-        (pts.length > 1 ? '<polyline points="' + svgPts + '" class="momentum-line"></polyline>' : "") +
-        '<circle cx="' + last.x + '" cy="' + toY(last.diff) + '" r="4.5" style="fill:' + leadingColor + '"></circle>' +
-      "</svg>" +
-      '<div class="momentum-labels">' + labelsHtml + "</div>"
-    );
-  }
-
   function playOneGame(gameIndex) {
     var homeIndex = gameIndex % 2;
     var bonus1 = homeIndex === 0 ? HOME_BONUS : 0;
@@ -467,7 +437,7 @@
     var preview = document.getElementById("h2h-game-preview");
     preview.innerHTML =
       '<div class="final-score">' + g.score1 + " - " + g.score2 + "</div>" +
-      momentumGraphHtml(cum1, cum2, 4) +
+      window.MomentumGraph.html(cum1, cum2, 4) +
       "<div>" + winnerLabel + " ניצח/ה במשחק זה</div>";
 
     var seriesDecided = seriesWins[0] >= state.gamesToWin || seriesWins[1] >= state.gamesToWin;
@@ -492,7 +462,7 @@
       var liveScore2 = step > 0 ? cum2[step - 1] : 0;
       preview.innerHTML =
         '<div class="final-score">' + liveScore1 + " - " + liveScore2 + "</div>" +
-        momentumGraphHtml(cum1, cum2, step) +
+        window.MomentumGraph.html(cum1, cum2, step) +
         '<div class="home-tag">רבע ' + Math.min(step + 1, 4) + " מתוך 4</div>";
       if (step > 0) window.Effects.playClick();
       if (step < 4) {
@@ -575,6 +545,14 @@
       }
     }
 
+    window.GameHistory.record({
+      mode: "h2h",
+      icon: "⚔️",
+      title: state.sides[0].label + " נגד " + state.sides[1].label,
+      detail: seriesWins[0] + "-" + seriesWins[1] + " · " + winnerLabel + " ניצח/ה",
+      outcome: state.mode === "computer" ? (seriesWinnerIndex === 0 ? "win" : "loss") : "neutral",
+    });
+
     window.AppNav.showScreen("h2hResult");
   }
 
@@ -602,7 +580,7 @@
       '<div class="share-tagline">1 על 1 &middot; יורוליג פנטזי</div>' +
       '<div class="share-rating">' + seriesWins[0] + "-" + seriesWins[1] + "</div>" +
       '<div class="share-rating-label">תוצאת הסדרה &middot; משחק אחרון: ' + lastGame.score1 + "-" + lastGame.score2 + "</div>" +
-      momentumGraphHtml(cum1, cum2, 4) +
+      window.MomentumGraph.html(cum1, cum2, 4) +
       '<div class="share-player-list"><h4>' + state.sides[0].label + (seriesWinnerIndex === 0 ? " 🏆" : "") + "</h4>" +
         topPlayerRowHtml(state.sides[0].picks) + "</div>" +
       '<div class="share-player-list"><h4>' + state.sides[1].label + (seriesWinnerIndex === 1 ? " 🏆" : "") + "</h4>" +

@@ -2,14 +2,13 @@
   "use strict";
 
   var TOTAL_PICKS = 10;
-  var LEAGUE_SIZE = 20;
   var MAX_REROLLS = 2;
-  var PLAYOFF_SIZE = 8;
   var SLOT_TEMPLATE = ["Guard", "Guard", "Forward", "Forward", "Center"];
   var POS_LABEL = { Guard: "מגן", Forward: "חלוץ", Center: "סנטר" };
 
   var state = {
     myTeamClub: null,
+    leagueSize: 20, // 20 = full season, 8 = mini-league (set on the team-select screen)
     usedComboIndexes: [],
     pickedNames: new Set(),
     myRoster: [], // { player, position, team, season, slotLabel, half }
@@ -17,6 +16,18 @@
     needsByHalf: null, // { 1: {Guard,Forward,Center}, 2: {Guard,Forward,Center} } - remaining open slots per half
     playSystem: null, // the coaching system chosen for this season, or null
   };
+
+  function playoffSizeFor(leagueSize) {
+    return leagueSize <= 8 ? 4 : 8;
+  }
+
+  // Same ~47%/~74%-through-the-schedule ratios as the original fixed [9, 14]
+  // out of 19 games, scaled to however many games this season actually has -
+  // too short a mini-league (under 4 games) skips mid-season trades entirely.
+  function tradeCheckpointsFor(totalGames) {
+    if (totalGames < 4) return [];
+    return [Math.round((totalGames * 9) / 19), Math.round((totalGames * 14) / 19)];
+  }
 
   function freshNeeds() {
     return { Guard: 2, Forward: 2, Center: 1 };
@@ -35,10 +46,10 @@
   var myOpponents = null; // lastTeams[1..], in the fixed order my team plays them
   var lastMyGames = null; // my team's individual game results, in play order
   var liveIndex = 0; // how many of myOpponents have been played/revealed in the "game by game" viewer
-  var TRADE_CHECKPOINTS = [9, 14]; // offer a trade window right before these game indexes (0-based) - roughly mid and 3/4 through 19
+  var tradeCheckpoints = []; // offer a trade window right before these game indexes (0-based); computed per season by tradeCheckpointsFor()
   var resolvedTradeCheckpoints = {}; // which checkpoints have already been resolved (traded or skipped) this season
   var tradeSelection = null; // the roster entry currently picked to be traded away, or null
-  var pendingTradeCheckpoint = null; // which TRADE_CHECKPOINTS entry is currently being resolved
+  var pendingTradeCheckpoint = null; // which tradeCheckpoints entry is currently being resolved
   var lastKnownRank = null; // my provisional standings rank as of the last revealed game, for the movement arrow
   var lineupSelection = null; // the roster entry currently picked for a swap, or null
 
@@ -471,6 +482,28 @@
     return (Math.random() * 2 - 1) * part + (Math.random() * 2 - 1) * part + (Math.random() * 2 - 1) * part;
   }
 
+  function splitIntoQuarters(total) {
+    var weights = [Math.random() + 0.6, Math.random() + 0.6, Math.random() + 0.6, Math.random() + 0.6];
+    var sum = weights[0] + weights[1] + weights[2] + weights[3];
+    var running = 0;
+    var quarters = [];
+    for (var i = 0; i < 4; i++) {
+      var isLast = i === 3;
+      var q = isLast ? total - running : Math.round((total * weights[i]) / sum);
+      quarters.push(q);
+      running += q;
+    }
+    return quarters;
+  }
+
+  function cumulativeLine(quarters) {
+    var running = 0;
+    return quarters.map(function (q) {
+      running += q;
+      return running;
+    });
+  }
+
   function finishDraftAndBuildLeague(mode) {
     var otherClubs = uniqueClubs().filter(function (c) {
       return c !== state.myTeamClub;
@@ -481,7 +514,7 @@
       otherClubs[i] = otherClubs[j];
       otherClubs[j] = tmp;
     }
-    var opponentClubs = otherClubs.slice(0, LEAGUE_SIZE - 1);
+    var opponentClubs = otherClubs.slice(0, state.leagueSize - 1);
 
     var teams = [];
     teams.push({
@@ -516,6 +549,7 @@
 
     lastTeams = teams;
     myOpponents = teams.slice(1);
+    tradeCheckpoints = tradeCheckpointsFor(myOpponents.length);
     lastMyGames = [];
     liveIndex = 0;
     resolvedTradeCheckpoints = {};
@@ -597,7 +631,14 @@
     if (won && Math.abs(scoreA - scoreB) === 1) {
       window.Achievements.unlock("league_close_win");
     }
-    return { opponent: opponent, myScore: scoreA, oppScore: scoreB, won: won };
+    return {
+      opponent: opponent,
+      myScore: scoreA,
+      oppScore: scoreB,
+      won: won,
+      myQuarters: splitIntoQuarters(scoreA),
+      oppQuarters: splitIntoQuarters(scoreB),
+    };
   }
 
   function finalizeStandings(teams) {
@@ -636,6 +677,18 @@
       log.appendChild(row);
     });
 
+    var momentumEl = document.getElementById("league-live-momentum");
+    var lastGame = lastMyGames[lastMyGames.length - 1];
+    if (lastGame) {
+      momentumEl.hidden = false;
+      momentumEl.innerHTML =
+        "<div>המשחק האחרון מול " + lastGame.opponent.label + "</div>" +
+        '<div class="final-score">' + lastGame.myScore + " - " + lastGame.oppScore + "</div>" +
+        window.MomentumGraph.html(cumulativeLine(lastGame.myQuarters), cumulativeLine(lastGame.oppQuarters), 4);
+    } else {
+      momentumEl.hidden = true;
+    }
+
     document.getElementById("league-live-record").textContent = "מאזן עד כה: " + wins + " נצחונות, " + losses + " הפסדים";
 
     var rankEl = document.getElementById("league-live-rank");
@@ -670,7 +723,7 @@
       renderLeagueTable(lastStandings);
       return;
     }
-    if (TRADE_CHECKPOINTS.indexOf(liveIndex) !== -1 && !resolvedTradeCheckpoints[liveIndex]) {
+    if (tradeCheckpoints.indexOf(liveIndex) !== -1 && !resolvedTradeCheckpoints[liveIndex]) {
       showTradeScreen(liveIndex);
       return;
     }
@@ -776,7 +829,7 @@
     tradeSelection = null;
     renderTradeCurrent();
     document.getElementById("league-trade-candidates-card").style.display = "none";
-    var isFirst = checkpoint === TRADE_CHECKPOINTS[0];
+    var isFirst = checkpoint === tradeCheckpoints[0];
     document.getElementById("league-trade-title").textContent =
       isFirst ? "חלון העברות ראשון (אמצע העונה)" : "חלון העברות שני (סוף העונה)";
     window.AppNav.showScreen("leagueTrade");
@@ -838,6 +891,14 @@
     var seasonsCompleted = window.Achievements.incrementCounter("league_seasons_completed");
     if (seasonsCompleted >= 3) window.Achievements.unlock("league_veteran");
 
+    window.GameHistory.record({
+      mode: "league",
+      icon: "🏆",
+      title: state.myTeamClub,
+      detail: "מקום " + myRank + " מתוך " + teams.length + " · " + mine.wins + "-" + mine.losses,
+      outcome: myRank === 1 ? "win" : (myRank <= playoffSizeFor(state.leagueSize) ? "neutral" : "loss"),
+    });
+
     var tbody = document.getElementById("league-table-body");
     tbody.innerHTML = "";
     teams.forEach(function (t, i) {
@@ -853,6 +914,10 @@
         "<td>" + (diff >= 0 ? "+" : "") + diff + "</td>";
       tbody.appendChild(tr);
     });
+
+    var playoffSize = playoffSizeFor(state.leagueSize);
+    document.getElementById("btn-league-playoffs").textContent =
+      "המשך לפלייאוף (" + playoffSize + " גדולות) »";
 
     window.AppNav.showScreen("leagueTable");
   }
@@ -875,14 +940,24 @@
 
   function runPlayoffs() {
     if (!lastStandings) return;
-    var top8 = lastStandings.slice(0, PLAYOFF_SIZE);
+    var size = playoffSizeFor(state.leagueSize);
+    var top8 = lastStandings.slice(0, size);
 
-    var qfPairsIdx = [[0, 7], [3, 4], [2, 5], [1, 6]];
-    var qf = qfPairsIdx.map(function (pair) {
-      return playMatch(top8[pair[0]], top8[pair[1]]);
-    });
+    var qf = null;
+    var sfTeams;
+    if (size === 8) {
+      var qfPairsIdx = [[0, 7], [3, 4], [2, 5], [1, 6]];
+      qf = qfPairsIdx.map(function (pair) {
+        return playMatch(top8[pair[0]], top8[pair[1]]);
+      });
+      sfTeams = qf.map(function (r) { return r.winner; });
+    } else {
+      // Mini-league (4-team) playoff: straight to the semifinals, no
+      // quarterfinal round. Seeded 1v4 / 2v3 like the 8-team bracket above,
+      // so the top two seeds can't meet before the final.
+      sfTeams = [top8[0], top8[3], top8[1], top8[2]];
+    }
 
-    var sfTeams = qf.map(function (r) { return r.winner; });
     var sf = [
       playMatch(sfTeams[0], sfTeams[1]),
       playMatch(sfTeams[2], sfTeams[3]),
@@ -914,7 +989,7 @@
 
   function describeMyRun(data) {
     var rounds = [
-      { name: "רבע הגמר", matches: data.qf },
+      { name: "רבע הגמר", matches: data.qf || [] },
       { name: "חצי הגמר", matches: data.sf },
       { name: "הגמר", matches: [data.final] },
     ];
@@ -934,7 +1009,7 @@
   function renderPlayoffs(data) {
     var container = document.getElementById("playoffs-bracket");
     container.innerHTML =
-      '<div class="playoff-round"><h3>רבע גמר</h3>' + data.qf.map(matchHtml).join("") + "</div>" +
+      (data.qf ? '<div class="playoff-round"><h3>רבע גמר</h3>' + data.qf.map(matchHtml).join("") + "</div>" : "") +
       '<div class="playoff-round"><h3>חצי גמר</h3>' + data.sf.map(matchHtml).join("") + "</div>" +
       '<div class="playoff-round"><h3>גמר</h3>' + matchHtml(data.final) + "</div>";
 
@@ -949,7 +1024,8 @@
       var run = describeMyRun(data);
       titleEl.textContent = "ההרכב שלכם הודח ב" + run.roundName + ". אלופת הפלייאוף: " + data.champion.label;
     } else {
-      titleEl.textContent = "ההרכב שלכם לא הגיע לשמינית הפלייאוף. אלופת הפלייאוף: " + data.champion.label;
+      var missedText = data.qf ? "לשמינית הפלייאוף" : "לפלייאוף";
+      titleEl.textContent = "ההרכב שלכם לא הגיע " + missedText + ". אלופת הפלייאוף: " + data.champion.label;
     }
 
     window.AppNav.showScreen("leaguePlayoffs");
@@ -959,6 +1035,18 @@
     showTeamSelect();
   });
   document.getElementById("btn-league-reroll").addEventListener("click", reroll);
+
+  document.querySelectorAll("#league-format-buttons .era-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll("#league-format-buttons .era-btn").forEach(function (b) {
+        b.classList.remove("selected");
+      });
+      btn.classList.add("selected");
+      window.UiSelect.sync(document.getElementById("league-format-buttons"));
+      state.leagueSize = parseInt(btn.dataset.leagueSize, 10);
+    });
+  });
+
   function renderSystemSelectScreen() {
     var grid = document.getElementById("league-system-grid");
     grid.innerHTML = "";

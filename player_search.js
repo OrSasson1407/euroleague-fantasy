@@ -68,12 +68,33 @@
     return INDEX;
   }
 
-  function search(query) {
+  // filters (all optional): { position: "Guard"|"Forward"|"Center", eraMin,
+  // eraMax, minRating }. A player matches if AT LEAST ONE of their seasons
+  // satisfies every active filter - "show me players who were ever a 90+
+  // Center in the 2000s", not "were that in every season".
+  function matchesFilters(entry, filters) {
+    if (!filters) return true;
+    return entry.appearances.some(function (a) {
+      if (filters.position && a.position !== filters.position) return false;
+      var year = parseInt(a.season, 10);
+      if (filters.eraMin && year < filters.eraMin) return false;
+      if (filters.eraMax && year > filters.eraMax) return false;
+      if (filters.minRating && (typeof a.rating !== "number" || a.rating < filters.minRating)) return false;
+      return true;
+    });
+  }
+
+  function hasActiveFilters(filters) {
+    return !!(filters && (filters.position || filters.eraMin || (filters.eraMax && filters.eraMax < 9999) || filters.minRating));
+  }
+
+  function search(query, filters) {
     var q = normalizeName(query || "");
-    if (q.length < 2) return [];
+    if (q.length < 2 && !hasActiveFilters(filters)) return [];
     return getIndex()
       .filter(function (e) {
-        return normalizeName(e.name).indexOf(q) !== -1;
+        if (q.length >= 2 && normalizeName(e.name).indexOf(q) === -1) return false;
+        return matchesFilters(e, filters);
       })
       .sort(function (a, b) {
         var ar = typeof a.bestAppearance.rating === "number" ? a.bestAppearance.rating : 0;

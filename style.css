@@ -1062,6 +1062,28 @@ footer {
   font-weight: 700;
 }
 
+/* Personal game history (profile screen) */
+.history-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-inline-start: 3px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+}
+
+.history-row.win { border-inline-start-color: var(--success); }
+.history-row.loss { border-inline-start-color: var(--danger); }
+
+.history-row-icon { font-size: 1.3rem; flex: 0 0 auto; }
+.history-row-body { flex: 1 1 auto; min-width: 0; }
+.history-row-title { font-weight: 700; font-size: 0.9rem; }
+.history-row-detail { color: var(--text-dim); font-size: 0.8rem; margin-top: 2px; }
+.history-row-date { color: var(--text-dim); font-size: 0.72rem; flex: 0 0 auto; white-space: nowrap; }
+
 /* Player search / profile */
 .player-search-input {
   display: block;

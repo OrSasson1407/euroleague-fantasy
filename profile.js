@@ -104,6 +104,24 @@
 
     html += "</div>";
 
+    var history = window.GameHistory.getAll();
+    if (history.length) {
+      html += "<h3>היסטוריית משחקים</h3>";
+      html += history.slice(0, 15).map(function (h) {
+        var dateLabel = new Date(h.date).toLocaleDateString("he-IL");
+        return (
+          '<div class="history-row ' + (h.outcome || "") + '">' +
+            '<span class="history-row-icon" aria-hidden="true">' + h.icon + "</span>" +
+            '<span class="history-row-body">' +
+              '<span class="history-row-title">' + escapeHtml(h.title) + "</span>" +
+              '<span class="history-row-detail">' + escapeHtml(h.detail) + "</span>" +
+            "</span>" +
+            '<span class="history-row-date">' + dateLabel + "</span>" +
+          "</div>"
+        );
+      }).join("");
+    }
+
     container.innerHTML = html;
   }
 

@@ -3,6 +3,12 @@
 
   var formatSeason = window.PlayerSearch.formatSeason;
 
+  var filters = { position: "", eraMin: 0, eraMax: 9999, minRating: 0 };
+
+  function hasActiveFilters() {
+    return !!(filters.position || filters.eraMin || filters.eraMax < 9999 || filters.minRating);
+  }
+
   function escapeHtml(str) {
     var div = document.createElement("div");
     div.textContent = str;
@@ -16,23 +22,31 @@
     resultsEl.innerHTML = "";
 
     var trimmed = (query || "").trim();
-    if (trimmed.length < 2) {
+    if (trimmed.length < 2 && !hasActiveFilters()) {
       resultsEl.innerHTML =
         '<div class="empty-state">' +
           '<div class="empty-state-icon" aria-hidden="true">🔍</div>' +
           '<p class="empty-state-text">חפשו שחקן מהיסטוריית היורוליג</p>' +
-          '<p class="empty-state-hint">הקלידו לפחות 2 תווים, למשל שם פרטי או משפחה</p>' +
+          '<p class="empty-state-hint">הקלידו לפחות 2 תווים, או סננו לפי עמדה/עידן/דירוג בלי להקליד שם</p>' +
         "</div>";
       return;
     }
 
-    var matches = window.PlayerSearch.search(trimmed);
+    var matches = window.PlayerSearch.search(trimmed, {
+      position: filters.position || null,
+      eraMin: filters.eraMin,
+      eraMax: filters.eraMax,
+      minRating: filters.minRating,
+    });
     if (matches.length === 0) {
+      var noResultsText = trimmed.length >= 2
+        ? 'לא נמצאו שחקנים בשם "' + escapeHtml(trimmed) + '" התואמים לסינון'
+        : "לא נמצאו שחקנים התואמים לסינון שנבחר";
       resultsEl.innerHTML =
         '<div class="empty-state">' +
           '<div class="empty-state-icon" aria-hidden="true">🕵️</div>' +
-          '<p class="empty-state-text">לא נמצאו שחקנים בשם "' + escapeHtml(trimmed) + '"</p>' +
-          '<p class="empty-state-hint">נסו לבדוק את האיות, או לחפש רק שם פרטי / משפחה</p>' +
+          '<p class="empty-state-text">' + noResultsText + "</p>" +
+          '<p class="empty-state-hint">נסו להרחיב את הסינון או לבדוק את האיות</p>' +
         "</div>";
       return;
     }
@@ -111,6 +125,47 @@
 
   document.getElementById("player-search-input").addEventListener("input", function (e) {
     renderResults(e.target.value);
+  });
+
+  function currentQuery() {
+    return document.getElementById("player-search-input").value;
+  }
+
+  document.querySelectorAll("#player-search-position-buttons .era-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll("#player-search-position-buttons .era-btn").forEach(function (b) {
+        b.classList.remove("selected");
+      });
+      btn.classList.add("selected");
+      window.UiSelect.sync(document.getElementById("player-search-position-buttons"));
+      filters.position = btn.dataset.pos;
+      renderResults(currentQuery());
+    });
+  });
+
+  document.querySelectorAll("#player-search-era-buttons .era-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll("#player-search-era-buttons .era-btn").forEach(function (b) {
+        b.classList.remove("selected");
+      });
+      btn.classList.add("selected");
+      window.UiSelect.sync(document.getElementById("player-search-era-buttons"));
+      filters.eraMin = parseInt(btn.dataset.min, 10);
+      filters.eraMax = parseInt(btn.dataset.max, 10);
+      renderResults(currentQuery());
+    });
+  });
+
+  document.querySelectorAll("#player-search-rating-buttons .era-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll("#player-search-rating-buttons .era-btn").forEach(function (b) {
+        b.classList.remove("selected");
+      });
+      btn.classList.add("selected");
+      window.UiSelect.sync(document.getElementById("player-search-rating-buttons"));
+      filters.minRating = parseInt(btn.dataset.minRating, 10);
+      renderResults(currentQuery());
+    });
   });
 
   window.PlayerProfile = { open: openSearchScreen };

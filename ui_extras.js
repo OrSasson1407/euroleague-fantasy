@@ -1,6 +1,42 @@
 (function () {
   "use strict";
 
+  // ---------- Live "game flow" momentum graph ----------
+  // Shared by h2h.js (per-series game reveal) and league.js (live game-by-
+  // game viewer). Plots the running score gap (side1 - side2) at tip-off and
+  // after each quarter, revealing one more point per tick so it draws itself
+  // as the game plays out. Gold = side1 leading, red = side2. Callers own
+  // however they split a final score into quarters/cumulative lines - this
+  // only needs the resulting cum1/cum2 arrays.
+  function momentumGraphHtml(cum1, cum2, revealCount) {
+    var maxDiff = 30;
+    var pts = [{ x: 0, diff: 0 }];
+    for (var i = 0; i < revealCount; i++) {
+      pts.push({ x: (i + 1) * 75, diff: cum1[i] - cum2[i] });
+    }
+    var toY = function (diff) {
+      var clamped = Math.max(-1, Math.min(1, diff / maxDiff));
+      return (50 - clamped * 40).toFixed(1);
+    };
+    var svgPts = pts.map(function (p) { return p.x + "," + toY(p.diff); }).join(" ");
+    var last = pts[pts.length - 1];
+    var leadingColor = last.diff > 0 ? "var(--accent-2)" : (last.diff < 0 ? "var(--accent)" : "var(--text-dim)");
+    var labels = ["התחלה", "רבע 1", "רבע 2", "רבע 3", "רבע 4"];
+    var labelsHtml = labels.map(function (lab, i) {
+      return '<span class="momentum-label' + (i <= revealCount ? " revealed" : "") + '">' + lab + "</span>";
+    }).join("");
+    return (
+      '<svg class="momentum-graph" viewBox="0 0 300 100" preserveAspectRatio="none" aria-hidden="true">' +
+        '<line x1="0" y1="50" x2="300" y2="50" class="momentum-baseline"></line>' +
+        (pts.length > 1 ? '<polyline points="' + svgPts + '" class="momentum-line"></polyline>' : "") +
+        '<circle cx="' + last.x + '" cy="' + toY(last.diff) + '" r="4.5" style="fill:' + leadingColor + '"></circle>' +
+      "</svg>" +
+      '<div class="momentum-labels">' + labelsHtml + "</div>"
+    );
+  }
+
+  window.MomentumGraph = { html: momentumGraphHtml };
+
   // ---------- Generic team badges ----------
   // No real club logos are used - just a deterministic colored emblem with
   // the club's initials, so every team name gets a consistent visual "crest"
