@@ -504,6 +504,33 @@
     });
   }
 
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  // The historical dataset skews toward notable (mostly strong) seasons, so
+  // a flat random draw per opponent club risks a league field where one
+  // club's random season is an all-time great roster and another's is a
+  // scrub, purely by luck - not a spread of strength around where my own
+  // roster actually sits. Bias each club's season toward a target strength
+  // near mine (same bellRandom-around-a-target idea career.js already uses
+  // for its own opponents) by picking whichever of that club's seasons
+  // lands closest to the target, rather than excluding any as a hard filter
+  // (clubs with few seasons on record could otherwise come up empty).
+  function pickBalancedCombo(combos, myRating) {
+    var target = clamp(myRating + bellRandom(16), 45, 99);
+    var best = combos[0];
+    var bestDiff = Infinity;
+    combos.forEach(function (c) {
+      var diff = Math.abs(ratingForHistoricalRoster(c.players) - target);
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        best = c;
+      }
+    });
+    return best;
+  }
+
   function finishDraftAndBuildLeague(mode) {
     var otherClubs = uniqueClubs().filter(function (c) {
       return c !== state.myTeamClub;
@@ -515,12 +542,13 @@
       otherClubs[j] = tmp;
     }
     var opponentClubs = otherClubs.slice(0, state.leagueSize - 1);
+    var myRating = ratingForMyRoster(state.myRoster);
 
     var teams = [];
     teams.push({
       label: "ההרכב שלי (" + state.myTeamClub + ")",
       isMine: true,
-      rating: ratingForMyRoster(state.myRoster),
+      rating: myRating,
       offense: offenseForMyRoster(state.myRoster, state.playSystem),
       defense: defenseForMyRoster(state.myRoster, state.playSystem),
       varianceMultiplier: state.playSystem ? state.playSystem.varianceMultiplier : 1,
@@ -532,7 +560,7 @@
 
     opponentClubs.forEach(function (club) {
       var combos = combosForClub(club);
-      var combo = combos[Math.floor(Math.random() * combos.length)];
+      var combo = pickBalancedCombo(combos, myRating);
       teams.push({
         label: club + " " + formatSeason(combo.season),
         isMine: false,
