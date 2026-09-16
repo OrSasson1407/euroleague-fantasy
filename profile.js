@@ -28,9 +28,9 @@
   function renderGuestView(container) {
     container.innerHTML =
       '<div class="career-event-card" style="text-align:center;">' +
-      "<p>הפרופיל האישי זמין רק למשתמשים רשומים.</p>" +
-      "<p>במצב אורח אין שיאים ונתונים שמורים להציג כאן.</p>" +
-      '<button id="btn-profile-register-cta" style="margin-top:10px;">הרשמה עכשיו</button>' +
+      "<p>" + window.I18n.t("profile.guestMessage1") + "</p>" +
+      "<p>" + window.I18n.t("profile.guestMessage2") + "</p>" +
+      '<button id="btn-profile-register-cta" style="margin-top:10px;">' + window.I18n.t("profile.registerCta") + "</button>" +
       "</div>";
     var btn = document.getElementById("btn-profile-register-cta");
     if (btn) {
@@ -59,56 +59,56 @@
     html +=
       '<div class="career-last-summary">' +
       "👤 <strong>" + escapeHtml(username) + "</strong>" +
-      "<br>🏅 " + unlockedCount + " מתוך " + all.length + " באנרים נפתחו" +
+      "<br>" + window.I18n.t("profile.badgesSummary", { count: unlockedCount, total: all.length }) +
       "</div>";
 
     html += '<div class="profile-stats-grid">';
 
     html += statCardHtml(
-      "🏀 בניית סגל",
+      window.I18n.t("profile.statSingleTitle"),
       topSquads.length
-        ? "שיא: <strong>" + topSquads[0].rating.toFixed(1) + "</strong> &middot; " + topSquads.length + " הרכבים שמורים"
-        : "עדיין לא נשמר הרכב"
+        ? window.I18n.t("profile.statSingleBest", { rating: topSquads[0].rating.toFixed(1), count: topSquads.length })
+        : window.I18n.t("profile.statNeverPlayed")
     );
 
     html += statCardHtml(
-      "⚔️ 1 על 1",
-      h2hSeries > 0 ? h2hSeries + " סדרות שוחקו" : "עדיין לא שוחק"
+      window.I18n.t("profile.statH2hTitle"),
+      h2hSeries > 0 ? window.I18n.t("profile.statH2hPlayed", { count: h2hSeries }) : window.I18n.t("profile.statNeverPlayed")
     );
 
     html += statCardHtml(
-      "🏆 ליגה",
-      leagueSeasons > 0 ? leagueSeasons + " עונות הושלמו" : "עדיין לא שוחק"
+      window.I18n.t("profile.statLeagueTitle"),
+      leagueSeasons > 0 ? window.I18n.t("profile.statLeagueSeasons", { count: leagueSeasons }) : window.I18n.t("profile.statNeverPlayed")
     );
 
     html += statCardHtml(
-      "🧠 טריוויה",
+      window.I18n.t("profile.statTriviaTitle"),
       (triviaTeamBest || triviaSeasonBest)
-        ? "קבוצות: " + triviaTeamBest + "/25 &middot; עונות: " + triviaSeasonBest + "/25"
-        : "עדיין לא שוחק"
+        ? window.I18n.t("profile.statTriviaBest", { team: triviaTeamBest, season: triviaSeasonBest })
+        : window.I18n.t("profile.statNeverPlayed")
     );
 
     var careerLine;
     if (hasCareerInProgress) {
-      careerLine = "קריירה בתהליך כרגע";
+      careerLine = window.I18n.t("profile.careerInProgress");
     } else if (careerRuns > 0) {
-      careerLine = careerRuns + " קריירות הושלמו";
+      careerLine = window.I18n.t("profile.careerCompletedCount", { count: careerRuns });
       if (lastCareer) {
-        careerLine += " &middot; אחרונה: " + escapeHtml(lastCareer.name || "") +
-          (typeof lastCareer.peakRating === "number" ? " (שיא " + lastCareer.peakRating + ")" : "");
+        careerLine += " &middot; " + window.I18n.t("profile.careerLastLabel", { name: escapeHtml(lastCareer.name || "") }) +
+          (typeof lastCareer.peakRating === "number" ? window.I18n.t("profile.careerPeakSuffix", { peak: lastCareer.peakRating }) : "");
       }
     } else {
-      careerLine = "עדיין לא שוחק";
+      careerLine = window.I18n.t("profile.statNeverPlayed");
     }
-    html += statCardHtml("🎽 קריירה", careerLine);
+    html += statCardHtml(window.I18n.t("profile.statCareerTitle"), careerLine);
 
     html += "</div>";
 
     var history = window.GameHistory.getAll();
     if (history.length) {
-      html += "<h3>היסטוריית משחקים</h3>";
+      html += "<h3>" + window.I18n.t("profile.historyTitle") + "</h3>";
       html += history.slice(0, 15).map(function (h) {
-        var dateLabel = new Date(h.date).toLocaleDateString("he-IL");
+        var dateLabel = new Date(h.date).toLocaleDateString(window.I18n.getLang() === "en" ? "en-US" : "he-IL");
         return (
           '<div class="history-row ' + (h.outcome || "") + '">' +
             '<span class="history-row-icon" aria-hidden="true">' + h.icon + "</span>" +

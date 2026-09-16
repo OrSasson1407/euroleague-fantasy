@@ -156,7 +156,7 @@
       return b.unlocked;
     }).length;
     document.getElementById("badges-progress").textContent =
-      "פתחתם " + unlockedCount + " מתוך " + all.length + " באנרים";
+      window.I18n.t("badges.progress", { count: unlockedCount, total: all.length });
 
     var grid = document.getElementById("badges-grid");
     grid.innerHTML = "";

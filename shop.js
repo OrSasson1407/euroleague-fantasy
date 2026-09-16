@@ -14,27 +14,9 @@
   // modes' game.js/career.js/league.js check window.Shop.isOwned(id) once
   // to decide whether to offer the unlocked option at all.
   var CATALOG = [
-    {
-      id: "legendsDraft",
-      icon: "🌟",
-      title: "דראפט אגדות",
-      desc: "מצב דראפט בלעדי בבניית סגל - מאגר השחקנים מוגבל לדירוג 90+ בלבד",
-      price: 800,
-    },
-    {
-      id: "freeClubChoice",
-      icon: "🎽",
-      title: "בחירת קבוצה חופשית",
-      desc: "ביום הדראפט בקריירה, בחרו כל קבוצה שתרצו במקום לבחור מתוך ההצעות שהוצגו",
-      price: 600,
-    },
-    {
-      id: "freeAgentSigning",
-      icon: "✍️",
-      title: "חתימת שחקן חופשי",
-      desc: "פעם בכל עונת ליגה, בחרו כל שחקן מההיסטוריה והחתימו אותו ישירות להרכב שלכם",
-      price: 700,
-    },
+    { id: "legendsDraft", icon: "🌟", price: 800 },
+    { id: "freeClubChoice", icon: "🎽", price: 600 },
+    { id: "freeAgentSigning", icon: "✍️", price: 700 },
   ];
 
   function load() {
@@ -97,11 +79,11 @@
 
   function refreshTopbarDisplay() {
     var el = document.getElementById("topbar-coin-balance");
-    if (el) el.textContent = getBalance().toLocaleString("he-IL");
+    if (el) el.textContent = window.I18n.formatNumber(getBalance());
   }
 
   function renderShopScreen() {
-    document.getElementById("shop-balance").textContent = getBalance().toLocaleString("he-IL");
+    document.getElementById("shop-balance").textContent = window.I18n.formatNumber(getBalance());
 
     var catalogEl = document.getElementById("shop-catalog");
     var balance = getBalance();
@@ -112,11 +94,11 @@
         '<div class="shop-item-card' + (owned ? " owned" : "") + '">' +
           '<div class="shop-item-icon" aria-hidden="true">' + item.icon + "</div>" +
           '<div class="shop-item-body">' +
-            '<div class="shop-item-title">' + item.title + "</div>" +
-            '<div class="shop-item-desc">' + item.desc + "</div>" +
+            '<div class="shop-item-title">' + window.I18n.t("shop.catalog." + item.id + ".title") + "</div>" +
+            '<div class="shop-item-desc">' + window.I18n.t("shop.catalog." + item.id + ".desc") + "</div>" +
           "</div>" +
           (owned
-            ? '<span class="shop-item-owned">✅ נרכש</span>'
+            ? '<span class="shop-item-owned">✅ ' + window.I18n.t("shop.owned") + "</span>"
             : '<button class="shop-item-buy" data-item-id="' + item.id + '"' + (afford ? "" : " disabled") + ">🪙 " + item.price + "</button>") +
         "</div>"
       );

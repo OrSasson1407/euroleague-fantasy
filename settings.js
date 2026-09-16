@@ -36,35 +36,35 @@
       "</div></div>";
 
     html += '<div class="settings-section"><div class="settings-row">' +
-      '<div><div class="settings-row-title">ערכת עיצוב</div>' +
-      '<div class="settings-row-desc">הלוק הכהה של שידור ספורט הוא ברירת המחדל של האפליקציה, אבל אפשר גם בהיר</div></div>' +
+      '<div><div class="settings-row-title">' + window.I18n.t("settings.theme.label") + "</div>" +
+      '<div class="settings-row-desc">' + window.I18n.t("settings.theme.desc") + "</div></div>" +
       '<div class="era-filter-buttons" id="settings-theme-buttons">' +
-      '<button class="era-btn' + (theme === "dark" ? " selected" : "") + '" data-theme-choice="dark">🌙 כהה</button>' +
-      '<button class="era-btn' + (theme === "light" ? " selected" : "") + '" data-theme-choice="light">☀️ בהיר</button>' +
+      '<button class="era-btn' + (theme === "dark" ? " selected" : "") + '" data-theme-choice="dark">🌙 ' + window.I18n.t("settings.theme.dark") + "</button>" +
+      '<button class="era-btn' + (theme === "light" ? " selected" : "") + '" data-theme-choice="light">☀️ ' + window.I18n.t("settings.theme.light") + "</button>" +
       "</div>" +
       "</div></div>";
 
     html += '<div class="settings-section"><div class="settings-row">' +
-      '<div><div class="settings-row-title">אפקטים וצלילים</div>' +
-      '<div class="settings-row-desc">קונפטי, אנימציות מעבר בין מסכים, וצלילי קליק/באזר בדראפט ובתוצאות</div></div>' +
+      '<div><div class="settings-row-title">' + window.I18n.t("settings.effects.label") + "</div>" +
+      '<div class="settings-row-desc">' + window.I18n.t("settings.effects.desc") + "</div></div>" +
       '<button class="settings-toggle-btn" id="btn-settings-toggle-effects" aria-pressed="' + (effectsOn ? "true" : "false") + '">' +
-      (effectsOn ? "מופעל ✅" : "כבוי ❌") + "</button>" +
+      (effectsOn ? window.I18n.t("settings.effects.on") : window.I18n.t("settings.effects.off")) + "</button>" +
       "</div></div>";
 
     html += '<div class="settings-section"><div class="settings-row">' +
-      '<div><div class="settings-row-title">התקנה כאפליקציה</div>' +
-      '<div class="settings-row-desc">מוסיפים את המשחק למסך הבית ומריצים אותו כמו אפליקציה, כולל שימוש בסיסי בלי חיבור לרשת.</div></div>' +
-      (deferredInstallPrompt ? '<button id="btn-settings-install">📲 התקנה</button>' :
-        '<span class="settings-row-note">לא זמין כרגע בדפדפן הזה</span>') +
+      '<div><div class="settings-row-title">' + window.I18n.t("settings.install.label") + "</div>" +
+      '<div class="settings-row-desc">' + window.I18n.t("settings.install.desc") + "</div></div>" +
+      (deferredInstallPrompt ? '<button id="btn-settings-install">📲 ' + window.I18n.t("settings.install.btn") + "</button>" :
+        '<span class="settings-row-note">' + window.I18n.t("settings.install.unavailable") + "</span>") +
       "</div>" +
-      '<p class="settings-row-note" style="margin-top:8px;">באייפון/ספארי: תפריט השיתוף &larr; "הוספה למסך הבית".</p>' +
+      '<p class="settings-row-note" style="margin-top:8px;">' + window.I18n.t("settings.install.iosNote") + "</p>" +
       "</div>";
 
     html += '<div class="settings-section"><div class="settings-row">' +
-      '<div><div class="settings-row-title">איפוס נתונים</div>' +
-      '<div class="settings-row-desc">מוחק לצמיתות את כל הבאנרים, השיאים והקריירה השמורים במכשיר זה, ומתנתק מהחשבון.</div></div>' +
+      '<div><div class="settings-row-title">' + window.I18n.t("settings.reset.label") + "</div>" +
+      '<div class="settings-row-desc">' + window.I18n.t("settings.reset.desc") + "</div></div>" +
       '<button class="danger-btn" id="btn-settings-reset">' +
-      (resetArmed ? "בטוחים? לחצו שוב לאישור מחיקה" : "🗑️ איפוס נתונים") + "</button>" +
+      (resetArmed ? window.I18n.t("settings.reset.confirm") : "🗑️ " + window.I18n.t("settings.reset.btn")) + "</button>" +
       "</div></div>";
 
     container.innerHTML = html;
