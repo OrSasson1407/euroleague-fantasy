@@ -157,7 +157,9 @@ header p {
   filter: none;
 }
 
-.topbar-coin-btn {
+.topbar-coin-display {
+  display: flex;
+  align-items: center;
   height: 36px;
   padding: 0 10px;
   border-radius: 999px;
@@ -167,11 +169,6 @@ header p {
   border: 1px solid var(--border);
   color: var(--accent-2);
   white-space: nowrap;
-}
-
-.topbar-coin-btn:hover {
-  border-color: var(--accent-2);
-  filter: none;
 }
 
 .shop-balance-display {
