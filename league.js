@@ -55,6 +55,14 @@
   var lastKnownRank = null; // my provisional standings rank as of the last revealed game, for the movement arrow
   var lineupSelection = null; // the roster entry currently picked for a swap, or null
 
+  // All 190 fixtures for a 20-team season (171 "other" + 19 "mine"), shuffled
+  // once so home/away and win/loss streaks are chronologically well-defined
+  // regardless of whether the season is watched live or simmed all at once.
+  var fixtureList = null;
+  var fixturePointer = 0; // next unplayed fixture in "live" mode
+  var seasonPlayerStats = {}; // per-player box-score totals this season, keyed by "name|team", for every team (leaderboard + awards)
+  var leagueStatsTab = "pts"; // "pts" | "reb" | "ast", which column the stats leaderboard screen is sorted by
+
   function normalizeName(name) {
     return name.trim().toLowerCase();
   }
@@ -576,10 +584,9 @@
       offense: offenseForMyRoster(state.myRoster, state.playSystem),
       defense: defenseForMyRoster(state.myRoster, state.playSystem),
       varianceMultiplier: state.playSystem ? state.playSystem.varianceMultiplier : 1,
-      wins: 0,
-      losses: 0,
-      pf: 0,
-      pa: 0,
+      players: buildTeamPlayers(state.myRoster, true),
+      wins: 0, losses: 0, pf: 0, pa: 0,
+      streak: 0, homeCount: 0, awayCount: 0, homeWins: 0, homeLosses: 0, awayWins: 0, awayLosses: 0,
     });
 
     opponentClubs.forEach(function (club) {
@@ -592,10 +599,9 @@
         offense: offenseForRoster(combo.players, false),
         defense: defenseForRoster(combo.players, false),
         varianceMultiplier: 1,
-        wins: 0,
-        losses: 0,
-        pf: 0,
-        pa: 0,
+        players: buildTeamPlayers(combo.players, false),
+        wins: 0, losses: 0, pf: 0, pa: 0,
+        streak: 0, homeCount: 0, awayCount: 0, homeWins: 0, homeLosses: 0, awayWins: 0, awayLosses: 0,
       });
     });
 
@@ -607,19 +613,155 @@
     resolvedTradeCheckpoints = {};
     tradeSelection = null;
     lastKnownRank = null;
-
-    simulateOtherPairs(teams);
+    seasonPlayerStats = {};
+    fixtureList = buildFixtureList(teams);
+    fixturePointer = 0;
 
     if (mode === "live") {
+      fixturePointer = advanceFixtures(fixtureList, 0, "live", recordBoxScore).pointer;
       renderLiveLog();
       window.AppNav.showScreen("leagueLive");
     } else {
-      myOpponents.forEach(function (opponent) {
-        lastMyGames.push(simulateMyGame(teams[0], opponent));
+      advanceFixtures(fixtureList, 0, "all", recordBoxScore);
+      fixtureList.filter(function (f) { return f.involvesMe; }).forEach(function (f) {
+        var game = fixtureToMyGame(f);
+        lastMyGames.push(game);
+        checkCloseWinAchievement(game);
       });
       finalizeStandings(teams);
       renderLeagueTable(lastStandings);
     }
+  }
+
+  // Converts a played fixture that involves me into the shape the live log /
+  // momentum graph / achievements already expect, regardless of whether I
+  // was the home or away side in it.
+  function fixtureToMyGame(fixture) {
+    var mine = fixture.teamA.isMine ? fixture.teamA : fixture.teamB;
+    var opponent = mine === fixture.teamA ? fixture.teamB : fixture.teamA;
+    var iAmHome = fixture.home === mine;
+    var myScore = iAmHome ? fixture.result.homeScore : fixture.result.awayScore;
+    var oppScore = iAmHome ? fixture.result.awayScore : fixture.result.homeScore;
+    var myQuarters = iAmHome ? fixture.result.homeQuarters : fixture.result.awayQuarters;
+    var oppQuarters = iAmHome ? fixture.result.awayQuarters : fixture.result.homeQuarters;
+    return {
+      opponent: opponent, myScore: myScore, oppScore: oppScore, won: myScore > oppScore,
+      myQuarters: myQuarters, oppQuarters: oppQuarters,
+      otPeriods: fixture.result.otPeriods, homeAway: iAmHome ? "home" : "away",
+    };
+  }
+
+  function checkCloseWinAchievement(game) {
+    if (game.won && Math.abs(game.myScore - game.oppScore) === 1) {
+      window.Achievements.unlock("league_close_win");
+    }
+  }
+
+  // Accumulates this season's per-player box-score totals for EVERY team
+  // (not just mine), keyed by name+team so two same-named historical players
+  // on different clubs don't collide - this is what powers the league-wide
+  // stats leaderboard and end-of-season awards.
+  function recordBoxScore(team, boxLines) {
+    team.players.forEach(function (p, i) {
+      var line = boxLines[i];
+      var key = normalizeName(p.name) + "|" + team.label;
+      var entry = seasonPlayerStats[key];
+      if (!entry) {
+        entry = {
+          name: p.name, team: team.label, position: p.position, defRating: playerDefense(p),
+          isMine: team.isMine, gamesPlayed: 0, totalPts: 0, totalReb: 0, totalAst: 0,
+        };
+        seasonPlayerStats[key] = entry;
+      }
+      entry.gamesPlayed++;
+      entry.totalPts += line.pts;
+      entry.totalReb += line.reb;
+      entry.totalAst += line.ast;
+    });
+  }
+
+  function seasonStatsList() {
+    var list = [];
+    Object.keys(seasonPlayerStats).forEach(function (key) { list.push(seasonPlayerStats[key]); });
+    return list;
+  }
+
+  function perGameAvg(entry, field) {
+    return entry.gamesPlayed > 0 ? entry[field] / entry.gamesPlayed : 0;
+  }
+
+  function mvpScore(e) {
+    return perGameAvg(e, "totalPts") + perGameAvg(e, "totalReb") * 1.2 + perGameAvg(e, "totalAst") * 1.5;
+  }
+
+  function dpoyScore(e) {
+    return e.defRating + perGameAvg(e, "totalReb") * 2;
+  }
+
+  // No historical opponent has a "before this season" rating to compare
+  // against, so Most Improved is scoped to my own roster and redefined as
+  // "most outperformed their draft-time rating."
+  function mostImprovedScore(e) {
+    var rosterEntry = state.myRoster.filter(function (r) { return normalizeName(r.player) === normalizeName(e.name); })[0];
+    var baseline = rosterEntry ? (playerOffense(rosterEntry) + playerDefense(rosterEntry)) / 2 : 0;
+    return mvpScore(e) - baseline * 0.35;
+  }
+
+  function topByScore(list, scoreFn) {
+    if (!list.length) return null;
+    return list.slice().sort(function (a, b) { return scoreFn(b) - scoreFn(a); })[0];
+  }
+
+  // League-wide MVP/DPOY (every team's tracked players) plus a
+  // roster-scoped Most Improved, rendered as a small card under the
+  // standings table alongside the existing (rating-only) team MVP line.
+  function renderSeasonAwards() {
+    var container = document.getElementById("league-awards-card");
+    if (!container) return;
+    var list = seasonStatsList();
+    if (!list.length) { container.innerHTML = ""; return; }
+
+    var topScorerEntry = topByScore(list, function (e) { return perGameAvg(e, "totalPts"); });
+    var mvpEntry = topByScore(list, mvpScore);
+    var dpoyEntry = topByScore(list, dpoyScore);
+    var mostImprovedEntry = topByScore(list.filter(function (e) { return e.isMine; }), mostImprovedScore);
+
+    var lines = "";
+    if (topScorerEntry) {
+      lines += "<p>" + window.I18n.t("league.topScorerLine", { name: topScorerEntry.name, team: topScorerEntry.team, ppg: perGameAvg(topScorerEntry, "totalPts").toFixed(1) }) + "</p>";
+    }
+    if (mvpEntry) lines += "<p>" + window.I18n.t("league.mvpAwardLine", { name: mvpEntry.name, team: mvpEntry.team }) + "</p>";
+    if (dpoyEntry) lines += "<p>" + window.I18n.t("league.dpoyAwardLine", { name: dpoyEntry.name, team: dpoyEntry.team }) + "</p>";
+    if (mostImprovedEntry) lines += "<p>" + window.I18n.t("league.mostImprovedAwardLine", { name: mostImprovedEntry.name }) + "</p>";
+
+    container.innerHTML = '<div class="career-event-card"><h3>' + window.I18n.t("league.awardsTitle") + "</h3>" + lines + "</div>";
+  }
+
+  function renderLeagueStatsScreen() {
+    leagueStatsTab = "pts";
+    renderLeagueStatsBody();
+    window.AppNav.showScreen("leagueStats");
+  }
+
+  function renderLeagueStatsBody() {
+    var list = seasonStatsList();
+    var field = leagueStatsTab === "pts" ? "totalPts" : leagueStatsTab === "reb" ? "totalReb" : "totalAst";
+    var sorted = list.slice().sort(function (a, b) { return perGameAvg(b, field) - perGameAvg(a, field); }).slice(0, 10);
+    var tbody = document.getElementById("league-stats-body");
+    tbody.innerHTML = "";
+    sorted.forEach(function (e, i) {
+      var tr = document.createElement("tr");
+      if (e.isMine) tr.className = "my-team-row";
+      tr.innerHTML =
+        "<td>" + (i + 1) + "</td>" +
+        "<td>" + e.name + "</td>" +
+        "<td>" + window.TeamBadge.html(e.team, "badge-sm") + e.team + "</td>" +
+        "<td>" + perGameAvg(e, field).toFixed(1) + "</td>";
+      tbody.appendChild(tr);
+    });
+    document.querySelectorAll("#league-stats-tabs .era-btn").forEach(function (btn) {
+      btn.classList.toggle("selected", btn.dataset.statTab === leagueStatsTab);
+    });
   }
 
   // A team's score is driven by its own offense against the opponent's
@@ -631,67 +773,10 @@
     return Math.round(base + variance);
   }
 
-  // Games between two opponent (non-mine) teams are independent of my roster,
-  // so they can all be resolved immediately regardless of sim mode.
-  function simulateOtherPairs(teams) {
-    for (var i = 1; i < teams.length; i++) {
-      for (var j = i + 1; j < teams.length; j++) {
-        var a = teams[i];
-        var b = teams[j];
-        var scoreA = simulateMatchScore(a.offense, b.defense, a.varianceMultiplier);
-        var scoreB = simulateMatchScore(b.offense, a.defense, b.varianceMultiplier);
-        if (scoreA === scoreB) {
-          if (Math.random() < 0.5) scoreA++;
-          else scoreB++;
-        }
-        a.pf += scoreA;
-        a.pa += scoreB;
-        b.pf += scoreB;
-        b.pa += scoreA;
-        if (scoreA > scoreB) {
-          a.wins++;
-          b.losses++;
-        } else {
-          b.wins++;
-          a.losses++;
-        }
-      }
-    }
-  }
-
-  // My games are resolved one at a time (immediately in "all" mode, or as each
-  // is revealed in "live" mode) so a mid-season trade can affect later results.
-  function simulateMyGame(myTeam, opponent) {
-    var scoreA = simulateMatchScore(myTeam.offense, opponent.defense, myTeam.varianceMultiplier);
-    var scoreB = simulateMatchScore(opponent.offense, myTeam.defense, opponent.varianceMultiplier);
-    if (scoreA === scoreB) {
-      if (Math.random() < 0.5) scoreA++;
-      else scoreB++;
-    }
-    myTeam.pf += scoreA;
-    myTeam.pa += scoreB;
-    opponent.pf += scoreB;
-    opponent.pa += scoreA;
-    var won = scoreA > scoreB;
-    if (won) {
-      myTeam.wins++;
-      opponent.losses++;
-    } else {
-      opponent.wins++;
-      myTeam.losses++;
-    }
-    if (won && Math.abs(scoreA - scoreB) === 1) {
-      window.Achievements.unlock("league_close_win");
-    }
-    return {
-      opponent: opponent,
-      myScore: scoreA,
-      oppScore: scoreB,
-      won: won,
-      myQuarters: splitIntoQuarters(scoreA),
-      oppQuarters: splitIntoQuarters(scoreB),
-    };
-  }
+  // Replaced by the fixture-list engine above (buildFixtureList/
+  // advanceFixtures/simulateFixture) - kept games chronologically ordered and
+  // player-list-aware so streaks, home-court and box scores all work, for
+  // both "other pair" and "my" games alike instead of two separate paths.
 
   function finalizeStandings(teams) {
     teams.sort(function (x, y) {
@@ -724,7 +809,7 @@
       row.className = "live-game-row " + (g.won ? "win" : "loss");
       row.innerHTML =
         "<span>" + window.I18n.t("league.vsOpponent", { opponent: g.opponent.label }) + "</span>" +
-        "<span>" + g.myScore + " - " + g.oppScore + "</span>" +
+        "<span>" + g.myScore + " - " + g.oppScore + (g.otPeriods ? " " + window.I18n.t("league.overtimeLabel", { count: g.otPeriods }) : "") + "</span>" +
         "<span>" + (g.won ? window.I18n.t("league.winLabel") : window.I18n.t("league.lossLabel")) + "</span>";
       log.appendChild(row);
     });
@@ -779,9 +864,14 @@
       showTradeScreen(liveIndex);
       return;
     }
-    var opponent = myOpponents[liveIndex];
-    lastMyGames.push(simulateMyGame(lastTeams[0], opponent));
+    var fixture = fixtureList[fixturePointer];
+    simulateFixture(fixture, recordBoxScore);
+    var game = fixtureToMyGame(fixture);
+    lastMyGames.push(game);
+    checkCloseWinAchievement(game);
     liveIndex++;
+    fixturePointer++;
+    fixturePointer = advanceFixtures(fixtureList, fixturePointer, "live", recordBoxScore).pointer;
     renderLiveLog();
   }
 
@@ -871,6 +961,7 @@
     lastTeams[0].rating = ratingForMyRoster(state.myRoster);
     lastTeams[0].offense = offenseForMyRoster(state.myRoster, state.playSystem);
     lastTeams[0].defense = defenseForMyRoster(state.myRoster, state.playSystem);
+    lastTeams[0].players = buildTeamPlayers(state.myRoster, true);
     window.Achievements.unlock("league_trade");
     tradeSelection = null;
     proceedAfterTradeDecision();
@@ -959,6 +1050,7 @@
       lastTeams[0].rating = ratingForMyRoster(state.myRoster);
       lastTeams[0].offense = offenseForMyRoster(state.myRoster, state.playSystem);
       lastTeams[0].defense = defenseForMyRoster(state.myRoster, state.playSystem);
+      lastTeams[0].players = buildTeamPlayers(state.myRoster, true);
     }
     state.freeAgentUsed = true;
     freeAgentTargetEntry = null;
@@ -1023,6 +1115,8 @@
     document.getElementById("league-mvp").innerHTML =
       window.I18n.t("league.mvpLine", { name: mvp.player, position: POS_LABEL[mvp.position], rating: mvp.rating }) + systemLine;
 
+    renderSeasonAwards();
+
     window.Achievements.markPlayed("league");
     window.Achievements.unlock("league_first");
     if (myRank === 1) {
@@ -1064,13 +1158,25 @@
     window.AppNav.showScreen("leagueTable");
   }
 
+  // Home-court goes to the better seed - teamA/teamB aren't reliably "better
+  // seed first" past the QF round (an upset means the SF/Final pairing is
+  // whoever won, not whoever seeded higher), so this reads the seedRank tag
+  // computePlayoffBracket() stamps onto the real team objects instead of
+  // trusting argument order.
   function playMatch(teamA, teamB) {
-    var scoreA = simulateMatchScore(teamA.offense, teamB.defense, teamA.varianceMultiplier);
-    var scoreB = simulateMatchScore(teamB.offense, teamA.defense, teamB.varianceMultiplier);
-    if (scoreA === scoreB) {
-      if (Math.random() < 0.5) scoreA++;
-      else scoreB++;
-    }
+    var aRank = typeof teamA.seedRank === "number" ? teamA.seedRank : 0;
+    var bRank = typeof teamB.seedRank === "number" ? teamB.seedRank : 0;
+    var home = aRank <= bRank ? teamA : teamB;
+    var away = home === teamA ? teamB : teamA;
+
+    var scoreHome = simulateMatchScore(home.offense + HOME_COURT_BONUS, away.defense, home.varianceMultiplier);
+    var scoreAway = simulateMatchScore(away.offense, home.defense + HOME_COURT_BONUS, away.varianceMultiplier);
+    var resolved = resolveOvertimeIfTied(scoreHome, scoreAway, home.offense + HOME_COURT_BONUS, away.defense, away.offense, home.defense + HOME_COURT_BONUS, home.varianceMultiplier, away.varianceMultiplier);
+    scoreHome = resolved.homeScore;
+    scoreAway = resolved.awayScore;
+
+    var scoreA = home === teamA ? scoreHome : scoreAway;
+    var scoreB = home === teamA ? scoreAway : scoreHome;
     return {
       teamA: teamA,
       teamB: teamB,
@@ -1087,6 +1193,10 @@
   function computePlayoffBracket(standings, leagueSize) {
     var size = playoffSizeFor(leagueSize);
     var top8 = standings.slice(0, size);
+    // Tags the real team objects (not copies) so playMatch() can find the
+    // better seed at every round - survives into qf/sf/final since a round's
+    // winner is a reference to one of these same objects.
+    top8.forEach(function (t, i) { t.seedRank = i; });
 
     var qf = null;
     var sfTeams;
@@ -1112,6 +1222,323 @@
     var finalMatch = playMatch(finalTeams[0], finalTeams[1]);
 
     return { top8: top8, qf: qf, sf: sf, final: finalMatch, champion: finalMatch.winner };
+  }
+
+  // ---------- Deeper match engine: home court, streaks, clutch, foul
+  // trouble, overtime, minutes/box scores. Shared with coach_career.js via
+  // window.LeagueSimCore, exactly like the season-sim functions above it. ----------
+
+  var HOME_COURT_BONUS = 3; // added to the home team's offense AND defense
+  var STREAK_CONF_STEP = 0.6; // per consecutive win/loss, added to offense+defense
+  var STREAK_CONF_CAP = 3; // max +/- from a streak, however long
+  var FOUL_TROUBLE_CHANCE = 0.12; // per team per game
+  var FOUL_TROUBLE_IMPACT = 0.5; // the affected player contributes at 50% for this game only
+  var CLUTCH_CLOSE_MARGIN = 5; // pre-clutch, pre-OT margin that counts as "close"
+  var CLUTCH_BONUS_PER_UNIT = 1.5; // points added per clutch-weight unit
+  var MINUTES_STARTER_BY_RANK = [34, 31, 29, 27, 25]; // best-rated starter first, sums to 146
+  var MINUTES_BENCH_BY_RANK = [16, 13, 10, 8, 7]; // sums to 54 -> 200 total (5 x 40 min)
+  var TEAM_REBOUNDS_POOL = 34;
+  var TEAM_ASSISTS_POOL = 17;
+  var POSITION_REB_WEIGHT = { Guard: 1.0, Forward: 1.8, Center: 3.0 }; // 1.4 fallback for null position
+  var POSITION_AST_WEIGHT = { Guard: 3.0, Forward: 1.3, Center: 0.7 }; // 1.5 fallback for null position
+
+  function toBoxPlayer(p, half) {
+    return {
+      name: p.player || p.name, position: p.position, rating: p.rating,
+      offRating: p.offRating, defRating: p.defRating, archetype: p.archetype, half: half,
+    };
+  }
+
+  // Team objects only kept aggregated offense/defense numbers before this -
+  // box scores, clutch and foul trouble all need the actual player list, so
+  // every team (mine and every historical opponent) carries one from here on.
+  function buildTeamPlayers(rosterOrPlayers, hasHalfData) {
+    var split = splitStartersBench(rosterOrPlayers, hasHalfData);
+    return split.starters.map(function (p) { return toBoxPlayer(p, 1); })
+      .concat(split.bench.map(function (p) { return toBoxPlayer(p, 2); }));
+  }
+
+  // One shuffled list of every possible pairing among this season's teams
+  // (190 for a 20-team league: 19 "mine" + 171 "other", same total game count
+  // as before - this only reorders them), so win/loss streaks and home/away
+  // balance are well-defined chronologically no matter which viewing mode
+  // (instant vs. live) actually processes them.
+  function buildFixtureList(teams) {
+    var fixtures = [];
+    for (var i = 0; i < teams.length; i++) {
+      for (var j = i + 1; j < teams.length; j++) {
+        fixtures.push({ teamA: teams[i], teamB: teams[j], involvesMe: teams[i].isMine || teams[j].isMine, played: false });
+      }
+    }
+    return shuffle(fixtures);
+  }
+
+  function confidenceModifier(streak) {
+    return clamp((streak || 0) * STREAK_CONF_STEP, -STREAK_CONF_CAP, STREAK_CONF_CAP);
+  }
+
+  // Starters with the "clutch" archetype count in full, bench ones partially -
+  // this is the archetype's first real mechanical effect (previously offBonus/
+  // defBonus were both 0, so it was a label with no gameplay impact at all).
+  function clutchStrength(players) {
+    var total = 0;
+    players.forEach(function (p) {
+      if (p.archetype && p.archetype.id === "clutch") total += p.half === 1 ? 1 : 0.4;
+    });
+    return total;
+  }
+
+  function computeMinutesShares(players, otPeriods) {
+    var starterIdxs = [], benchIdxs = [];
+    players.forEach(function (p, i) {
+      if (p.half === 1) starterIdxs.push(i); else benchIdxs.push(i);
+    });
+    starterIdxs.sort(function (a, b) { return (players[b].rating || 0) - (players[a].rating || 0); });
+    benchIdxs.sort(function (a, b) { return (players[b].rating || 0) - (players[a].rating || 0); });
+
+    var minutes = [];
+    for (var i = 0; i < players.length; i++) minutes.push(0);
+    starterIdxs.forEach(function (idx, rank) {
+      minutes[idx] = MINUTES_STARTER_BY_RANK[rank] || MINUTES_STARTER_BY_RANK[MINUTES_STARTER_BY_RANK.length - 1];
+    });
+    benchIdxs.forEach(function (idx, rank) {
+      minutes[idx] = MINUTES_BENCH_BY_RANK[rank] || MINUTES_BENCH_BY_RANK[MINUTES_BENCH_BY_RANK.length - 1];
+    });
+
+    var otScale = otPeriods ? (200 + otPeriods * 25) / 200 : 1;
+    var total = 0;
+    for (var j = 0; j < minutes.length; j++) {
+      minutes[j] = minutes[j] * otScale;
+      total += minutes[j];
+    }
+    return players.map(function (p, i) {
+      return { minutes: Math.round(minutes[i]), share: total > 0 ? minutes[i] / total : 0 };
+    });
+  }
+
+  // A per-game-only penalty (never mutates the roster entry) representing one
+  // starter picking up early fouls - weighted toward the team's best players,
+  // since stars are the ones a coach can least afford to sit but also the
+  // biggest loss when they're not on the floor.
+  function maybeFoulTrouble(players, minutesShares) {
+    if (Math.random() >= FOUL_TROUBLE_CHANCE) return null;
+    var starterIdxs = [];
+    players.forEach(function (p, i) { if (p.half === 1) starterIdxs.push(i); });
+    if (!starterIdxs.length) return null;
+    var totalWeight = 0;
+    starterIdxs.forEach(function (i) { totalWeight += Math.max(1, players[i].rating || 60); });
+    var roll = Math.random() * totalWeight;
+    var acc = 0, pickedIdx = starterIdxs[0];
+    for (var k = 0; k < starterIdxs.length; k++) {
+      acc += Math.max(1, players[starterIdxs[k]].rating || 60);
+      if (roll <= acc) { pickedIdx = starterIdxs[k]; break; }
+    }
+    return { player: players[pickedIdx], share: minutesShares[pickedIdx].share };
+  }
+
+  // A slice of a full game (minutesFraction=1), reused for a single half
+  // (0.5, Coach Career's halftime feature) and a ~5-minute OT period (1/8).
+  function simulateGamePortion(offense, opponentDefense, varianceMultiplier, minutesFraction) {
+    var base = (60 + (offense - opponentDefense) * 0.6) * minutesFraction;
+    var variance = bellRandom(20 * (varianceMultiplier || 1) * minutesFraction);
+    return Math.max(0, Math.round(base + variance));
+  }
+
+  function simulateOTPeriod(offense, opponentDefense, varianceMultiplier) {
+    return simulateGamePortion(offense, opponentDefense, varianceMultiplier, 1 / 8);
+  }
+
+  // Splits a team total (points, or a rebounds/assists "pool") across its
+  // players by relative weight, with the last player absorbing whatever
+  // rounding leaves over so the parts always sum back to the total exactly.
+  function distributeStat(players, weights, total) {
+    var sumWeights = 0;
+    weights.forEach(function (w) { sumWeights += w; });
+    if (sumWeights <= 0) sumWeights = 1;
+    var values = [];
+    var runningTotal = 0;
+    for (var i = 0; i < players.length; i++) {
+      if (i === players.length - 1) {
+        values.push(Math.max(0, total - runningTotal));
+      } else {
+        var v = Math.max(0, Math.round((total * weights[i]) / sumWeights));
+        values.push(v);
+        runningTotal += v;
+      }
+    }
+    return values;
+  }
+
+  function generateBoxScore(players, teamScore, otPeriods, minutesShares) {
+    var otScale = otPeriods ? (200 + otPeriods * 25) / 200 : 1;
+    var teamAvgOffense = 0;
+    players.forEach(function (p) { teamAvgOffense += playerOffense(p); });
+    teamAvgOffense = players.length ? teamAvgOffense / players.length : 0;
+
+    var ptsWeights = players.map(function (p, i) {
+      var adj = clamp((playerOffense(p) - teamAvgOffense) / 100, -0.3, 0.5);
+      return minutesShares[i].share * (1 + adj);
+    });
+    var pts = distributeStat(players, ptsWeights, teamScore);
+
+    var rebWeights = players.map(function (p, i) {
+      var posW = POSITION_REB_WEIGHT[p.position] || 1.4;
+      return posW * (0.7 + playerDefense(p) / 250) * minutesShares[i].share;
+    });
+    var reb = distributeStat(players, rebWeights, Math.round(TEAM_REBOUNDS_POOL * otScale));
+
+    var astWeights = players.map(function (p, i) {
+      var posW = POSITION_AST_WEIGHT[p.position] || 1.5;
+      return posW * (0.7 + playerOffense(p) / 250) * minutesShares[i].share;
+    });
+    var ast = distributeStat(players, astWeights, Math.round(TEAM_ASSISTS_POOL * otScale));
+
+    return players.map(function (p, i) {
+      return { pts: pts[i], reb: reb[i], ast: ast[i], minutes: minutesShares[i].minutes };
+    });
+  }
+
+  // The full per-game resolution: home court + streak confidence + foul
+  // trouble adjust each side's effective offense/defense, simulateMatchScore
+  // rolls the base result, a close game gives clutch-archetype players a
+  // shot at deciding it, ties go to real overtime instead of a coin flip,
+  // and box scores are generated off the final numbers.
+  // Home court + streak confidence + foul trouble, resolved once per game -
+  // pulled out of simulateFullGame() so Coach Career's halftime feature (which
+  // needs these same effective numbers before splitting a game into two
+  // simulateGamePortion() calls) can reuse it instead of re-deriving it.
+  function computeEffectiveStrengths(home, away) {
+    var homeMinutes = computeMinutesShares(home.players, 0);
+    var awayMinutes = computeMinutesShares(away.players, 0);
+
+    var homeConf = confidenceModifier(home.streak);
+    var awayConf = confidenceModifier(away.streak);
+
+    var effHomeOffense = home.offense + HOME_COURT_BONUS + homeConf;
+    var effHomeDefense = home.defense + HOME_COURT_BONUS + homeConf;
+    var effAwayOffense = away.offense + awayConf;
+    var effAwayDefense = away.defense + awayConf;
+
+    var homeFoul = maybeFoulTrouble(home.players, homeMinutes);
+    var awayFoul = maybeFoulTrouble(away.players, awayMinutes);
+    if (homeFoul) {
+      effHomeOffense -= effHomeOffense * homeFoul.share * FOUL_TROUBLE_IMPACT;
+      effHomeDefense -= effHomeDefense * homeFoul.share * FOUL_TROUBLE_IMPACT;
+    }
+    if (awayFoul) {
+      effAwayOffense -= effAwayOffense * awayFoul.share * FOUL_TROUBLE_IMPACT;
+      effAwayDefense -= effAwayDefense * awayFoul.share * FOUL_TROUBLE_IMPACT;
+    }
+
+    return {
+      effHomeOffense: effHomeOffense, effHomeDefense: effHomeDefense,
+      effAwayOffense: effAwayOffense, effAwayDefense: effAwayDefense,
+      homeMinutes: homeMinutes, awayMinutes: awayMinutes,
+      homeFoulPlayer: homeFoul ? homeFoul.player.name : null,
+      awayFoulPlayer: awayFoul ? awayFoul.player.name : null,
+    };
+  }
+
+  function applyClutchAdjustment(scoreHome, scoreAway, homePlayers, awayPlayers) {
+    if (Math.abs(scoreHome - scoreAway) > CLUTCH_CLOSE_MARGIN) {
+      return { homeScore: scoreHome, awayScore: scoreAway };
+    }
+    return {
+      homeScore: scoreHome + Math.round(clutchStrength(homePlayers) * CLUTCH_BONUS_PER_UNIT),
+      awayScore: scoreAway + Math.round(clutchStrength(awayPlayers) * CLUTCH_BONUS_PER_UNIT),
+    };
+  }
+
+  function resolveOvertimeIfTied(scoreHome, scoreAway, effHomeOffense, effAwayDefense, effAwayOffense, effHomeDefense, homeVariance, awayVariance) {
+    var otPeriods = 0;
+    while (scoreHome === scoreAway && otPeriods < 6) {
+      otPeriods++;
+      scoreHome += simulateOTPeriod(effHomeOffense, effAwayDefense, homeVariance);
+      scoreAway += simulateOTPeriod(effAwayOffense, effHomeDefense, awayVariance);
+    }
+    if (scoreHome === scoreAway) {
+      if (Math.random() < 0.5) scoreHome++;
+      else scoreAway++;
+    }
+    return { homeScore: scoreHome, awayScore: scoreAway, otPeriods: otPeriods };
+  }
+
+  function simulateFullGame(home, away) {
+    var eff = computeEffectiveStrengths(home, away);
+
+    var scoreHome = simulateMatchScore(eff.effHomeOffense, eff.effAwayDefense, home.varianceMultiplier);
+    var scoreAway = simulateMatchScore(eff.effAwayOffense, eff.effHomeDefense, away.varianceMultiplier);
+
+    var clutched = applyClutchAdjustment(scoreHome, scoreAway, home.players, away.players);
+    scoreHome = clutched.homeScore;
+    scoreAway = clutched.awayScore;
+
+    var resolved = resolveOvertimeIfTied(scoreHome, scoreAway, eff.effHomeOffense, eff.effAwayDefense, eff.effAwayOffense, eff.effHomeDefense, home.varianceMultiplier, away.varianceMultiplier);
+    scoreHome = resolved.homeScore;
+    scoreAway = resolved.awayScore;
+
+    var homeMinutes = resolved.otPeriods > 0 ? computeMinutesShares(home.players, resolved.otPeriods) : eff.homeMinutes;
+    var awayMinutes = resolved.otPeriods > 0 ? computeMinutesShares(away.players, resolved.otPeriods) : eff.awayMinutes;
+
+    return {
+      homeScore: scoreHome, awayScore: scoreAway, otPeriods: resolved.otPeriods,
+      homeBox: generateBoxScore(home.players, scoreHome, resolved.otPeriods, homeMinutes),
+      awayBox: generateBoxScore(away.players, scoreAway, resolved.otPeriods, awayMinutes),
+      homeFoulPlayer: eff.homeFoulPlayer, awayFoulPlayer: eff.awayFoulPlayer,
+      homeQuarters: splitIntoQuarters(scoreHome), awayQuarters: splitIntoQuarters(scoreAway),
+    };
+  }
+
+  // Shared win/loss/streak/home-away bookkeeping, used by simulateFixture()
+  // below and by Coach Career's halftime flow (which resolves a game through
+  // two simulateGamePortion() calls instead of one simulateFullGame() call
+  // but still needs the exact same bookkeeping afterward).
+  function applyFixtureResult(home, away, result) {
+    home.pf += result.homeScore; home.pa += result.awayScore;
+    away.pf += result.awayScore; away.pa += result.homeScore;
+    home.homeCount++; away.awayCount++;
+    if (result.homeScore > result.awayScore) {
+      home.wins++; home.homeWins++; home.streak = home.streak >= 0 ? home.streak + 1 : 1;
+      away.losses++; away.awayLosses++; away.streak = away.streak <= 0 ? away.streak - 1 : -1;
+    } else {
+      away.wins++; away.awayWins++; away.streak = away.streak >= 0 ? away.streak + 1 : 1;
+      home.losses++; home.homeLosses++; home.streak = home.streak <= 0 ? home.streak - 1 : -1;
+    }
+  }
+
+  function simulateFixture(fixture, onBoxScore) {
+    var teamA = fixture.teamA, teamB = fixture.teamB;
+    var home;
+    if (teamA.homeCount < teamB.homeCount) home = teamA;
+    else if (teamB.homeCount < teamA.homeCount) home = teamB;
+    else home = Math.random() < 0.5 ? teamA : teamB;
+    var away = home === teamA ? teamB : teamA;
+
+    var result = simulateFullGame(home, away);
+    applyFixtureResult(home, away, result);
+    if (onBoxScore) {
+      onBoxScore(home, result.homeBox);
+      onBoxScore(away, result.awayBox);
+    }
+    fixture.result = result;
+    fixture.home = home;
+    fixture.away = away;
+    fixture.played = true;
+    return fixture;
+  }
+
+  // mode "all": simulates every remaining fixture. mode "live": simulates
+  // every fixture that doesn't involve me, stopping right before the next
+  // one that does - so my games can still be revealed one at a time while
+  // everyone else's results happen in the background, same UX as before.
+  function advanceFixtures(fixtures, pointer, mode, onBoxScore) {
+    var i = pointer;
+    while (i < fixtures.length) {
+      if (mode === "live" && fixtures[i].involvesMe) break;
+      simulateFixture(fixtures[i], onBoxScore);
+      i++;
+    }
+    return { pointer: i, waitingForMyGame: mode === "live" && i < fixtures.length };
   }
 
   function runPlayoffs() {
@@ -1241,6 +1668,16 @@
   document.getElementById("btn-league-live-next").addEventListener("click", liveNext);
   document.getElementById("btn-league-trade-skip").addEventListener("click", proceedAfterTradeDecision);
   document.getElementById("btn-league-playoffs").addEventListener("click", runPlayoffs);
+  document.getElementById("btn-league-stats").addEventListener("click", renderLeagueStatsScreen);
+  document.getElementById("btn-league-stats-back").addEventListener("click", function () {
+    window.AppNav.showScreen("leagueTable");
+  });
+  document.querySelectorAll("#league-stats-tabs .era-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      leagueStatsTab = btn.dataset.statTab;
+      renderLeagueStatsBody();
+    });
+  });
 
   window.LeagueGame = { showTeamSelect: showTeamSelect };
 
@@ -1263,5 +1700,23 @@
     finalizeStandings: finalizeStandings,
     pickBalancedCombo: pickBalancedCombo,
     computePlayoffBracket: computePlayoffBracket,
+    // Deeper match engine (home court, streaks, clutch, foul trouble,
+    // overtime, minutes/box scores) - see the block above computePlayoffBracket.
+    buildTeamPlayers: buildTeamPlayers,
+    buildFixtureList: buildFixtureList,
+    simulateFixture: simulateFixture,
+    applyFixtureResult: applyFixtureResult,
+    advanceFixtures: advanceFixtures,
+    simulateFullGame: simulateFullGame,
+    simulateGamePortion: simulateGamePortion,
+    simulateOTPeriod: simulateOTPeriod,
+    computeMinutesShares: computeMinutesShares,
+    maybeFoulTrouble: maybeFoulTrouble,
+    clutchStrength: clutchStrength,
+    confidenceModifier: confidenceModifier,
+    generateBoxScore: generateBoxScore,
+    computeEffectiveStrengths: computeEffectiveStrengths,
+    applyClutchAdjustment: applyClutchAdjustment,
+    resolveOvertimeIfTied: resolveOvertimeIfTied,
   };
 })();

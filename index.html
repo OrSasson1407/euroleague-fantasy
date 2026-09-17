@@ -875,6 +875,7 @@
     <div class="center-box" style="padding-top:0;">
       <h2 id="league-result-title" style="margin-top:0;"></h2>
       <p class="league-mvp" id="league-mvp"></p>
+      <div id="league-awards-card"></div>
     </div>
     <div class="league-table-wrap">
       <table class="league-table">
@@ -886,8 +887,33 @@
     </div>
     <div class="final-actions">
       <button id="btn-league-playoffs" data-i18n="league.continueToPlayoffs">המשך לפלייאוף (8 גדולות) &raquo;</button>
+      <button class="secondary" id="btn-league-stats" data-i18n="league.statsBtn">לוח הסטטיסטיקות</button>
       <button class="secondary" id="btn-league-restart" data-i18n="common.newGame">משחק חדש</button>
       <button class="secondary" id="btn-home-from-league-table" data-i18n="common.home">לדף הבית</button>
+    </div>
+  </section>
+
+  <section id="screen-league-stats" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 style="margin-top:0;" data-i18n="league.statsTitle">לוח הסטטיסטיקות</h2>
+      <div class="era-filter">
+        <div class="era-filter-buttons" id="league-stats-tabs">
+          <button class="era-btn selected" data-stat-tab="pts" data-i18n="league.statsTabScoring">קליעה</button>
+          <button class="era-btn" data-stat-tab="reb" data-i18n="league.statsTabRebounds">ריבאונדים</button>
+          <button class="era-btn" data-stat-tab="ast" data-i18n="league.statsTabAssists">אסיסטים</button>
+        </div>
+      </div>
+    </div>
+    <div class="league-table-wrap">
+      <table class="league-table">
+        <thead>
+          <tr><th>#</th><th data-i18n="league.statsColPlayer">שחקן</th><th data-i18n="league.colClub">קבוצה</th><th data-i18n="league.statsColPerGame">ממוצע</th></tr>
+        </thead>
+        <tbody id="league-stats-body"></tbody>
+      </table>
+    </div>
+    <div class="final-actions">
+      <button class="secondary" id="btn-league-stats-back" data-i18n="career.backBtn">חזרה</button>
     </div>
   </section>
 

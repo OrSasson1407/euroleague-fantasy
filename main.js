@@ -28,6 +28,7 @@
     leagueLive: "screen-league-live",
     leagueTrade: "screen-league-trade",
     leagueTable: "screen-league-table",
+    leagueStats: "screen-league-stats",
     leaguePlayoffs: "screen-league-playoffs",
     triviaSelect: "screen-trivia-select",
     triviaQuestion: "screen-trivia-question",

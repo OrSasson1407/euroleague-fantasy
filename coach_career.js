@@ -188,6 +188,10 @@
   var pendingPlayoffRank = null;
   var liveOpponentIndex = 0;
   var transferTargetQuery = "";
+  var pendingFixtureList = null; // shuffled fixture list for the season in progress, same engine as league.js
+  var pendingFixturePointer = 0;
+  var seasonPlayerStats = {}; // this season's per-player box-score totals, scoped to coach.roster only (for MVP/DPOY/Most Improved)
+  var pendingHalftimeState = null; // { fixture, home, away, effHomeOffense, ... } while a halftime choice is being made
 
   function clamp(v, min, max) {
     return Math.max(min, Math.min(max, v));
@@ -984,7 +988,7 @@
     return coach.roster.map(function (e) {
       var mult = e.injury ? (e.injury.severe ? 0.7 : 0.85) : 1;
       return {
-        position: e.position, half: e.half, archetype: e.archetype,
+        id: e.id, player: e.player, position: e.position, half: e.half, archetype: e.archetype,
         rating: e.rating, offRating: typeof e.offRating === "number" ? e.offRating * mult : e.offRating,
         defRating: typeof e.defRating === "number" ? e.defRating * mult : e.defRating,
       };
@@ -1047,7 +1051,9 @@
       label: coach.club.label, isMine: true, rating: myTeamRating(),
       offense: myTeamOffense(), defense: myTeamDefense(),
       varianceMultiplier: coach.playSystem ? coach.playSystem.varianceMultiplier : 1,
+      players: window.LeagueSimCore.buildTeamPlayers(effectiveRoster(), true),
       wins: 0, losses: 0, pf: 0, pa: 0,
+      streak: 0, homeCount: 0, awayCount: 0, homeWins: 0, homeLosses: 0, awayWins: 0, awayLosses: 0,
     }];
     // Opponents were already picked at season start (see generateLeagueOpponents)
     // so the transfer window's trade-with-rivals view matches who's actually
@@ -1059,73 +1065,195 @@
         rating: window.LeagueSimCore.ratingForHistoricalRoster(opp.players),
         offense: window.LeagueSimCore.offenseForRoster(opp.players, false),
         defense: window.LeagueSimCore.defenseForRoster(opp.players, false),
-        varianceMultiplier: 1, wins: 0, losses: 0, pf: 0, pa: 0,
+        varianceMultiplier: 1,
+        players: window.LeagueSimCore.buildTeamPlayers(opp.players, false),
+        wins: 0, losses: 0, pf: 0, pa: 0,
+        streak: 0, homeCount: 0, awayCount: 0, homeWins: 0, homeLosses: 0, awayWins: 0, awayLosses: 0,
       });
     });
 
-    // Non-mine pairs are independent of my roster - resolve them all up front.
-    for (var i = 1; i < teams.length; i++) {
-      for (var j = i + 1; j < teams.length; j++) {
-        var a = teams[i], b = teams[j];
-        var scoreA = window.LeagueSimCore.simulateMatchScore(a.offense, b.defense, a.varianceMultiplier);
-        var scoreB = window.LeagueSimCore.simulateMatchScore(b.offense, a.defense, b.varianceMultiplier);
-        if (scoreA === scoreB) { if (Math.random() < 0.5) scoreA++; else scoreB++; }
-        a.pf += scoreA; a.pa += scoreB; b.pf += scoreB; b.pa += scoreA;
-        if (scoreA > scoreB) { a.wins++; b.losses++; } else { b.wins++; a.losses++; }
-      }
-    }
-
     pendingSeasonTeams = teams;
+    seasonPlayerStats = {};
+    pendingFixtureList = window.LeagueSimCore.buildFixtureList(teams);
+    pendingFixturePointer = 0;
+
     if (mode === "live") {
       liveOpponentIndex = 0;
+      pendingFixturePointer = window.LeagueSimCore.advanceFixtures(pendingFixtureList, 0, "live", recordBoxScore).pointer;
       renderLiveSeason();
     } else {
-      teams.slice(1).forEach(function (opponent) { playMyGame(teams[0], opponent); });
+      window.LeagueSimCore.advanceFixtures(pendingFixtureList, 0, "all", recordBoxScore);
       finishSeasonSim();
     }
   }
 
-  function playMyGame(myTeam, opponent) {
-    var scoreA = window.LeagueSimCore.simulateMatchScore(myTeam.offense, opponent.defense, myTeam.varianceMultiplier);
-    var scoreB = window.LeagueSimCore.simulateMatchScore(opponent.offense, myTeam.defense, opponent.varianceMultiplier);
-    if (scoreA === scoreB) { if (Math.random() < 0.5) scoreA++; else scoreB++; }
-    myTeam.pf += scoreA; myTeam.pa += scoreB; opponent.pf += scoreB; opponent.pa += scoreA;
-    if (scoreA > scoreB) { myTeam.wins++; opponent.losses++; } else { opponent.wins++; myTeam.losses++; }
-    return { opponent: opponent, myScore: scoreA, oppScore: scoreB, won: scoreA > scoreB };
+  // Only my own roster's box lines are tracked here (unlike league.js's
+  // league-wide leaderboard) - Coach Career's MVP/DPOY/Most Improved are all
+  // scoped to coach.roster, so there's no need to accumulate opponents' stats.
+  function recordBoxScore(team, boxLines) {
+    if (!team.isMine) return;
+    team.players.forEach(function (p, i) {
+      var line = boxLines[i];
+      var entry = seasonPlayerStats[p.name];
+      if (!entry) {
+        entry = {
+          name: p.name, position: p.position,
+          defRating: typeof p.defRating === "number" ? p.defRating : (p.rating || 60),
+          gamesPlayed: 0, totalPts: 0, totalReb: 0, totalAst: 0,
+        };
+        seasonPlayerStats[p.name] = entry;
+      }
+      entry.gamesPlayed++;
+      entry.totalPts += line.pts;
+      entry.totalReb += line.reb;
+      entry.totalAst += line.ast;
+    });
   }
 
   function renderLiveSeason() {
-    var myTeam = pendingSeasonTeams[0];
-    var opponents = pendingSeasonTeams.slice(1);
+    var totalMyGames = pendingFixtureList.filter(function (f) { return f.involvesMe; }).length;
     document.getElementById("coach-hub-title").textContent = window.I18n.t("league.yourGamesTitle");
-    document.getElementById("coach-hub-status").textContent = window.I18n.t("league.gameOfTotal", { n: liveOpponentIndex + 1, total: opponents.length });
+    document.getElementById("coach-hub-status").textContent = window.I18n.t("league.gameOfTotal", { n: liveOpponentIndex + 1, total: totalMyGames });
     var content = document.getElementById("coach-hub-content");
-    var log = document.getElementById("coach-live-log-store") || [];
     content.innerHTML = '<div class="league-live-log" id="coach-live-log"></div>' +
       '<div class="final-actions"><button id="btn-coach-live-next">' + window.I18n.t("h2h.nextGameBtn") + "</button></div>";
     var logEl = document.getElementById("coach-live-log");
     logEl.innerHTML = (window.__coachLiveRows || []).join("");
 
     document.getElementById("btn-coach-live-next").addEventListener("click", function () {
-      if (liveOpponentIndex >= opponents.length) {
+      if (pendingFixturePointer >= pendingFixtureList.length) {
         finishSeasonSim();
         return;
       }
-      var result = playMyGame(myTeam, opponents[liveOpponentIndex]);
-      var row = '<div class="live-game-row ' + (result.won ? "win" : "loss") + '">' +
-        "<span>" + window.I18n.t("league.vsOpponent", { opponent: result.opponent.label }) + "</span>" +
-        "<span>" + result.myScore + " - " + result.oppScore + "</span>" +
-        "<span>" + (result.won ? window.I18n.t("league.winLabel") : window.I18n.t("league.lossLabel")) + "</span></div>";
-      window.__coachLiveRows = (window.__coachLiveRows || []).concat(row);
-      liveOpponentIndex++;
-      renderLiveSeason();
+      beginMyGameHalftime(pendingFixtureList[pendingFixturePointer]);
     });
+  }
+
+  function appendLiveLogRow(opponentLabel, myScore, oppScore, won) {
+    var row = '<div class="live-game-row ' + (won ? "win" : "loss") + '">' +
+      "<span>" + window.I18n.t("league.vsOpponent", { opponent: opponentLabel }) + "</span>" +
+      "<span>" + myScore + " - " + oppScore + "</span>" +
+      "<span>" + (won ? window.I18n.t("league.winLabel") : window.I18n.t("league.lossLabel")) + "</span></div>";
+    window.__coachLiveRows = (window.__coachLiveRows || []).concat(row);
+  }
+
+  function afterMyLiveGame() {
+    liveOpponentIndex++;
+    pendingFixturePointer++;
+    pendingFixturePointer = window.LeagueSimCore.advanceFixtures(pendingFixtureList, pendingFixturePointer, "live", recordBoxScore).pointer;
+    renderLiveSeason();
   }
 
   function finishSeasonSim() {
     window.__coachLiveRows = [];
     window.LeagueSimCore.finalizeStandings(pendingSeasonTeams);
     renderStandingsTable(pendingSeasonTeams);
+  }
+
+  // Only affects MY side's second-half effective offense/defense - a coaching
+  // lever, symmetric with how the assistant-coach/play-system bonuses already
+  // only ever apply to my own team.
+  var HALFTIME_CHOICES = [
+    { id: "pushTempo", offDelta: 4, defDelta: -2 },
+    { id: "lockDefense", offDelta: -2, defDelta: 4 },
+    { id: "stayCourse", offDelta: 0, defDelta: 0 },
+  ];
+
+  // Live-mode-only (feature 27): pauses the fixture at halftime instead of
+  // resolving it in one simulateFullGame() call, using the same home-court/
+  // streak/foul-trouble numbers that call would have computed - only the
+  // second half's offense/defense (mine only) can then be nudged by the
+  // player's choice before the game is finished out.
+  function beginMyGameHalftime(fixture) {
+    var teamA = fixture.teamA, teamB = fixture.teamB;
+    var LSC = window.LeagueSimCore;
+    var home;
+    if (teamA.homeCount < teamB.homeCount) home = teamA;
+    else if (teamB.homeCount < teamA.homeCount) home = teamB;
+    else home = Math.random() < 0.5 ? teamA : teamB;
+    var away = home === teamA ? teamB : teamA;
+    var mine = teamA.isMine ? teamA : teamB;
+
+    var eff = LSC.computeEffectiveStrengths(home, away);
+    var firstHalfHome = LSC.simulateGamePortion(eff.effHomeOffense, eff.effAwayDefense, home.varianceMultiplier, 0.5);
+    var firstHalfAway = LSC.simulateGamePortion(eff.effAwayOffense, eff.effHomeDefense, away.varianceMultiplier, 0.5);
+
+    pendingHalftimeState = {
+      fixture: fixture, home: home, away: away, mine: mine, iAmHome: home === mine,
+      eff: eff, firstHalfHome: firstHalfHome, firstHalfAway: firstHalfAway,
+    };
+    renderHalftimeDialog();
+  }
+
+  function renderHalftimeDialog() {
+    var st = pendingHalftimeState;
+    var opponent = st.mine === st.fixture.teamA ? st.fixture.teamB : st.fixture.teamA;
+    var myHalfScore = st.iAmHome ? st.firstHalfHome : st.firstHalfAway;
+    var oppHalfScore = st.iAmHome ? st.firstHalfAway : st.firstHalfHome;
+
+    document.getElementById("coach-hub-title").textContent = window.I18n.t("coachCareer.halftime.title");
+    document.getElementById("coach-hub-status").textContent = "";
+    var content = document.getElementById("coach-hub-content");
+    content.innerHTML =
+      '<div class="career-event-card"><p>' + window.I18n.t("coachCareer.halftime.scoreLine", { opponent: opponent.label, myScore: myHalfScore, oppScore: oppHalfScore }) + "</p></div>" +
+      '<div class="h2h-setup-buttons">' +
+      '<button id="btn-halftime-push">' + window.I18n.t("coachCareer.halftime.pushTempo") + "</button>" +
+      '<button id="btn-halftime-lock">' + window.I18n.t("coachCareer.halftime.lockDefense") + "</button>" +
+      '<button class="secondary" id="btn-halftime-stay">' + window.I18n.t("coachCareer.halftime.stayCourse") + "</button>" +
+      "</div>";
+
+    document.getElementById("btn-halftime-push").addEventListener("click", function () { resolveHalftimeChoice(HALFTIME_CHOICES[0]); });
+    document.getElementById("btn-halftime-lock").addEventListener("click", function () { resolveHalftimeChoice(HALFTIME_CHOICES[1]); });
+    document.getElementById("btn-halftime-stay").addEventListener("click", function () { resolveHalftimeChoice(HALFTIME_CHOICES[2]); });
+  }
+
+  function resolveHalftimeChoice(choice) {
+    var st = pendingHalftimeState;
+    var LSC = window.LeagueSimCore;
+
+    var secondHalfHomeOffense = st.eff.effHomeOffense + (st.iAmHome ? choice.offDelta : 0);
+    var secondHalfHomeDefense = st.eff.effHomeDefense + (st.iAmHome ? choice.defDelta : 0);
+    var secondHalfAwayOffense = st.eff.effAwayOffense + (!st.iAmHome ? choice.offDelta : 0);
+    var secondHalfAwayDefense = st.eff.effAwayDefense + (!st.iAmHome ? choice.defDelta : 0);
+
+    var secondHalfHome = LSC.simulateGamePortion(secondHalfHomeOffense, secondHalfAwayDefense, st.home.varianceMultiplier, 0.5);
+    var secondHalfAway = LSC.simulateGamePortion(secondHalfAwayOffense, secondHalfHomeDefense, st.away.varianceMultiplier, 0.5);
+
+    var scoreHome = st.firstHalfHome + secondHalfHome;
+    var scoreAway = st.firstHalfAway + secondHalfAway;
+
+    var clutched = LSC.applyClutchAdjustment(scoreHome, scoreAway, st.home.players, st.away.players);
+    scoreHome = clutched.homeScore;
+    scoreAway = clutched.awayScore;
+
+    var resolved = LSC.resolveOvertimeIfTied(scoreHome, scoreAway, st.eff.effHomeOffense, st.eff.effAwayDefense, st.eff.effAwayOffense, st.eff.effHomeDefense, st.home.varianceMultiplier, st.away.varianceMultiplier);
+    scoreHome = resolved.homeScore;
+    scoreAway = resolved.awayScore;
+
+    var homeMinutes = resolved.otPeriods > 0 ? LSC.computeMinutesShares(st.home.players, resolved.otPeriods) : st.eff.homeMinutes;
+    var awayMinutes = resolved.otPeriods > 0 ? LSC.computeMinutesShares(st.away.players, resolved.otPeriods) : st.eff.awayMinutes;
+
+    var result = {
+      homeScore: scoreHome, awayScore: scoreAway, otPeriods: resolved.otPeriods,
+      homeBox: LSC.generateBoxScore(st.home.players, scoreHome, resolved.otPeriods, homeMinutes),
+      awayBox: LSC.generateBoxScore(st.away.players, scoreAway, resolved.otPeriods, awayMinutes),
+    };
+
+    LSC.applyFixtureResult(st.home, st.away, result);
+    recordBoxScore(st.home, result.homeBox);
+    recordBoxScore(st.away, result.awayBox);
+    st.fixture.result = result;
+    st.fixture.home = st.home;
+    st.fixture.away = st.away;
+    st.fixture.played = true;
+
+    var myScore = st.iAmHome ? scoreHome : scoreAway;
+    var oppScore = st.iAmHome ? scoreAway : scoreHome;
+    var opponent = st.mine === st.fixture.teamA ? st.fixture.teamB : st.fixture.teamA;
+    appendLiveLogRow(opponent.label, myScore, oppScore, myScore > oppScore);
+
+    pendingHalftimeState = null;
+    afterMyLiveGame();
   }
 
   function renderStandingsTable(teams) {
@@ -1194,8 +1322,44 @@
     return sorted[0];
   }
 
+  // League-wide leaderboard doesn't exist here (unlike league.js) - Coach
+  // Career's awards are all scoped to coach.roster, using this season's
+  // seasonPlayerStats (accumulated via recordBoxScore during the fixture
+  // loop) plus a before/after rating snapshot for Most Improved.
+  function computeSeasonAwards(ratingsBefore) {
+    var list = [];
+    Object.keys(seasonPlayerStats).forEach(function (key) { list.push(seasonPlayerStats[key]); });
+    if (!list.length) return { mvp: null, dpoy: null, mostImproved: null };
+
+    function perGame(e, field) { return e.gamesPlayed > 0 ? e[field] / e.gamesPlayed : 0; }
+    function mvpScore(e) { return perGame(e, "totalPts") + perGame(e, "totalReb") * 1.2 + perGame(e, "totalAst") * 1.5; }
+    function dpoyScore(e) { return e.defRating + perGame(e, "totalReb") * 2; }
+    function top(scoreFn) { return list.slice().sort(function (a, b) { return scoreFn(b) - scoreFn(a); })[0]; }
+
+    var mvpEntry = top(mvpScore);
+    var dpoyEntry = top(dpoyScore);
+
+    var mostImprovedName = null, bestDelta = -Infinity;
+    coach.roster.forEach(function (e) {
+      if (!(e.id in ratingsBefore)) return;
+      var delta = e.rating - ratingsBefore[e.id];
+      if (delta > bestDelta) { bestDelta = delta; mostImprovedName = e.player; }
+    });
+
+    return {
+      mvp: mvpEntry ? mvpEntry.name : null,
+      dpoy: dpoyEntry ? dpoyEntry.name : null,
+      mostImproved: mostImprovedName,
+    };
+  }
+
   function resolveSeasonEnd(teams, myRank, bracket) {
     var mine = teams[0];
+    // Snapshot BEFORE resolveInjuries()/applyGrowthAndDecline() run below, so
+    // computeSeasonAwards() can measure how much each player's rating moved
+    // this season for the Most Improved award.
+    var ratingsBefore = {};
+    coach.roster.forEach(function (e) { ratingsBefore[e.id] = e.rating; });
     // coach.boardGoal is a plain object once round-tripped through
     // localStorage (JSON.stringify drops function properties), so its
     // .check() must be looked up fresh from the live BOARD_GOALS list by id
@@ -1220,12 +1384,14 @@
     resolveInjuries();
     applyGrowthAndDecline();
     var academyProspect = maybeCallUpAcademyProspect();
+    var seasonAwards = computeSeasonAwards(ratingsBefore);
 
     coach.skillPoints += SKILL_POINTS_PER_SEASON + (wonPlayoffs ? SKILL_POINTS_PER_TROPHY : 0);
 
     var record = {
       seasonNumber: coach.seasonNumber, club: coach.club.label, wins: mine.wins, losses: mine.losses,
       rank: myRank, goalAchieved: goalAchieved, wonPlayoffs: wonPlayoffs, coachOfYear: coachOfYear,
+      homeWins: mine.homeWins, homeLosses: mine.homeLosses, awayWins: mine.awayWins, awayLosses: mine.awayLosses,
     };
     coach.seasonHistory.push(record);
 
@@ -1249,7 +1415,10 @@
     if (fired) { coach.reputation = clamp(coach.reputation - 10, 0, 100); coach.fired = true; window.Achievements.unlock("coach_fired"); }
 
     saveCoach();
-    pendingSeasonRecord = { record: record, goalAchieved: goalAchieved, wonPlayoffs: wonPlayoffs, coachOfYear: coachOfYear, mvp: seasonMvp(), milestonesHit: milestonesHit, fired: fired, academyProspect: academyProspect };
+    pendingSeasonRecord = {
+      record: record, goalAchieved: goalAchieved, wonPlayoffs: wonPlayoffs, coachOfYear: coachOfYear,
+      mvp: seasonMvp(), seasonAwards: seasonAwards, milestonesHit: milestonesHit, fired: fired, academyProspect: academyProspect,
+    };
     renderRecap();
   }
 
@@ -1324,6 +1493,12 @@
     if (p.wonPlayoffs) { lines.push("🏆 " + window.I18n.t("coachCareer.awards.playoffChampion")); }
     if (p.coachOfYear) lines.push("🌟 " + window.I18n.t("coachCareer.awards.coachOfYear"));
     if (p.mvp) lines.push(window.I18n.t("coachCareer.hub.mvpLine", { name: p.mvp.player, rating: Math.round(p.mvp.rating) }));
+    if (p.seasonAwards) {
+      if (p.seasonAwards.mvp) lines.push(window.I18n.t("coachCareer.hub.mvpStatLine", { name: p.seasonAwards.mvp }));
+      if (p.seasonAwards.dpoy) lines.push(window.I18n.t("coachCareer.hub.dpoyLine", { name: p.seasonAwards.dpoy }));
+      if (p.seasonAwards.mostImproved) lines.push(window.I18n.t("coachCareer.hub.mostImprovedLine", { name: p.seasonAwards.mostImproved }));
+    }
+    lines.push(window.I18n.t("coachCareer.stats.homeAwayLine", { homeWins: p.record.homeWins, homeLosses: p.record.homeLosses, awayWins: p.record.awayWins, awayLosses: p.record.awayLosses }));
     var injured = coach.roster.filter(function (e) { return e.injury; });
     if (injured.length) lines.push("🩹 " + window.I18n.t("coachCareer.hub.injuryReportLine", { count: injured.length }));
     if (p.fired) lines.push("😬 " + window.I18n.t("coachCareer.hub.firedLine"));
@@ -1652,14 +1827,21 @@
   function renderStatsScreen(returnFn) {
     document.getElementById("coach-hub-title").textContent = window.I18n.t("coachCareer.hub.statsBtn");
     document.getElementById("coach-hub-status").textContent = "";
-    var totalWins = 0, totalLosses = 0;
+    var totalWins = 0, totalLosses = 0, homeWins = 0, homeLosses = 0, awayWins = 0, awayLosses = 0;
     var clubs = {};
-    coach.seasonHistory.forEach(function (r) { totalWins += r.wins; totalLosses += r.losses; clubs[r.club] = true; });
+    coach.seasonHistory.forEach(function (r) {
+      totalWins += r.wins; totalLosses += r.losses; clubs[r.club] = true;
+      // Older saves (from before the home/away split existed) simply don't
+      // contribute to these totals rather than producing NaN.
+      homeWins += r.homeWins || 0; homeLosses += r.homeLosses || 0;
+      awayWins += r.awayWins || 0; awayLosses += r.awayLosses || 0;
+    });
     var content = document.getElementById("coach-hub-content");
     content.innerHTML =
       '<div class="career-event-card">' +
       "<p>" + window.I18n.t("coachCareer.stats.nameLine", { name: coach.name, rep: coach.reputation }) + "</p>" +
       "<p>" + window.I18n.t("coachCareer.stats.recordLine", { seasons: coach.seasonHistory.length, wins: totalWins, losses: totalLosses }) + "</p>" +
+      "<p>" + window.I18n.t("coachCareer.stats.homeAwayLine", { homeWins: homeWins, homeLosses: homeLosses, awayWins: awayWins, awayLosses: awayLosses }) + "</p>" +
       "<p>" + window.I18n.t("coachCareer.stats.trophiesLine", { trophies: coach.trophies, coachOfYear: coach.coachOfYearCount }) + "</p>" +
       "<p>" + window.I18n.t("coachCareer.stats.clubsLine", { count: Object.keys(clubs).length }) + "</p>" +
       "<p>" + window.I18n.t("coachCareer.stats.imageLine", { image: coach.publicImage }) + "</p>" +

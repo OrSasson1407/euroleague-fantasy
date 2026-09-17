@@ -333,6 +333,21 @@
     return Math.round(base + bellRandom(20));
   }
 
+  var CAREER_POS_REB_WEIGHT = { Guard: 2.5, Forward: 5, Center: 8 }; // per 36 minutes, 4 fallback for null position
+  var CAREER_POS_AST_WEIGHT = { Guard: 5, Forward: 2.5, Center: 1.5 }; // per 36 minutes, 3 fallback for null position
+
+  // A real per-game stat line instead of the old single season-end PPG
+  // formula (which wasn't even derived from the 8-game loop it sat next to) -
+  // called once per simulated game so the season averages reflect actual
+  // game-to-game variance, not just one flat estimate.
+  function simPlayerGameLine(myOffense, myDefense, position, starter) {
+    var minutes = starter ? (26 + Math.random() * 8) : (10 + Math.random() * 10);
+    var pts = Math.max(0, Math.round((6 + (myOffense - 50) * 0.5 + (myDefense - 50) * 0.1) * (minutes / 36) + bellRandom(5)));
+    var reb = Math.max(0, Math.round((CAREER_POS_REB_WEIGHT[position] || 4) * (0.7 + myDefense / 150) * (minutes / 36) + bellRandom(2)));
+    var ast = Math.max(0, Math.round((CAREER_POS_AST_WEIGHT[position] || 3) * (0.7 + myOffense / 150) * (minutes / 36) + bellRandom(2)));
+    return { pts: pts, reb: reb, ast: ast };
+  }
+
   function reputationLabel(rep) {
     if (rep >= 80) return window.I18n.t("career.repSuperstar");
     if (rep >= 60) return window.I18n.t("career.repKnown");
@@ -928,22 +943,40 @@
   function computeLeagueStanding(myWins, myLosses) {
     var others = shuffle(uniqueClubs().filter(function (c) { return c !== career.team.label; })).slice(0, 19);
     var table = [{ label: career.team.label, wins: myWins, losses: myLosses, mine: true }];
+    var comparablePpgs = [];
     others.forEach(function (club) {
       var strength = clubAverageStrength(club);
       var w = 0, l = 0;
+      var totalPts = 0;
       for (var i = 0; i < 8; i++) {
         var opp = opponentStrengthNear(strength);
         if (simScore(strength, opp) > simScore(opp, strength)) w++;
         else l++;
+        // A hypothetical starter on this club, for the scoring-title/MVP
+        // comparison below - same box-score formula as my own player,
+        // just fed the club's own strength as both offense and defense.
+        totalPts += simPlayerGameLine(strength, strength, null, true).pts;
       }
       table.push({ label: club, wins: w, losses: l, mine: false });
+      comparablePpgs.push(totalPts / 8);
     });
     table.sort(function (a, b) { return b.wins - a.wins; });
     var rank = -1;
     table.forEach(function (t, i) {
       if (t.mine) rank = i + 1;
     });
-    return { rank: rank, total: table.length };
+    return { rank: rank, total: table.length, comparablePpgs: comparablePpgs };
+  }
+
+  // Compares my season's PPG against 19 simulated comparable players to
+  // decide a scoring title / MVP-caliber season - the only place any of my
+  // stats get measured against the rest of the league, not just my own team.
+  function evaluateAwardRace(myPpg, comparablePpgs, starter, wins, rating) {
+    var sorted = comparablePpgs.concat([myPpg]).sort(function (a, b) { return b - a; });
+    var ppgLeagueRank = sorted.indexOf(myPpg) + 1;
+    var scoringTitle = ppgLeagueRank === 1;
+    var mvpCaliber = starter && wins >= 6 && ppgLeagueRank <= 3 && rating >= 80;
+    return { ppgLeagueRank: ppgLeagueRank, scoringTitle: scoringTitle, mvpCaliber: mvpCaliber };
   }
 
   function resolveProSeason(focusId) {
@@ -974,6 +1007,7 @@
     var teamDefense = career.team.baseStrength * (1 - contributionWeight) + myDefense * contributionWeight;
 
     var wins = 0, losses = 0;
+    var totalPts = 0, totalReb = 0, totalAst = 0;
     var GAMES = 8;
     for (var i = 0; i < GAMES; i++) {
       var opp = opponentStrengthNear(career.team.baseStrength);
@@ -981,14 +1015,15 @@
       var oppScore = simScore(opp, teamDefense);
       if (myScore > oppScore) wins++;
       else losses++;
+      var gameLine = simPlayerGameLine(myOffense, myDefense, career.position, starter);
+      totalPts += gameLine.pts;
+      totalReb += gameLine.reb;
+      totalAst += gameLine.ast;
     }
 
-    // Offense still drives scoring (it's fundamentally an offensive stat),
-    // but a small share comes from defense too - good defenders rack up
-    // extra box-score points off steals, putbacks and transition chances,
-    // so two players with the same offRating but different defRating
-    // shouldn't score identically.
-    var ppg = Math.max(2, ((myOffense - 50) * 0.45 + (myDefense - 50) * 0.1 + 8) * (starter ? 1 : 0.5));
+    var ppg = totalPts / GAMES;
+    var rpg = totalReb / GAMES;
+    var apg = totalAst / GAMES;
 
     var delta = ageGrowthDelta(career.age);
     var offShare = focusId === "offense" ? 0.7 : focusId === "defense" ? 0.3 : 0.5;
@@ -1008,6 +1043,8 @@
       career.injury = injuryEvent;
       wins = Math.round(wins * 0.6);
       ppg *= 0.7;
+      rpg *= 0.7;
+      apg *= 0.7;
     }
     if (shieldActive) career.injuryShieldActive = false;
 
@@ -1022,6 +1059,10 @@
 
     var standing = computeLeagueStanding(wins, losses);
 
+    var awardRace = evaluateAwardRace(ppg, standing.comparablePpgs, starter, wins, Math.round((career.offRating + career.defRating) / 2));
+    if (awardRace.scoringTitle) awards.push("scoringTitle");
+    if (awardRace.mvpCaliber && Math.random() < 0.5) awards.push("mvpSeason");
+
     var fitsSystem = window.PlaySystemsAPI.fits({ archetype: career.archetype }, career.team.system, null);
     career.team.coachMeter = clamp(career.team.coachMeter + (fitsSystem ? 4 : -2) + (wins > losses ? 2 : -2), 0, 100);
 
@@ -1032,6 +1073,8 @@
       wins: wins,
       losses: losses,
       ppg: Math.round(ppg * 10) / 10,
+      rpg: Math.round(rpg * 10) / 10,
+      apg: Math.round(apg * 10) / 10,
       rating: Math.round((career.offRating + career.defRating) / 2),
       awards: awards,
       champion: champion,
@@ -1165,6 +1208,8 @@
     lines.push(window.I18n.t("career.seasonRecordLine", { wins: record.wins, losses: record.losses }));
     lines.push(window.I18n.t("career.leagueRankLine", { rank: record.leagueRank, total: record.leagueTotal }));
     lines.push(window.I18n.t("career.ppgLine", { ppg: record.ppg }));
+    lines.push(window.I18n.t("career.rpgLine", { rpg: record.rpg }));
+    lines.push(window.I18n.t("career.apgLine", { apg: record.apg }));
     if (record.champion) {
       lines.push("🏆 " + window.I18n.t("career.awards.seasonChampion"));
       window.Effects.confetti();
@@ -1452,7 +1497,7 @@
         "<span>" + (r.starter ? window.I18n.t("career.starterShortLabel") : window.I18n.t("common.bench")) + "</span>" +
         window.RatingTag.html(r.rating) +
         "<span>" + r.wins + "-" + r.losses + "</span>" +
-        "<span>" + window.I18n.t("career.ppgSuffix", { ppg: r.ppg }) + "</span>" +
+        "<span>" + window.I18n.t("career.boxLineSuffix", { ppg: r.ppg, rpg: r.rpg || 0, apg: r.apg || 0 }) + "</span>" +
         (r.champion ? '<span class="archetype-tag">🏆 ' + window.I18n.t("career.championsTag") + "</span>" : "") +
         (r.onNationalTeam ? '<span class="archetype-tag">🇪🇺 ' + window.I18n.t("career.nationalTeamChipTag") + "</span>" : "") +
         (r.awards && r.awards.length
