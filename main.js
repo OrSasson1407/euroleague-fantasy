@@ -42,6 +42,13 @@
     careerCreate: "screen-career-create",
     careerHub: "screen-career-hub",
     careerSummary: "screen-career-summary",
+    coachHome: "screen-coach-home",
+    coachCreate: "screen-coach-create",
+    coachHub: "screen-coach-hub",
+    coachRoster: "screen-coach-roster",
+    coachTransfer: "screen-coach-transfer",
+    coachSkills: "screen-coach-skills",
+    coachSummary: "screen-coach-summary",
   };
 
   // Per-screen "how this works" explanations, shown as a dismissible toast
@@ -63,6 +70,10 @@
     leagueSimChoice: "screenInfo.leagueSimChoice",
     leagueTrade: "screenInfo.leagueTrade",
     triviaSelect: "screenInfo.triviaSelect",
+    coachHome: "screenInfo.coachHome",
+    coachRoster: "screenInfo.coachRoster",
+    coachTransfer: "screenInfo.coachTransfer",
+    coachSkills: "screenInfo.coachSkills",
   };
 
   var lastScreen = null;
@@ -147,6 +158,30 @@
     showScreen("home");
   });
   document.getElementById("btn-home-from-career-summary").addEventListener("click", function () {
+    showScreen("home");
+  });
+  document.getElementById("btn-mode-coach").addEventListener("click", function () {
+    window.CoachCareerGame.open();
+  });
+  document.getElementById("btn-home-from-coach-home").addEventListener("click", function () {
+    showScreen("home");
+  });
+  document.getElementById("btn-home-from-coach-create").addEventListener("click", function () {
+    showScreen("home");
+  });
+  document.getElementById("btn-home-from-coach-hub").addEventListener("click", function () {
+    showScreen("home");
+  });
+  document.getElementById("btn-home-from-coach-roster").addEventListener("click", function () {
+    showScreen("home");
+  });
+  document.getElementById("btn-home-from-coach-transfer").addEventListener("click", function () {
+    showScreen("home");
+  });
+  document.getElementById("btn-home-from-coach-skills").addEventListener("click", function () {
+    showScreen("home");
+  });
+  document.getElementById("btn-home-from-coach-summary").addEventListener("click", function () {
     showScreen("home");
   });
 

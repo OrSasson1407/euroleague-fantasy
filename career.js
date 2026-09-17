@@ -1409,6 +1409,7 @@
       trophies: career.seasonHistory.filter(function (r) { return r.champion; }).length,
       teams: Object.keys(teams),
       totalMoney: career.money,
+      archetype: career.archetype ? career.archetype.id : null,
     };
   }
 
@@ -1525,5 +1526,5 @@
     updatePointsDisplay();
   });
 
-  window.CareerGame = { open: openHome };
+  window.CareerGame = { open: openHome, getLastCareerSummary: loadLastCareer };
 })();

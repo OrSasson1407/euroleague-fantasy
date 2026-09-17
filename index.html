@@ -118,6 +118,10 @@
           <div class="mode-card-title" data-i18n="home.modes.career.title">🏀 קריירה</div>
           <div class="mode-card-desc" data-i18n="home.modes.career.desc">התחילו כשחקן בן 16 באקדמיה, התפתחו עד לליגה המקצוענית, ונהלו קריירה שלמה עד הפרישה</div>
         </button>
+        <button class="mode-card" id="btn-mode-coach">
+          <div class="mode-card-title" data-i18n="home.modes.coach.title">🧢 קריירת מאמן</div>
+          <div class="mode-card-desc" data-i18n="home.modes.coach.desc">נהלו קבוצה לאורך עונות רבות - סגל, תקציב, יחסי הנהלה, ומסלול קריירה משלכם כמאמן</div>
+        </button>
       </div>
     </div>
   </section>
@@ -298,6 +302,126 @@
     <div class="final-actions">
       <button id="btn-career-new-2" data-i18n="career.home.newBtn">קריירה חדשה</button>
       <button class="secondary" id="btn-home-from-career-summary" data-i18n="common.home">לדף הבית</button>
+    </div>
+  </section>
+
+  <section id="screen-coach-home" class="screen">
+    <div class="center-box">
+      <h2 style="margin-top:0;" data-i18n="coachCareer.home.title">קריירת מאמן</h2>
+      <div id="coach-continue-wrap" hidden style="margin-bottom:12px;">
+        <button id="btn-coach-continue" data-i18n="coachCareer.home.continueBtn">המשך קריירת מאמן קיימת</button>
+      </div>
+      <button id="btn-coach-new" data-i18n="coachCareer.home.newBtn">קריירת מאמן חדשה</button>
+      <div class="career-last-summary" id="coach-last-summary" hidden></div>
+      <div style="margin-top:16px;"><button class="secondary" id="btn-home-from-coach-home" data-i18n="common.backHome">חזרה לדף הבית</button></div>
+    </div>
+  </section>
+
+  <section id="screen-coach-create" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 style="margin-top:0;" data-i18n="coachCareer.create.title">יצירת מאמן</h2>
+      <input type="text" id="coach-name-input" class="player-search-input" data-i18n-placeholder="coachCareer.create.namePlaceholder" placeholder="שם המאמן..." />
+    </div>
+    <div class="era-filter">
+      <div class="era-filter-label" data-i18n="coachCareer.create.backgroundLabel">רקע:</div>
+      <div class="system-select-grid" id="coach-background-grid"></div>
+    </div>
+    <div class="era-filter">
+      <div class="era-filter-label" data-i18n="coachCareer.create.philosophyLabel">פילוסופיית אימון:</div>
+      <div class="system-select-grid" id="coach-philosophy-grid"></div>
+    </div>
+    <div class="final-actions">
+      <button id="btn-coach-start" data-i18n="coachCareer.create.startBtn">מצאו עבודה &raquo;</button>
+      <button class="secondary" id="btn-home-from-coach-create" data-i18n="common.home">לדף הבית</button>
+    </div>
+  </section>
+
+  <section id="screen-coach-hub" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 id="coach-hub-title" style="margin-top:0;"></h2>
+      <div class="round-meta" id="coach-hub-status"></div>
+    </div>
+    <div id="coach-hub-content"></div>
+    <div class="final-actions">
+      <button class="secondary" id="btn-home-from-coach-hub" data-i18n="common.home">לדף הבית</button>
+    </div>
+  </section>
+
+  <section id="screen-coach-roster" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 style="margin-top:0;" data-i18n="coachCareer.roster.title">ניהול הרכב</h2>
+    </div>
+    <div class="h2h-status">
+      <div class="h2h-player-panel">
+        <div class="h2h-player-name" data-i18n="common.starters">חמישייה פותחת</div>
+        <div class="h2h-slots" id="coach-roster-starters"></div>
+      </div>
+      <div class="h2h-player-panel">
+        <div class="h2h-player-name" data-i18n="common.bench">ספסל</div>
+        <div class="h2h-slots" id="coach-roster-bench"></div>
+      </div>
+    </div>
+    <div class="era-filter">
+      <div class="era-filter-label" data-i18n="coachCareer.roster.captainLabel">קפטן הקבוצה:</div>
+      <div class="era-filter-buttons" id="coach-captain-grid"></div>
+    </div>
+    <div class="final-actions">
+      <button id="btn-coach-roster-continue" data-i18n="coachCareer.hub.continueBtn">המשך &raquo;</button>
+      <button class="secondary" id="btn-home-from-coach-roster" data-i18n="common.home">לדף הבית</button>
+    </div>
+  </section>
+
+  <section id="screen-coach-transfer" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 style="margin-top:0;" data-i18n="coachCareer.transfer.title">חלון העברות</h2>
+      <div class="round-meta" id="coach-transfer-budget"></div>
+    </div>
+    <div class="team-card">
+      <div class="team-name" data-i18n="coachCareer.transfer.sellSectionLabel">מכירת שחקנים מהסגל</div>
+      <div class="players-grid" id="coach-transfer-roster"></div>
+    </div>
+    <div class="center-box" style="padding-top:0;">
+      <h3 data-i18n="coachCareer.transfer.tradeSectionTitle">טרייד מול יריבות העונה</h3>
+    </div>
+    <div class="team-card" id="coach-transfer-trade-current-panel">
+      <div class="team-name" data-i18n="coachCareer.transfer.tradeCurrentLabel">בחרו שחקן מהסגל שלכם להצעה</div>
+      <div class="players-grid" id="coach-transfer-trade-current"></div>
+    </div>
+    <div class="team-card" id="coach-transfer-trade-candidates-card" style="display:none;">
+      <div class="team-name" data-i18n="coachCareer.transfer.tradeCandidatesLabel">שחקנים אפשריים מקבוצות יריבות (אותה עמדה)</div>
+      <div class="players-grid" id="coach-transfer-trade-candidates"></div>
+    </div>
+    <div class="center-box" style="padding-top:0;">
+      <h3 data-i18n="coachCareer.transfer.buySectionTitle">חתימת שחקן בתשלום</h3>
+      <input type="text" id="coach-transfer-search" class="player-search-input" data-i18n-placeholder="coachCareer.transfer.searchPlaceholder" placeholder="הקלידו שם שחקן לחתימה בתשלום..." />
+    </div>
+    <div id="coach-transfer-results"></div>
+    <div class="final-actions">
+      <button id="btn-coach-transfer-continue" data-i18n="coachCareer.hub.continueBtn">המשך &raquo;</button>
+      <button class="secondary" id="btn-home-from-coach-transfer" data-i18n="common.home">לדף הבית</button>
+    </div>
+  </section>
+
+  <section id="screen-coach-skills" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 style="margin-top:0;" data-i18n="coachCareer.skills.title">יכולות מאמן</h2>
+      <div class="round-meta" id="coach-skills-points"></div>
+    </div>
+    <div class="system-select-grid" id="coach-skills-grid"></div>
+    <div class="final-actions">
+      <button id="btn-coach-skills-continue" data-i18n="coachCareer.hub.continueBtn">המשך &raquo;</button>
+      <button class="secondary" id="btn-home-from-coach-skills" data-i18n="common.home">לדף הבית</button>
+    </div>
+  </section>
+
+  <section id="screen-coach-summary" class="screen">
+    <div class="center-box" style="padding-top:0;">
+      <h2 style="margin-top:0;" data-i18n="coachCareer.summary.title">סיכום קריירת מאמן</h2>
+    </div>
+    <div id="coach-summary-content"></div>
+    <div class="final-actions">
+      <button id="btn-coach-new-2" data-i18n="coachCareer.home.newBtn">קריירת מאמן חדשה</button>
+      <button class="secondary" id="btn-home-from-coach-summary" data-i18n="common.home">לדף הבית</button>
     </div>
   </section>
 
@@ -844,6 +968,7 @@
 <script src="trivia.js"></script>
 <script src="player_profile.js"></script>
 <script src="career.js"></script>
+<script src="coach_career.js"></script>
 <script src="profile.js"></script>
 <script src="settings.js"></script>
 <script>

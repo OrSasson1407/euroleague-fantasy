@@ -38,6 +38,15 @@
     { id: "career_legend_rating", icon: "🌟" },
     { id: "career_retired", icon: "🎽" },
     { id: "career_second_run", icon: "🔁" },
+    { id: "coach_first_hire", icon: "📋" },
+    { id: "coach_champion", icon: "🏆" },
+    { id: "coach_playoff_champion", icon: "🥇" },
+    { id: "coach_coach_of_year", icon: "🌟" },
+    { id: "coach_fired", icon: "📦" },
+    { id: "coach_journeyman", icon: "🧳" },
+    { id: "coach_loyal", icon: "❤️" },
+    { id: "coach_retired", icon: "🧢" },
+    { id: "coach_second_run", icon: "🔁" },
   ];
 
   function defTitle(id) {

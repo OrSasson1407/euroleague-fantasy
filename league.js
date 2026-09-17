@@ -1080,10 +1080,13 @@
     };
   }
 
-  function runPlayoffs() {
-    if (!lastStandings) return;
-    var size = playoffSizeFor(state.leagueSize);
-    var top8 = lastStandings.slice(0, size);
+  // DOM-free: builds the qf/sf/final bracket from a standings list and a
+  // league size, without touching module-private state - shared with
+  // coach_career.js via window.LeagueSimCore so its season-end playoffs use
+  // the exact same seeding/simulation as this mode instead of a re-implementation.
+  function computePlayoffBracket(standings, leagueSize) {
+    var size = playoffSizeFor(leagueSize);
+    var top8 = standings.slice(0, size);
 
     var qf = null;
     var sfTeams;
@@ -1108,7 +1111,12 @@
     var finalTeams = sf.map(function (r) { return r.winner; });
     var finalMatch = playMatch(finalTeams[0], finalTeams[1]);
 
-    renderPlayoffs({ top8: top8, qf: qf, sf: sf, final: finalMatch, champion: finalMatch.winner });
+    return { top8: top8, qf: qf, sf: sf, final: finalMatch, champion: finalMatch.winner };
+  }
+
+  function runPlayoffs() {
+    if (!lastStandings) return;
+    renderPlayoffs(computePlayoffBracket(lastStandings, state.leagueSize));
   }
 
   function matchTeamRowHtml(team, score, isWinner) {
@@ -1235,4 +1243,25 @@
   document.getElementById("btn-league-playoffs").addEventListener("click", runPlayoffs);
 
   window.LeagueGame = { showTeamSelect: showTeamSelect };
+
+  // Pure season-sim/roster-math functions shared with coach_career.js, so
+  // its multi-season simulation reuses this mode's tested math instead of
+  // a reimplementation. Purely additive - no existing call site above changes.
+  window.LeagueSimCore = {
+    weightedTeamValue: weightedTeamValue,
+    weightedTeamRating: weightedTeamRating,
+    weightedOffense: weightedOffense,
+    weightedDefense: weightedDefense,
+    splitStartersBench: splitStartersBench,
+    offenseForRoster: offenseForRoster,
+    defenseForRoster: defenseForRoster,
+    offenseForMyRoster: offenseForMyRoster,
+    defenseForMyRoster: defenseForMyRoster,
+    ratingForHistoricalRoster: ratingForHistoricalRoster,
+    simulateMatchScore: simulateMatchScore,
+    playMatch: playMatch,
+    finalizeStandings: finalizeStandings,
+    pickBalancedCombo: pickBalancedCombo,
+    computePlayoffBracket: computePlayoffBracket,
+  };
 })();
