@@ -143,6 +143,23 @@
   ];
   COACH_PRESS_EVENTS.forEach(resolveEventText);
 
+  // Triggered once, right after the season recap - a reflective, personal
+  // note rather than a mid-season management decision (feature: end-of-
+  // season interview).
+  var COACH_INTERVIEW_EVENTS = [
+    {
+      id: "seasonReflection",
+      choiceA: { imageDelta: 5, reputationDelta: 2 },
+      choiceB: { imageDelta: -3, reputationDelta: 5 },
+    },
+    {
+      id: "futurePlans",
+      choiceA: { coachMeterDelta: 5 },
+      choiceB: { imageDelta: 6 },
+    },
+  ];
+  COACH_INTERVIEW_EVENTS.forEach(resolveEventText);
+
   function resolveEventText(ev) {
     ev.title = window.I18n.t("coachCareer.events." + ev.id + ".title");
     ev.desc = window.I18n.t("coachCareer.events." + ev.id + ".desc");
@@ -332,6 +349,22 @@
     var saved = loadCoach();
     if (!saved) return;
     coach = saved;
+    // localStorage round-trips these as plain data (losing the live object's
+    // resolved label/desc if the UI language changed since the last save, and
+    // dropping BOARD_GOALS' .check function) - re-resolve each by id from its
+    // live source array so both the current language and behavior are correct.
+    if (coach.boardGoal) {
+      var freshGoal = BOARD_GOALS.filter(function (g) { return g.id === coach.boardGoal.id; })[0];
+      if (freshGoal) coach.boardGoal = freshGoal;
+    }
+    if (coach.background) {
+      var freshBg = COACH_BACKGROUNDS.filter(function (b) { return b.id === coach.background.id; })[0];
+      if (freshBg) coach.background = freshBg;
+    }
+    if (coach.identitySystem) {
+      var freshSys = window.PlaySystems.filter(function (s) { return s.id === coach.identitySystem.id; })[0];
+      if (freshSys) coach.identitySystem = freshSys;
+    }
     if (coach.phase === "jobSearch") renderJobOffers();
     else renderPreseasonHub();
     showScreen("coachHub");
@@ -357,7 +390,10 @@
       reputation: 50,
       boardConfidence: 60,
       publicImage: 50,
+      fanSupport: 50,
       budget: 0,
+      sponsor: null,
+      scoutingBoostActive: false,
       skills: { scouting: createState.background.scoutingSkillStart || 0, motivation: 0, tactics: 0 },
       skillPoints: 0,
       assistantCoach: null,
@@ -399,6 +435,11 @@
         club: coach.club.label, tier: coach.club.tier, stay: true,
         salary: Math.round((coach.contract ? coach.contract.salary : 40000) * (0.95 + effRep / 300)),
       });
+      // A veteran coach occasionally gets a golden-handshake offer instead
+      // of a normal renewal - a board-initiated nudge toward retirement.
+      if (coach.seasonNumber >= 10 && Math.random() < 0.25) {
+        offers.push({ special: "retire", payout: Math.round((coach.contract ? coach.contract.salary : 40000) * 1.5) });
+      }
     }
     var excludeClub = coach.club ? coach.club.label : null;
     var candidates = shuffle(uniqueClubs().filter(function (c) { return c !== excludeClub; }));
@@ -441,6 +482,15 @@
     var grid = document.getElementById("coach-job-grid");
     offers.forEach(function (o) {
       var btn = document.createElement("button");
+      if (o.special === "retire") {
+        btn.className = "system-card";
+        btn.innerHTML =
+          '<div class="system-name">🤝 ' + window.I18n.t("coachCareer.jobOffers.retirementOfferLabel") + "</div>" +
+          '<div class="system-desc">' + window.I18n.t("coachCareer.jobOffers.retirementOfferDesc", { payout: o.payout.toLocaleString() }) + "</div>";
+        btn.addEventListener("click", finishCoachCareer);
+        grid.appendChild(btn);
+        return;
+      }
       btn.className = "system-card";
       btn.innerHTML =
         '<div class="system-name">' + window.TeamBadge.html(o.club) + o.club + (o.stay ? " (" + window.I18n.t("coachCareer.jobOffers.staySuffix") + ")" : "") + "</div>" +
@@ -540,7 +590,20 @@
       player: p.name, position: p.position, rating: p.rating, offRating: p.offRating, defRating: p.defRating,
       archetype: p.archetype, team: team, season: season,
       half: 2, age: age, injury: null, morale: 60, isLegendCrossover: false,
+      contract: makePlayerContract(p.rating),
     };
+  }
+
+  // Individual player contracts (feature 6) - a separate wage/years-left
+  // pair per roster entry, distinct from the coach's own contract, so a
+  // player can come up for renewal/release on their own schedule.
+  function makePlayerContract(rating) {
+    var r = typeof rating === "number" ? rating : 60;
+    // Scaled so a full roster's wage bill fits comfortably inside a season's
+    // budget (computeSeasonBudget()) - at *15 an ~11-player roster's wages
+    // ran to 700K+ against budgets of a few hundred thousand, so payWageBill()
+    // clamped the budget to 0 every season and permanently broke transfers/renewals.
+    return { yearsLeft: 2 + Math.floor(Math.random() * 3), salary: Math.round(r * r * 4) };
   }
 
   // ---------- Preseason hub ----------
@@ -550,15 +613,53 @@
     return pool[0] || BOARD_GOALS[0];
   }
 
+  // Gate revenue and the missed-goal penalty both key off LAST season's
+  // record (the only thing known at this point) rather than the season
+  // about to be played; sponsor income also resolves here since it's
+  // another once-per-season budget input.
   function computeSeasonBudget() {
     var tierBase = coach.club.tier === "big" ? 500000 : coach.club.tier === "mid" ? 250000 : 120000;
     var mult = (1 + coach.reputation / 200) * (coach.seasonNumber <= 1 ? (coach.background.budgetStartMult || 1) : 1);
-    return Math.round(tierBase * mult);
+    var base = tierBase * mult;
+
+    var lastRecord = coach.seasonHistory[coach.seasonHistory.length - 1];
+    var gateRevenue = 0;
+    if (lastRecord) {
+      var winPct = lastRecord.wins / Math.max(1, lastRecord.wins + lastRecord.losses);
+      gateRevenue = tierBase * 0.15 * winPct * (1 + coach.reputation / 300);
+      if (!lastRecord.goalAchieved) base *= 0.85;
+    }
+
+    var sponsorIncome = 0;
+    if (coach.sponsor) {
+      sponsorIncome = coach.sponsor.annualAmount;
+      coach.sponsor.yearsLeft--;
+      if (coach.sponsor.yearsLeft <= 0) coach.sponsor = null;
+    }
+
+    return Math.round(base + gateRevenue + sponsorIncome);
+  }
+
+  function tickPlayerContracts() {
+    var expired = [];
+    coach.roster.forEach(function (e) {
+      if (!e.contract) e.contract = makePlayerContract(e.rating);
+      e.contract.yearsLeft--;
+      if (e.contract.yearsLeft <= 0) expired.push(e);
+    });
+    return expired;
+  }
+
+  function payWageBill() {
+    var total = 0;
+    coach.roster.forEach(function (e) { total += (e.contract ? e.contract.salary : 0); });
+    coach.budget = Math.max(0, coach.budget - total);
   }
 
   function startNewSeason() {
     coach.seasonNumber++;
     coach.boardGoal = pickBoardGoal();
+    coach.scoutingBoostActive = false;
     coach.budget = computeSeasonBudget();
     coach.playSystem = null;
     // Opponents for the season are picked now, before the transfer window,
@@ -567,8 +668,14 @@
     // in buildAndPlaySeason(), any trades against them already applied.
     coach.leagueOpponents = generateLeagueOpponents();
     healInjuriesAndAge();
+    payWageBill();
+    var expiredContracts = tickPlayerContracts();
     saveCoach();
-    renderPreseasonHub();
+    if (expiredContracts.length) {
+      renderPlayerContractDecisions(expiredContracts, 0);
+    } else {
+      renderPreseasonHub();
+    }
   }
 
   function generateLeagueOpponents() {
@@ -593,6 +700,38 @@
     });
   }
 
+  // One decision per expired player contract, resolved before the normal
+  // preseason hub is shown - mirrors the "queue, resolve one at a time"
+  // shape of the trade/transfer screens elsewhere in this file.
+  function renderPlayerContractDecisions(list, index) {
+    if (index >= list.length) { renderPreseasonHub(); return; }
+    var entry = list[index];
+    document.getElementById("coach-hub-title").textContent = window.I18n.t("coachCareer.contracts.title");
+    document.getElementById("coach-hub-status").textContent = "";
+    var renewCost = Math.round(entry.contract.salary * 0.5);
+    var content = document.getElementById("coach-hub-content");
+    content.innerHTML =
+      '<div class="career-event-card"><p>' + window.I18n.t("coachCareer.contracts.expiredLine", { name: entry.player }) + window.RatingTag.html(entry.rating) + "</p>" +
+      '<div class="h2h-setup-buttons">' +
+      '<button id="btn-contract-renew"' + (coach.budget < renewCost ? " disabled" : "") + ">" + window.I18n.t("coachCareer.contracts.renewBtn", { cost: renewCost.toLocaleString() }) + "</button>" +
+      // Only block release at the roster floor when renewing is actually affordable -
+      // otherwise a broke coach with a minimal roster would have no legal action at all.
+      '<button class="secondary" id="btn-contract-release"' + (coach.roster.length <= 8 && coach.budget >= renewCost ? " disabled" : "") + ">" + window.I18n.t("coachCareer.contracts.releaseBtn") + "</button>" +
+      "</div></div>";
+    document.getElementById("btn-contract-renew").addEventListener("click", function () {
+      coach.budget = Math.max(0, coach.budget - renewCost);
+      entry.contract = makePlayerContract(entry.rating);
+      saveCoach();
+      renderPlayerContractDecisions(list, index + 1);
+    });
+    document.getElementById("btn-contract-release").addEventListener("click", function () {
+      coach.roster = coach.roster.filter(function (x) { return x !== entry; });
+      if (coach.captainId === entry.id) coach.captainId = null;
+      saveCoach();
+      renderPlayerContractDecisions(list, index + 1);
+    });
+  }
+
   function renderPreseasonHub() {
     document.getElementById("coach-hub-title").innerHTML = window.TeamBadge.html(coach.club.label) + window.I18n.t("coachCareer.hub.teamSeasonHeader", { team: coach.club.label, season: coach.seasonNumber });
     document.getElementById("coach-hub-status").innerHTML = window.I18n.t("coachCareer.hub.statusLine", {
@@ -600,15 +739,21 @@
       board: coach.boardConfidence, rep: coach.reputation,
     });
 
+    var scoutingBoostCost = computeScoutingBoostCost();
     var content = document.getElementById("coach-hub-content");
     content.innerHTML =
       '<div class="career-event-card"><p>' + window.I18n.t("coachCareer.hub.boardGoalLine", { goal: coach.boardGoal.label }) + "</p>" +
       "<p>" + coach.boardGoal.desc + "</p>" +
       (coach.assistantCoach ? "<p>" + window.I18n.t("coachCareer.assistant.hiredLine", { label: ASSISTANT_COACH_TYPES_BY_ID[coach.assistantCoach].label }) + "</p>" : "") +
+      (coach.sponsor ? "<p>" + window.I18n.t("coachCareer.sponsor.activeLine", { amount: coach.sponsor.annualAmount.toLocaleString(), years: coach.sponsor.yearsLeft }) + "</p>" : "") +
       "</div>" +
       (!coach.assistantCoach
         ? '<p style="text-align:center;color:var(--text-dim);">' + window.I18n.t("coachCareer.assistant.prompt") + "</p>" +
           '<div class="system-select-grid" id="coach-assistant-grid"></div>'
+        : "") +
+      (!coach.sponsor
+        ? '<p style="text-align:center;color:var(--text-dim);">' + window.I18n.t("coachCareer.sponsor.prompt") + "</p>" +
+          '<div class="system-select-grid" id="coach-sponsor-grid"></div>'
         : "") +
       '<p style="text-align:center;color:var(--text-dim);">' + window.I18n.t("common.chooseSystem") + "</p>" +
       '<div class="system-select-grid" id="coach-system-grid"></div>' +
@@ -617,6 +762,9 @@
       '<button class="secondary" id="btn-coach-transfer">💰 ' + window.I18n.t("coachCareer.hub.transferBtn") + "</button>" +
       '<button class="secondary" id="btn-coach-skills">🧠 ' + window.I18n.t("coachCareer.hub.skillsBtn") + "</button>" +
       '<button class="secondary" id="btn-coach-stats">📊 ' + window.I18n.t("coachCareer.hub.statsBtn") + "</button>" +
+      (!coach.scoutingBoostActive
+        ? '<button class="secondary" id="btn-coach-scouting-boost"' + (coach.budget < scoutingBoostCost ? " disabled" : "") + ">🔍 " + window.I18n.t("coachCareer.hub.scoutingBoostBtn", { cost: scoutingBoostCost.toLocaleString() }) + "</button>"
+        : "") +
       (coach.seasonNumber >= MIN_SEASONS_BEFORE_RETIRE
         ? '<button class="secondary" id="btn-coach-retire-now">' + window.I18n.t("coachCareer.hub.considerRetireBtn") + "</button>"
         : "") +
@@ -649,17 +797,87 @@
       });
     }
 
+    if (!coach.sponsor) {
+      var sponsorGrid = document.getElementById("coach-sponsor-grid");
+      sponsorGrid.innerHTML = "";
+      var sponsorOffer = computeSponsorOffer();
+      var sponsorBtn = document.createElement("button");
+      sponsorBtn.className = "system-card";
+      sponsorBtn.innerHTML = '<div class="system-name">' + window.I18n.t("coachCareer.sponsor.dealLabel") + "</div><div class=\"system-desc\">" +
+        window.I18n.t("coachCareer.sponsor.dealDesc", { amount: sponsorOffer.annualAmount.toLocaleString(), years: sponsorOffer.yearsLeft }) + "</div>";
+      sponsorBtn.addEventListener("click", function () {
+        coach.sponsor = sponsorOffer;
+        saveCoach();
+        renderPreseasonHub();
+      });
+      sponsorGrid.appendChild(sponsorBtn);
+    }
+
     document.getElementById("btn-coach-roster").addEventListener("click", renderRosterScreen);
     document.getElementById("btn-coach-transfer").addEventListener("click", function () { transferTradeSelection = null; renderTransferScreen(""); });
     document.getElementById("btn-coach-skills").addEventListener("click", renderSkillsScreen);
     document.getElementById("btn-coach-stats").addEventListener("click", function () { renderStatsScreen(renderPreseasonHub); });
+    if (!coach.scoutingBoostActive) {
+      document.getElementById("btn-coach-scouting-boost").addEventListener("click", function () {
+        coach.budget -= scoutingBoostCost;
+        coach.scoutingBoostActive = true;
+        saveCoach();
+        renderPreseasonHub();
+      });
+    }
     if (coach.seasonNumber >= MIN_SEASONS_BEFORE_RETIRE) {
       document.getElementById("btn-coach-retire-now").addEventListener("click", showRetirePrompt);
     }
     document.getElementById("btn-coach-start-season").addEventListener("click", beginSeasonFlow);
   }
 
+  function computeSponsorOffer() {
+    var tierBase = coach.club.tier === "big" ? 500000 : coach.club.tier === "mid" ? 250000 : 120000;
+    return { annualAmount: Math.round(tierBase * 0.2 * (1 + coach.reputation / 300)), yearsLeft: 3 };
+  }
+
+  function computeScoutingBoostCost() {
+    var tierBase = coach.club.tier === "big" ? 500000 : coach.club.tier === "mid" ? 250000 : 120000;
+    return Math.round(tierBase * 0.1);
+  }
+
   function beginSeasonFlow() {
+    renderFriendlyMatch();
+  }
+
+  // A quick, low-stakes preseason exhibition (feature 27) - no impact on
+  // the league table, just a small morale/reputation nudge from the result.
+  function renderFriendlyMatch() {
+    var myRating = myTeamRating();
+    var opponentClub = shuffle(uniqueClubs().filter(function (c) { return c !== coach.club.label; }))[0];
+    var combos = combosForClub(opponentClub);
+    var combo = combos.length ? window.LeagueSimCore.pickBalancedCombo(combos, clamp(myRating + 8, 45, 95)) : null;
+    if (!combo) { afterFriendlyMatch(); return; }
+
+    var oppOffense = window.LeagueSimCore.offenseForRoster(combo.players, false);
+    var oppDefense = window.LeagueSimCore.defenseForRoster(combo.players, false);
+    var myScore = window.LeagueSimCore.simulateMatchScore(myTeamOffense(), oppDefense, 1);
+    var oppScore = window.LeagueSimCore.simulateMatchScore(oppOffense, myTeamDefense(), 1);
+    if (myScore === oppScore) { if (Math.random() < 0.5) myScore++; else oppScore++; }
+    var won = myScore > oppScore;
+
+    if (won) { coach.fanSupport = clamp(coach.fanSupport + 2, 0, 100); coach.reputation = clamp(coach.reputation + 1, 0, 100); }
+    saveCoach();
+
+    document.getElementById("coach-hub-title").textContent = window.I18n.t("coachCareer.friendly.title");
+    document.getElementById("coach-hub-status").textContent = "";
+    var content = document.getElementById("coach-hub-content");
+    content.innerHTML =
+      '<div class="career-event-card">' +
+      "<p>" + window.I18n.t("coachCareer.friendly.vsLabel", { opponent: window.TeamBadge.html(combo.team) + combo.team + " " + formatSeason(combo.season) }) + "</p>" +
+      '<div class="share-rating">' + myScore + " - " + oppScore + "</div>" +
+      "<p>" + (won ? window.I18n.t("coachCareer.friendly.wonLine") : window.I18n.t("coachCareer.friendly.lostLine")) + "</p>" +
+      "</div>" +
+      '<div class="final-actions"><button id="btn-coach-friendly-next">' + window.I18n.t("coachCareer.hub.continueBtn") + "</button></div>";
+    document.getElementById("btn-coach-friendly-next").addEventListener("click", afterFriendlyMatch);
+  }
+
+  function afterFriendlyMatch() {
     if (Math.random() < 0.3) {
       renderEventDialog("general");
     } else {
@@ -676,7 +894,7 @@
   }
 
   function renderEventDialog(kind) {
-    var pool = kind === "captain" ? COACH_CAPTAIN_EVENTS : kind === "conflict" ? COACH_CONFLICT_EVENTS : kind === "crisis" ? COACH_CRISIS_EVENTS : kind === "press" ? COACH_PRESS_EVENTS : COACH_EVENTS;
+    var pool = kind === "captain" ? COACH_CAPTAIN_EVENTS : kind === "conflict" ? COACH_CONFLICT_EVENTS : kind === "crisis" ? COACH_CRISIS_EVENTS : kind === "press" ? COACH_PRESS_EVENTS : kind === "interview" ? COACH_INTERVIEW_EVENTS : COACH_EVENTS;
     var event = pool[Math.floor(Math.random() * pool.length)];
     pendingEventKind = kind;
     document.getElementById("coach-hub-title").textContent = event.title;
@@ -802,6 +1020,7 @@
     var base = window.LeagueSimCore.offenseForMyRoster(roster, coach.playSystem);
     base += chemistryBonus() / 2;
     base += (averageMorale() - 60) / 10;
+    base += (coach.fanSupport - 50) / 15;
     if (matchesIdentitySystem()) base += 2;
     if (coach.assistantCoach === "offense") base += 2;
     return base;
@@ -812,6 +1031,7 @@
     var base = window.LeagueSimCore.defenseForMyRoster(roster, coach.playSystem);
     base += chemistryBonus() / 2;
     base += (averageMorale() - 60) / 10;
+    base += (coach.fanSupport - 50) / 15;
     if (matchesIdentitySystem()) base += 2;
     if (coach.assistantCoach === "defense") base += 2;
     return base;
@@ -989,6 +1209,8 @@
     coach.boardConfidence = clamp(coach.boardConfidence + boardDelta, 0, 100);
     var repDelta = (goalAchieved ? 5 : -3) + (wonPlayoffs ? 12 : reachedPlayoffs ? 4 : 0);
     coach.reputation = clamp(coach.reputation + repDelta, 0, 100);
+    var fanDelta = (mine.wins > mine.losses ? 4 : -4) + (goalAchieved ? 3 : -3) + (wonPlayoffs ? 10 : 0);
+    coach.fanSupport = clamp(coach.fanSupport + fanDelta, 0, 100);
 
     var coachOfYear = (myRank === 1 || (myRank <= 3 && goalAchieved)) && Math.random() < 0.4;
     if (wonPlayoffs) { coach.trophies++; window.Achievements.unlock("coach_playoff_champion"); }
@@ -1061,6 +1283,7 @@
       entry.defRating = entry.rating;
       entry.age = 18 + Math.floor(Math.random() * 2);
       entry.half = 2;
+      entry.contract = makePlayerContract(entry.rating); // cheap prospect wage, not the real player's historical rating
       coach.roster.push(entry);
       return entry;
     }
@@ -1079,9 +1302,13 @@
       } else {
         delta = (Math.random() - 0.5) * 1.5;
       }
-      e.rating = clamp(e.rating + delta, 30, 99);
-      if (typeof e.offRating === "number") e.offRating = clamp(e.offRating + delta, 30, 99);
-      if (typeof e.defRating === "number") e.defRating = clamp(e.defRating + delta, 30, 99);
+      // Rounded to whole numbers - every other mode in the app treats
+      // ratings as integers (RatingTag.html() just stringifies them with
+      // no rounding of its own), so an unrounded fractional delta compounding
+      // season after season would eventually display as a long decimal.
+      e.rating = Math.round(clamp(e.rating + delta, 30, 99));
+      if (typeof e.offRating === "number") e.offRating = Math.round(clamp(e.offRating + delta, 30, 99));
+      if (typeof e.defRating === "number") e.defRating = Math.round(clamp(e.defRating + delta, 30, 99));
       e.age++;
     });
   }
@@ -1110,7 +1337,10 @@
     content.innerHTML = milestoneBanner +
       '<div class="career-event-card">' + lines.map(function (l) { return "<p>" + l + "</p>"; }).join("") + "</div>" +
       '<div class="final-actions"><button id="btn-coach-recap-next">' + window.I18n.t("coachCareer.hub.continueBtn") + "</button></div>";
-    document.getElementById("btn-coach-recap-next").addEventListener("click", afterSeasonEventsResolved);
+    document.getElementById("btn-coach-recap-next").addEventListener("click", function () {
+      if (Math.random() < 0.5) renderEventDialog("interview");
+      else afterSeasonEventsResolved();
+    });
   }
 
   function afterSeasonEventsResolved() {
@@ -1227,7 +1457,8 @@
     var r = typeof rating === "number" ? rating : 60;
     var base = Math.max(0, r - 40) * Math.max(0, r - 40) * 30;
     var ageFactor = (age >= 24 && age <= 29) ? 1 : (age < 24 ? 0.85 : 0.6);
-    return Math.max(5000, Math.round(base * ageFactor));
+    var scoutingDiscount = coach.scoutingBoostActive ? 0.8 : 1;
+    return Math.max(5000, Math.round(base * ageFactor * scoutingDiscount));
   }
 
   var transferTradeSelection = null; // roster entry currently offered for trade, or null
@@ -1355,6 +1586,7 @@
           position: lastCareer.position, rating: lastCareer.peakRating, offRating: lastCareer.peakRating, defRating: lastCareer.peakRating,
           archetype: lastCareer.archetype ? { id: lastCareer.archetype, offBonus: 0, defBonus: 0 } : null,
           team: coach.club.label, season: "career", half: 2, age: 33, injury: null, morale: 70, isLegendCrossover: true,
+          contract: makePlayerContract(lastCareer.peakRating),
         });
         coach.crossoverSigned = true;
         saveCoach();
@@ -1366,7 +1598,7 @@
     var trimmed = (query || "").trim();
     if (trimmed.length < 2) return;
     var matches = window.PlayerSearch.search(trimmed).filter(function (entry) { return !currentNames[normalizeName(entry.name)]; });
-    matches.slice(0, 10).forEach(function (entry) {
+    matches.slice(0, coach.scoutingBoostActive ? 15 : 10).forEach(function (entry) {
       var b = entry.bestAppearance;
       var price = transferPrice(b.rating, 26);
       var btn = document.createElement("button");
@@ -1431,7 +1663,9 @@
       "<p>" + window.I18n.t("coachCareer.stats.trophiesLine", { trophies: coach.trophies, coachOfYear: coach.coachOfYearCount }) + "</p>" +
       "<p>" + window.I18n.t("coachCareer.stats.clubsLine", { count: Object.keys(clubs).length }) + "</p>" +
       "<p>" + window.I18n.t("coachCareer.stats.imageLine", { image: coach.publicImage }) + "</p>" +
+      "<p>" + window.I18n.t("coachCareer.stats.fanSupportLine", { support: coach.fanSupport }) + "</p>" +
       (coach.assistantCoach ? "<p>" + window.I18n.t("coachCareer.assistant.hiredLine", { label: ASSISTANT_COACH_TYPES_BY_ID[coach.assistantCoach].label }) + "</p>" : "") +
+      (coach.sponsor ? "<p>" + window.I18n.t("coachCareer.sponsor.activeLine", { amount: coach.sponsor.annualAmount.toLocaleString(), years: coach.sponsor.yearsLeft }) + "</p>" : "") +
       "</div>" +
       '<div class="final-actions"><button id="btn-coach-stats-back">' + window.I18n.t("career.backBtn") + "</button></div>";
     document.getElementById("btn-coach-stats-back").addEventListener("click", returnFn);
