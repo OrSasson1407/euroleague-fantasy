@@ -1,11 +1,12 @@
 (function () {
   "use strict";
 
-  // Splits each player's single OVR rating into offense/defense sub-ratings and
-  // assigns an archetype tag. There's no real scouting data behind this split yet -
-  // every value is deterministically derived from the player's name/team/season via
-  // a seeded hash, so it's stable across reloads but effectively "random for now"
-  // until real per-attribute research replaces it.
+  // Assigns each player an archetype tag, biased by their offense/defense split
+  // (now baked into euroleague_data.js itself, see migrate_data.js) - a bigger
+  // offense-leaning gap nudges toward "sharpshooter", a bigger defense-leaning
+  // gap nudges toward "anchor". The archetype pick itself is deterministically
+  // derived from the player's name/team/season via a seeded hash, so it's
+  // stable across reloads.
 
   // label/desc are resolved through window.I18n.t() (see RatingArchetypesAPI
   // below) rather than stored here, so every caller that displays an
@@ -43,23 +44,15 @@
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   }
 
-  function clamp(v, min, max) {
-    return Math.max(min, Math.min(max, v));
-  }
-
   function enrichPlayer(player, team, season) {
     if (typeof player.rating !== "number") {
-      player.offRating = null;
-      player.defRating = null;
       player.archetype = null;
       return;
     }
     var seed = hashString(player.name + "|" + team + "|" + season);
-    var spread = 6 + seededRandom(seed) * 10; // 6-16 point gap between offense/defense
-    var skew = (seededRandom(seed + 1) - 0.5) * 2 * spread;
-
-    player.offRating = clamp(Math.round(player.rating + skew), 30, 99);
-    player.defRating = clamp(Math.round(player.rating - skew), 30, 99);
+    var skew = (typeof player.offRating === "number" && typeof player.defRating === "number")
+      ? player.offRating - player.defRating
+      : 0;
 
     var archIdx = Math.floor(seededRandom(seed + 2) * ARCHETYPES.length);
     if (skew >= 6 && seededRandom(seed + 3) < 0.6) archIdx = 0; // lean into sharpshooter
