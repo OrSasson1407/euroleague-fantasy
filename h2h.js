@@ -32,6 +32,7 @@
 
   var seriesGames = []; // revealed games so far: {score1, score2, winnerIndex, quarters1, quarters2, homeIndex}
   var seriesWins = [0, 0];
+  var seriesPlayerStats = {}; // key: sideIndex + "|" + normalizedName -> { name, side, totalPts, totalReb, totalAst, gamesPlayed }
   var pendingGameIndex = 0;
   var awaitingReveal = true; // true = next click reveals a result; false = next click advances/finishes
   var revealTimer = null; // pending setTimeout id for the quarter-by-quarter reveal animation
@@ -184,6 +185,9 @@
         (player.position ? '<span class="pos-tag">' + player.position + "</span>" : "") +
         window.RatingTag.html(player.rating) +
         window.PlayerMeta.html(player) +
+        (typeof player.offRating === "number" ? '<span class="off-tag">' + window.I18n.t("common.offAbbr") + " " + player.offRating + "</span>" : "") +
+        (typeof player.defRating === "number" ? '<span class="def-tag">' + window.I18n.t("common.defAbbr") + " " + player.defRating + "</span>" : "") +
+        (player.archetype ? '<span class="archetype-tag">' + window.RatingArchetypesAPI.label(player.archetype) + "</span>" : "") +
         (taken ? '<span class="taken-tag">' + window.I18n.t("common.takenTag") + "</span>" : (slotFull ? '<span class="taken-tag">' + window.I18n.t("common.slotFullTag") + "</span>" : ""));
       if (!disabled) {
         btn.addEventListener("click", function () {
@@ -369,7 +373,49 @@
     return HOME_BONUS_BASE * closeness;
   }
 
+  // Both sides are exactly 5 players with no bench (1 on 1's format), so
+  // every pick is tagged half=1 ("starter") when feeding the shared engine -
+  // there's no rotation to model, every player plays the full game.
+  function buildH2HEnginePlayers(picks) {
+    return window.LeagueSimCore.buildTeamPlayers(
+      picks.map(function (p) { return Object.assign({}, p, { half: 1 }); }),
+      true
+    );
+  }
+
+  // computeMinutesShares() assumes a starter/bench split and caps starters
+  // below 40 minutes to leave room for bench substitutes - wrong for a
+  // format where all 5 picks play the entire game with nobody to sub in.
+  // Every player gets an equal share of the (40 + 5/OT-period) total instead.
+  function fullGameMinutesShares(players, otPeriods) {
+    var minutes = 40 + (otPeriods || 0) * 5;
+    var total = minutes * players.length;
+    return players.map(function () { return { minutes: minutes, share: total > 0 ? minutes / total : 0 }; });
+  }
+
+  // The largest deficit the winning side ever faced in this game (by
+  // cumulative score at a quarter break), for the comeback achievement.
+  function largestDeficitOvercome(quarters1, quarters2, winnerIndex) {
+    var winnerCum = cumulativeLine(winnerIndex === 0 ? quarters1 : quarters2);
+    var loserCum = cumulativeLine(winnerIndex === 0 ? quarters2 : quarters1);
+    var maxDeficit = 0;
+    for (var i = 0; i < winnerCum.length; i++) {
+      maxDeficit = Math.max(maxDeficit, loserCum[i] - winnerCum[i]);
+    }
+    return maxDeficit;
+  }
+
+  function wonEveryQuarter(g, winnerIndex) {
+    var wq = winnerIndex === 0 ? g.quarters1 : g.quarters2;
+    var lq = winnerIndex === 0 ? g.quarters2 : g.quarters1;
+    for (var i = 0; i < wq.length; i++) {
+      if (wq[i] < lq[i]) return false;
+    }
+    return true;
+  }
+
   function playOneGame(gameIndex) {
+    var LSC = window.LeagueSimCore;
     var homeIndex = gameIndex % 2;
     var sys1 = state.sides[0].system;
     var sys2 = state.sides[1].system;
@@ -384,17 +430,38 @@
     var mult2 = sys2 ? sys2.varianceMultiplier : 1;
     var score1 = simulateTeamScore(offense1, defense2, bonus1, chemistryBonus(state.sides[0].picks), mult1);
     var score2 = simulateTeamScore(offense2, defense1, bonus2, chemistryBonus(state.sides[1].picks), mult2);
-    if (score1 === score2) {
-      if (Math.random() < 0.5) score1++;
-      else score2++;
-    }
+
+    var players1 = buildH2HEnginePlayers(state.sides[0].picks);
+    var players2 = buildH2HEnginePlayers(state.sides[1].picks);
+
+    var clutched = LSC.applyClutchAdjustment(score1, score2, players1, players2);
+    score1 = clutched.homeScore;
+    score2 = clutched.awayScore;
+
+    var resolved = LSC.resolveOvertimeIfTied(score1, score2, offense1 + bonus1, defense2, offense2 + bonus2, defense1, mult1, mult2);
+    score1 = resolved.homeScore;
+    score2 = resolved.awayScore;
+
+    var minutes1 = fullGameMinutesShares(players1, resolved.otPeriods);
+    var minutes2 = fullGameMinutesShares(players2, resolved.otPeriods);
+    var box1 = LSC.generateBoxScore(players1, score1, resolved.otPeriods, minutes1);
+    var box2 = LSC.generateBoxScore(players2, score2, resolved.otPeriods, minutes2);
+
+    var winnerIndex = score1 > score2 ? 0 : 1;
+    var quarters1 = splitIntoQuarters(score1);
+    var quarters2 = splitIntoQuarters(score2);
+
     return {
       score1: score1,
       score2: score2,
-      winnerIndex: score1 > score2 ? 0 : 1,
+      winnerIndex: winnerIndex,
       homeIndex: homeIndex,
-      quarters1: splitIntoQuarters(score1),
-      quarters2: splitIntoQuarters(score2),
+      quarters1: quarters1,
+      quarters2: quarters2,
+      otPeriods: resolved.otPeriods,
+      players1: players1, box1: box1,
+      players2: players2, box2: box2,
+      comebackDeficit: largestDeficitOvercome(quarters1, quarters2, winnerIndex),
     };
   }
 
@@ -458,6 +525,8 @@
     seriesGames.push(g);
     seriesWins[g.winnerIndex]++;
     pendingGameIndex++;
+    recordSeriesBox(0, g.players1, g.box1);
+    recordSeriesBox(1, g.players2, g.box2);
 
     renderSeriesLog("h2h-series-log-live");
     document.getElementById("h2h-game-status").textContent =
@@ -469,7 +538,10 @@
     var preview = document.getElementById("h2h-game-preview");
     preview.innerHTML =
       '<div class="final-score">' + g.score1 + " - " + g.score2 + "</div>" +
+      (g.otPeriods > 0 ? "<div>" + window.I18n.t("league.overtimeLabel", { count: g.otPeriods }) + "</div>" : "") +
       window.MomentumGraph.html(cum1, cum2, 4) +
+      "<div>" + topScorerLine(g.players1, g.box1) + "</div>" +
+      "<div>" + topScorerLine(g.players2, g.box2) + "</div>" +
       "<div>" + window.I18n.t("h2h.wonThisGame", { winner: winnerLabel }) + "</div>";
 
     var seriesDecided = seriesWins[0] >= state.gamesToWin || seriesWins[1] >= state.gamesToWin;
@@ -479,9 +551,11 @@
   // Reveals an already-decided game one minute at a time (2s/tick, matching
   // League's and Coach Career's live viewers) instead of the old 4-step
   // quarter jump. There's no bench/rotation concept in H2H - each side's 5
-  // picks play the whole game by design - so buildGameTimeline() (given no
-  // box data) naturally keeps the same 5-man lineup on screen the whole
-  // time; only the running score changes tick to tick.
+  // picks play the whole game by design - so buildGameTimeline() (given a
+  // real box where all 5 players exactly fill the 5 needed court slots)
+  // naturally keeps the same 5-man lineup on screen the whole time; only
+  // the running score changes tick to tick. otPeriods now reflects the
+  // real overtime resolution, so a tied game reveals the extra minutes too.
   function revealGame() {
     awaitingReveal = false;
     var g = playOneGame(pendingGameIndex);
@@ -492,9 +566,9 @@
     }
 
     var timeline = window.LeagueSimCore.buildGameTimeline(
-      state.sides[0].picks, null, g.score1,
-      state.sides[1].picks, null, g.score2,
-      0
+      g.players1, g.box1, g.score1,
+      g.players2, g.box2, g.score2,
+      g.otPeriods
     );
     var preview = document.getElementById("h2h-game-preview");
     var idx = 0;
@@ -538,6 +612,26 @@
     });
   }
 
+  function renderSeriesStats() {
+    var entries = Object.keys(seriesPlayerStats).map(function (k) { return seriesPlayerStats[k]; });
+    if (entries.length === 0) { document.getElementById("h2h-series-stats").innerHTML = ""; return; }
+
+    function topBy(field) {
+      var best = entries[0];
+      entries.forEach(function (e) { if (e[field] > best[field]) best = e; });
+      return best;
+    }
+    var topScorer = topBy("totalPts");
+    var topRebounder = topBy("totalReb");
+    var topAssister = topBy("totalAst");
+
+    document.getElementById("h2h-series-stats").innerHTML =
+      "<p><strong>" + window.I18n.t("h2h.seriesStatsTitle") + "</strong></p>" +
+      "<p>" + window.I18n.t("h2h.seriesStatsPtsLine", { name: topScorer.name, side: state.sides[topScorer.side].label, total: topScorer.totalPts }) + "</p>" +
+      "<p>" + window.I18n.t("h2h.seriesStatsRebLine", { name: topRebounder.name, side: state.sides[topRebounder.side].label, total: topRebounder.totalReb }) + "</p>" +
+      "<p>" + window.I18n.t("h2h.seriesStatsAstLine", { name: topAssister.name, side: state.sides[topAssister.side].label, total: topAssister.totalAst }) + "</p>";
+  }
+
   function finishSeries() {
     var seriesWinnerIndex = seriesWins[0] > seriesWins[1] ? 0 : 1;
     var loserIndex = seriesWinnerIndex === 0 ? 1 : 0;
@@ -548,6 +642,7 @@
     }
 
     renderSeriesLog("h2h-series-log");
+    renderSeriesStats();
 
     document.getElementById("h2h-score-board").innerHTML =
       '<div class="h2h-score-row">' +
@@ -573,7 +668,9 @@
     renderFinalTeamGrid("h2h-final-team1-grid", state.sides[0]);
     renderFinalTeamGrid("h2h-final-team2-grid", state.sides[1]);
 
-    if (seriesWinnerIndex === 0) window.Effects.confetti();
+    // A friend-mode series is worth celebrating no matter which side wins -
+    // only a computer win over the human (side 0) should stay silent.
+    if (state.mode === "friend" || seriesWinnerIndex === 0) window.Effects.confetti();
 
     window.Achievements.markPlayed("h2h");
     var seriesPlayed = window.Achievements.incrementCounter("h2h_series_played");
@@ -581,9 +678,28 @@
     if (seriesWinnerIndex === 0) {
       window.Achievements.unlock("h2h_first_win");
       if (seriesWins[0] === state.gamesToWin && seriesWins[1] === 0) window.Achievements.unlock("h2h_sweep");
-      if (averageRating(state.sides[0].picks) < averageRating(state.sides[1].picks)) {
-        window.Achievements.unlock("h2h_upset");
-      }
+      var winnerRating = averageRating(state.sides[0].picks);
+      var loserRating = averageRating(state.sides[1].picks);
+      if (winnerRating < loserRating) window.Achievements.unlock("h2h_upset");
+      if (winnerRating <= loserRating - 8) window.Achievements.unlock("h2h_underdog");
+    }
+
+    if (seriesGames.some(function (g) { return g.winnerIndex === seriesWinnerIndex && g.comebackDeficit >= 15; })) {
+      window.Achievements.unlock("h2h_comeback");
+    }
+    if (seriesWins[loserIndex] === 0 && seriesGames.every(function (g) { return wonEveryQuarter(g, seriesWinnerIndex); })) {
+      window.Achievements.unlock("h2h_perfect_series");
+    }
+    if (state.sides[seriesWinnerIndex].picks.every(function (p) { return typeof p.rating === "number" && p.rating >= 90; })) {
+      window.Achievements.unlock("h2h_legends_battle");
+    }
+    var seriesTopScorer = null;
+    Object.keys(seriesPlayerStats).forEach(function (k) {
+      var e = seriesPlayerStats[k];
+      if (!seriesTopScorer || e.totalPts > seriesTopScorer.totalPts) seriesTopScorer = e;
+    });
+    if (seriesTopScorer && seriesTopScorer.side === seriesWinnerIndex) {
+      window.Achievements.unlock("h2h_series_scorer");
     }
 
     window.GameHistory.record({
@@ -693,8 +809,32 @@
     revealSkip = null;
     seriesGames = [];
     seriesWins = [0, 0];
+    seriesPlayerStats = {};
     pendingGameIndex = 0;
     renderGamePreview();
+  }
+
+  function recordSeriesBox(sideIndex, players, box) {
+    players.forEach(function (p, i) {
+      var key = sideIndex + "|" + normalizeName(p.name);
+      var entry = seriesPlayerStats[key];
+      if (!entry) {
+        entry = { name: p.name, side: sideIndex, totalPts: 0, totalReb: 0, totalAst: 0, gamesPlayed: 0 };
+        seriesPlayerStats[key] = entry;
+      }
+      entry.gamesPlayed++;
+      entry.totalPts += box[i].pts;
+      entry.totalReb += box[i].reb;
+      entry.totalAst += box[i].ast;
+    });
+  }
+
+  function topScorerLine(players, box) {
+    var best = null, bestPts = -1;
+    players.forEach(function (p, i) {
+      if (box[i].pts > bestPts) { bestPts = box[i].pts; best = p; }
+    });
+    return window.I18n.t("single.exhibitionTopScorerLine", { name: best.name, pts: bestPts });
   }
 
   function startH2H(mode) {
@@ -746,6 +886,11 @@
   function computerWantsBid(player, price, side) {
     var rating = typeof player.rating === "number" ? player.rating : 65;
     var baseValue = 3 + ((rating - 60) / (99 - 60)) * 15;
+
+    // A position down to its last open slot is a use-it-or-lose-it
+    // opportunity, same idea as computerDraftChoice()'s scarcity bonus -
+    // worth stretching the budget a bit further to not miss it.
+    if ((side.needs[player.position] || 0) <= 1) baseValue += 2;
 
     var remainingSlots = 0;
     for (var pos in side.needs) remainingSlots += side.needs[pos];
@@ -809,7 +954,10 @@
       document.getElementById("h2h-auction-player-name").innerHTML =
         cp.player.name +
         (cp.player.position ? '<span class="pos-tag">' + cp.player.position + "</span>" : "") +
-        window.RatingTag.html(cp.player.rating) + window.PlayerMeta.html(cp.player);
+        window.RatingTag.html(cp.player.rating) + window.PlayerMeta.html(cp.player) +
+        (typeof cp.player.offRating === "number" ? '<span class="off-tag">' + window.I18n.t("common.offAbbr") + " " + cp.player.offRating + "</span>" : "") +
+        (typeof cp.player.defRating === "number" ? '<span class="def-tag">' + window.I18n.t("common.defAbbr") + " " + cp.player.defRating + "</span>" : "") +
+        (cp.player.archetype ? '<span class="archetype-tag">' + window.RatingArchetypesAPI.label(cp.player.archetype) + "</span>" : "");
       document.getElementById("h2h-auction-player-meta").textContent =
         cp.combo.team + " &middot; " + seasonLabel(cp.combo.season);
     }
