@@ -13,6 +13,7 @@
     { id: "single_elite", icon: "💎" },
     { id: "single_legend", icon: "🌟" },
     { id: "single_exhibition_win", icon: "🎮" },
+    { id: "single_exhibition_legends_win", icon: "🐐" },
     { id: "h2h_first_win", icon: "🥇" },
     { id: "h2h_sweep", icon: "🧹" },
     { id: "h2h_upset", icon: "🐎" },

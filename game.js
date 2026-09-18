@@ -740,47 +740,6 @@
     showScreen("singleShare");
   }
 
-  function bellRandomExh(totalSpread) {
-    var part = totalSpread / 3;
-    return (Math.random() * 2 - 1) * part + (Math.random() * 2 - 1) * part + (Math.random() * 2 - 1) * part;
-  }
-
-  function splitIntoQuartersExh(total) {
-    var weights = [Math.random() + 0.6, Math.random() + 0.6, Math.random() + 0.6, Math.random() + 0.6];
-    var sum = weights[0] + weights[1] + weights[2] + weights[3];
-    var running = 0;
-    var quarters = [];
-    for (var i = 0; i < 4; i++) {
-      var isLast = i === 3;
-      var q = isLast ? total - running : Math.round((total * weights[i]) / sum);
-      quarters.push(q);
-      running += q;
-    }
-    return quarters;
-  }
-
-  function cumulativeLineExh(quarters) {
-    var running = 0;
-    return quarters.map(function (q) {
-      running += q;
-      return running;
-    });
-  }
-
-  function playerOffenseForExh(e) {
-    var base = typeof e.offRating === "number" ? e.offRating : playerRating(e);
-    base += e.archetype ? e.archetype.offBonus : 0;
-    if (state.selectedSystem) base += window.PlaySystemsAPI.fitBonus(e, state.selectedSystem, null).off;
-    return base;
-  }
-
-  function playerDefenseForExh(e) {
-    var base = typeof e.defRating === "number" ? e.defRating : playerRating(e);
-    base += e.archetype ? e.archetype.defBonus : 0;
-    if (state.selectedSystem) base += window.PlaySystemsAPI.fitBonus(e, state.selectedSystem, null).def;
-    return base;
-  }
-
   function weightedValue(starters, bench, valueFn) {
     function avg(group) {
       if (group.length === 0) return 0;
@@ -798,44 +757,228 @@
     return weightedValue(sorted.slice(0, 5), sorted.slice(5), valueFn);
   }
 
-  function playExhibitionGame() {
-    var starters = state.squad.filter(function (e) { return e.slot === "starter"; });
-    var bench = state.squad.filter(function (e) { return e.slot === "bench"; });
-    var myOffense = weightedValue(starters, bench, playerOffenseForExh);
-    var myDefense = weightedValue(starters, bench, playerDefenseForExh);
+  // --- Exhibition opponent selection ------------------------------------
 
-    var all = getAllCombos();
-    var challenger = all[Math.floor(Math.random() * all.length)];
-    var oppOffense = ratingForHistoricalCombo(challenger.players, playerOffenseForExh);
-    var oppDefense = ratingForHistoricalCombo(challenger.players, playerDefenseForExh);
+  function uniqueExhibitionClubs() {
+    var seen = {};
+    var clubs = [];
+    getAllCombos().forEach(function (c) {
+      if (!seen[c.team]) { seen[c.team] = true; clubs.push(c.team); }
+    });
+    clubs.sort();
+    return clubs;
+  }
 
-    var myScore = Math.round(60 + (myOffense - oppDefense) * 0.6 + bellRandomExh(20));
-    var oppScore = Math.round(60 + (oppOffense - myDefense) * 0.6 + bellRandomExh(20));
-    if (myScore === oppScore) {
-      if (Math.random() < 0.5) myScore++;
-      else oppScore++;
+  // Splits every historical combo into three equal-sized strength tiers by
+  // its own weighted top-5 rating, rather than hardcoding absolute rating
+  // cutoffs - self-scales to whatever the dataset's real rating spread is.
+  function exhibitionTierBuckets() {
+    var sorted = getAllCombos().slice().sort(function (a, b) {
+      return ratingForHistoricalCombo(b.players, playerRating) - ratingForHistoricalCombo(a.players, playerRating);
+    });
+    var third = Math.ceil(sorted.length / 3);
+    return { legends: sorted.slice(0, third), allstars: sorted.slice(third, third * 2), midtable: sorted.slice(third * 2) };
+  }
+
+  var EXHIBITION_TIERS = ["legends", "allstars", "midtable"];
+  var EXHIBITION_TIER_ICON = { legends: "🏆", allstars: "⭐", midtable: "🙂" };
+
+  function showExhibitionSetup() {
+    var content = document.getElementById("single-exhibition-content");
+    content.innerHTML =
+      '<div class="career-event-card"><p>' + window.I18n.t("single.exhibitionSetupTitle") + "</p></div>" +
+      '<div class="h2h-setup-buttons">' +
+      '<button id="btn-exh-by-tier">' + window.I18n.t("single.exhibitionByTier") + "</button>" +
+      '<button class="secondary" id="btn-exh-by-club">' + window.I18n.t("single.exhibitionBySpecific") + "</button>" +
+      "</div>";
+    document.getElementById("btn-exh-by-tier").addEventListener("click", showExhibitionTierPicker);
+    document.getElementById("btn-exh-by-club").addEventListener("click", showExhibitionClubPicker);
+    showScreen("singleExhibition");
+  }
+
+  function showExhibitionTierPicker() {
+    var buckets = exhibitionTierBuckets();
+    var content = document.getElementById("single-exhibition-content");
+    content.innerHTML =
+      '<div class="h2h-setup-buttons">' +
+      EXHIBITION_TIERS.map(function (id) {
+        return '<button id="btn-exh-tier-' + id + '">' + EXHIBITION_TIER_ICON[id] + " " +
+          window.I18n.t("single.exhibitionTier." + id) + "<br><small>" + window.I18n.t("single.exhibitionTier." + id + "Desc") + "</small></button>";
+      }).join("") +
+      "</div>";
+    EXHIBITION_TIERS.forEach(function (id) {
+      document.getElementById("btn-exh-tier-" + id).addEventListener("click", function () {
+        var pool = buckets[id];
+        var combo = pool[Math.floor(Math.random() * pool.length)];
+        startExhibitionMatch(combo, id === "legends");
+      });
+    });
+  }
+
+  function showExhibitionClubPicker() {
+    var content = document.getElementById("single-exhibition-content");
+    content.innerHTML =
+      '<input type="text" class="player-search-input" id="exh-club-search" placeholder="' + window.I18n.t("single.exhibitionSearchPlaceholder") + '">' +
+      '<div class="player-search-results" id="exh-club-results"></div>';
+    var input = document.getElementById("exh-club-search");
+    var resultsEl = document.getElementById("exh-club-results");
+
+    function renderClubList(query) {
+      var q = query.toLowerCase();
+      var clubs = uniqueExhibitionClubs().filter(function (c) {
+        return !q || c.toLowerCase().indexOf(q) !== -1;
+      }).slice(0, 30);
+      resultsEl.innerHTML = clubs.map(function (c) {
+        return '<div class="player-search-result" data-club="' + c.replace(/"/g, "&quot;") + '">' + window.TeamBadge.html(c) + c + "</div>";
+      }).join("");
+      resultsEl.querySelectorAll(".player-search-result").forEach(function (row) {
+        row.addEventListener("click", function () { showExhibitionSeasonPicker(row.getAttribute("data-club")); });
+      });
     }
-    var won = myScore > oppScore;
 
-    var myQuarters = cumulativeLineExh(splitIntoQuartersExh(myScore));
-    var oppQuarters = cumulativeLineExh(splitIntoQuartersExh(oppScore));
-    var quartersText = myQuarters.map(function (v, i) { return v + "-" + oppQuarters[i]; }).join(" &middot; ");
+    input.addEventListener("input", function () { renderClubList(input.value); });
+    renderClubList("");
+  }
+
+  function showExhibitionSeasonPicker(club) {
+    var combos = getAllCombos().filter(function (c) { return c.team === club; })
+      .sort(function (a, b) { return a.season < b.season ? -1 : a.season > b.season ? 1 : 0; });
+    var content = document.getElementById("single-exhibition-content");
+    content.innerHTML =
+      '<div class="career-event-card"><p>' + window.TeamBadge.html(club) + club + "</p></div>" +
+      '<div class="player-search-results" id="exh-season-results"></div>';
+    var resultsEl = document.getElementById("exh-season-results");
+    resultsEl.innerHTML = combos.map(function (c, i) {
+      return '<div class="player-search-result" data-idx="' + i + '">' + formatSeason(c.season) + "</div>";
+    }).join("");
+    resultsEl.querySelectorAll(".player-search-result").forEach(function (row, i) {
+      row.addEventListener("click", function () { startExhibitionMatch(combos[i], false); });
+    });
+  }
+
+  // --- Exhibition match engine --------------------------------------------
+  // Reuses the same shared LeagueSimCore match engine (home court, clutch,
+  // foul trouble, real overtime, box scores, minute-by-minute reveal) as
+  // League/Coach Career/H2H, instead of the old flat one-roll formula.
+
+  var singleExhibitionTickTimer = null;
+  var pendingSingleExhibitionGame = null;
+
+  function buildMyExhibitionTeam() {
+    var LSC = window.LeagueSimCore;
+    var system = state.selectedSystem;
+    var engineRoster = state.squad.map(function (e) {
+      return Object.assign({}, e, { half: e.slot === "starter" ? 1 : 2 });
+    });
+    var chem = chemistryBonus(state.squad);
+    return {
+      offense: LSC.offenseForMyRoster(engineRoster, system) + chem / 2,
+      defense: LSC.defenseForMyRoster(engineRoster, system) + chem / 2,
+      varianceMultiplier: system ? system.varianceMultiplier : 1,
+      players: LSC.buildTeamPlayers(engineRoster, true),
+      streak: 0,
+    };
+  }
+
+  function buildOpponentExhibitionTeam(combo) {
+    var LSC = window.LeagueSimCore;
+    return {
+      offense: LSC.offenseForRoster(combo.players, false),
+      defense: LSC.defenseForRoster(combo.players, false),
+      varianceMultiplier: 1,
+      players: LSC.buildTeamPlayers(combo.players, false),
+      streak: 0,
+    };
+  }
+
+  // My squad always hosts the exhibition - a showcase game for your dream
+  // team, so there's no need for a coin flip to decide home court.
+  function startExhibitionMatch(combo, isLegendsTier) {
+    var LSC = window.LeagueSimCore;
+    var home = buildMyExhibitionTeam();
+    var away = buildOpponentExhibitionTeam(combo);
+    var result = LSC.simulateFullGame(home, away);
+
+    var game = {
+      myLabel: window.I18n.t("single.myTeamLabel"), myPlayers: home.players, myBox: result.homeBox, myScore: result.homeScore,
+      oppLabel: combo.team + " " + formatSeason(combo.season), oppPlayers: away.players, oppBox: result.awayBox, oppScore: result.awayScore,
+      otPeriods: result.otPeriods, won: result.homeScore > result.awayScore, combo: combo, isLegendsTier: isLegendsTier,
+    };
+
+    if (!window.Effects.isEnabled()) { finishExhibitionGame(game); return; }
+    startExhibitionTick(game);
+  }
+
+  function startExhibitionTick(game) {
+    pendingSingleExhibitionGame = game;
+    var timeline = window.LeagueSimCore.buildGameTimeline(game.myPlayers, game.myBox, game.myScore, game.oppPlayers, game.oppBox, game.oppScore, game.otPeriods);
+    var idx = 0;
+    singleExhibitionTickTimer = true;
+
+    var content = document.getElementById("single-exhibition-content");
+    content.innerHTML = '<div id="single-exhibition-lineup"></div><div class="final-actions"><button id="btn-exh-skip">' + window.I18n.t("league.skipToResultBtn") + "</button></div>";
+    document.getElementById("btn-exh-skip").addEventListener("click", skipExhibitionTick);
+
+    function showTick() {
+      var tick = timeline[idx];
+      var lineupEl = document.getElementById("single-exhibition-lineup");
+      if (lineupEl) {
+        lineupEl.innerHTML = window.CourtLineup.htmlLive(
+          game.myLabel, tick.lineupA, game.oppLabel, tick.lineupB,
+          tick.scoreA, tick.scoreB, tick.minute, timeline.length
+        );
+      }
+      idx++;
+      if (idx >= timeline.length) {
+        clearInterval(singleExhibitionTickTimer);
+        singleExhibitionTickTimer = null;
+        finishExhibitionGame(game);
+      }
+    }
+    showTick();
+    singleExhibitionTickTimer = setInterval(showTick, 2000);
+  }
+
+  function skipExhibitionTick() {
+    if (!singleExhibitionTickTimer) return;
+    clearInterval(singleExhibitionTickTimer);
+    singleExhibitionTickTimer = null;
+    finishExhibitionGame(pendingSingleExhibitionGame);
+  }
+
+  function topScorerLine(players, box) {
+    var best = null, bestPts = -1;
+    players.forEach(function (p, i) {
+      if (box[i].pts > bestPts) { bestPts = box[i].pts; best = p; }
+    });
+    return window.I18n.t("single.exhibitionTopScorerLine", { name: best.name, pts: bestPts });
+  }
+
+  function finishExhibitionGame(game) {
+    pendingSingleExhibitionGame = null;
+    var chem = chemistryBonus(state.squad);
 
     var content = document.getElementById("single-exhibition-content");
     content.innerHTML =
       '<div class="career-event-card">' +
-      "<p>" + window.I18n.t("single.exhibitionVsLabel") + " " + window.TeamBadge.html(challenger.team) + challenger.team + " " + formatSeason(challenger.season) + "</p>" +
-      '<div class="share-rating">' + myScore + " - " + oppScore + "</div>" +
-      "<p>" + window.I18n.t("single.byQuarters", { quarters: quartersText }) + "</p>" +
-      "<p>" + (won ? "🏆 " + window.I18n.t("single.exhibitionWon") : "😔 " + window.I18n.t("single.exhibitionLost")) + "</p>" +
-      "</div>";
+      "<p>" + window.I18n.t("single.exhibitionVsLabel") + " " + window.TeamBadge.html(game.combo.team) + game.oppLabel + "</p>" +
+      '<div class="share-rating">' + game.myScore + " - " + game.oppScore + "</div>" +
+      (game.otPeriods > 0 ? "<p>" + window.I18n.t("league.overtimeLabel", { count: game.otPeriods }) + "</p>" : "") +
+      "<p>" + topScorerLine(game.myPlayers, game.myBox) + "</p>" +
+      "<p>" + topScorerLine(game.oppPlayers, game.oppBox) + "</p>" +
+      (chem > 0 ? "<p>" + window.I18n.t("single.chemistryBonusLabel") + " +" + chem + "</p>" : "") +
+      "<p>" + (game.won ? "🏆 " + window.I18n.t("single.exhibitionWon") : "😔 " + window.I18n.t("single.exhibitionLost")) + "</p>" +
+      "</div>" +
+      window.CourtLineup.html(game.myLabel, game.myPlayers, game.myBox, game.oppLabel, game.oppPlayers, game.oppBox) +
+      '<div class="final-actions"><button id="btn-exh-rematch">' + window.I18n.t("single.exhibitionRematchBtn") + "</button></div>";
 
-    if (won) {
+    document.getElementById("btn-exh-rematch").addEventListener("click", showExhibitionSetup);
+
+    if (game.won) {
       window.Achievements.unlock("single_exhibition_win");
       window.Effects.confetti();
+      if (game.isLegendsTier) window.Achievements.unlock("single_exhibition_legends_win");
     }
-
-    showScreen("singleExhibition");
   }
 
   function startGame() {
@@ -848,6 +991,8 @@
     pendingTradeOffer = null;
     state.needsByHalf = freshNeedsByHalf();
     state.budgetRemaining = state.budgetTotal;
+    if (singleExhibitionTickTimer) { clearInterval(singleExhibitionTickTimer); singleExhibitionTickTimer = null; }
+    pendingSingleExhibitionGame = null;
     renderRound();
   }
 
@@ -889,7 +1034,7 @@
   document.getElementById("btn-single-share-back").addEventListener("click", function () {
     showScreen("final");
   });
-  document.getElementById("btn-single-exhibition").addEventListener("click", playExhibitionGame);
+  document.getElementById("btn-single-exhibition").addEventListener("click", showExhibitionSetup);
   document.getElementById("btn-single-exhibition-back").addEventListener("click", function () {
     showScreen("final");
   });
