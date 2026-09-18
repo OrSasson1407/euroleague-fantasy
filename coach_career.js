@@ -192,6 +192,7 @@
   var pendingFixturePointer = 0;
   var seasonPlayerStats = {}; // this season's per-player box-score totals, scoped to coach.roster only (for MVP/DPOY/Most Improved)
   var pendingHalftimeState = null; // { fixture, home, away, effHomeOffense, ... } while a halftime choice is being made
+  var lastCoachLiveGame = null; // { myLabel, myPlayers, myBox, oppLabel, oppPlayers, oppBox } for the court lineup panel, set after each live-mode game
 
   function clamp(v, min, max) {
     return Math.max(min, Math.min(max, v));
@@ -1089,6 +1090,7 @@
     seasonPlayerStats = {};
     pendingFixtureList = window.LeagueSimCore.buildFixtureList(teams);
     pendingFixturePointer = 0;
+    lastCoachLiveGame = null;
 
     if (mode === "live") {
       liveOpponentIndex = 0;
@@ -1128,7 +1130,13 @@
     document.getElementById("coach-hub-title").textContent = window.I18n.t("league.yourGamesTitle");
     document.getElementById("coach-hub-status").textContent = window.I18n.t("league.gameOfTotal", { n: liveOpponentIndex + 1, total: totalMyGames });
     var content = document.getElementById("coach-hub-content");
-    content.innerHTML = '<div class="league-live-log" id="coach-live-log"></div>' +
+    var lineupHtml = lastCoachLiveGame
+      ? window.CourtLineup.html(
+          lastCoachLiveGame.myLabel, lastCoachLiveGame.myPlayers, lastCoachLiveGame.myBox,
+          lastCoachLiveGame.oppLabel, lastCoachLiveGame.oppPlayers, lastCoachLiveGame.oppBox
+        )
+      : "";
+    content.innerHTML = lineupHtml + '<div class="league-live-log" id="coach-live-log"></div>' +
       '<div class="final-actions"><button id="btn-coach-live-next">' + window.I18n.t("h2h.nextGameBtn") + "</button></div>";
     var logEl = document.getElementById("coach-live-log");
     logEl.innerHTML = (window.__coachLiveRows || []).join("");
@@ -1264,6 +1272,13 @@
     var oppScore = st.iAmHome ? scoreAway : scoreHome;
     var opponent = st.mine === st.fixture.teamA ? st.fixture.teamB : st.fixture.teamA;
     appendLiveLogRow(opponent.label, myScore, oppScore, myScore > oppScore);
+
+    var myBox = st.iAmHome ? result.homeBox : result.awayBox;
+    var oppBox = st.iAmHome ? result.awayBox : result.homeBox;
+    lastCoachLiveGame = {
+      myLabel: st.mine.label, myPlayers: st.mine.players, myBox: myBox,
+      oppLabel: opponent.label, oppPlayers: opponent.players, oppBox: oppBox,
+    };
 
     pendingHalftimeState = null;
     afterMyLiveGame();

@@ -132,6 +132,83 @@
 
   window.PlayerMeta = { html: playerMetaHtml };
 
+  // ---------- Live "who's on the court" lineup panel ----------
+  // Shared by league.js's and coach_career.js's live (game-by-game) viewers.
+  // There's no possession-by-possession simulation in this app - minutes are
+  // computed once per game (see league.js's computeMinutesShares) - so
+  // "substitutions" are approximated honestly: the 5-man unit shown is
+  // whoever actually logged the most minutes in THAT specific game (not just
+  // the nominal starters), with any other player who still logged a
+  // meaningful stretch called out below as having also played.
+  var COURT_POSITION_NEED = { Guard: 2, Forward: 2, Center: 1 };
+  var COURT_SUB_MINUTES_THRESHOLD = 8;
+
+  function buildLineupSlots(players, box) {
+    var byPos = { Guard: [], Forward: [], Center: [] };
+    var other = [];
+    (players || []).forEach(function (p, i) {
+      var z = { player: p, box: box ? box[i] : null, pos: p.position };
+      if (byPos[p.position]) byPos[p.position].push(z);
+      else other.push(z);
+    });
+    Object.keys(byPos).forEach(function (pos) {
+      byPos[pos].sort(function (a, b) { return (b.box ? b.box.minutes : 0) - (a.box ? a.box.minutes : 0); });
+    });
+    var selected = { Guard: [], Forward: [], Center: [] };
+    var bench = [];
+    Object.keys(COURT_POSITION_NEED).forEach(function (pos) {
+      byPos[pos].forEach(function (z, i) {
+        if (i < COURT_POSITION_NEED[pos]) selected[pos].push(z);
+        else bench.push(z);
+      });
+    });
+    bench = bench.concat(other);
+    return { selected: selected, bench: bench };
+  }
+
+  function courtChipHtml(z, benchClass) {
+    var minutes = z.box && typeof z.box.minutes === "number" ? z.box.minutes : null;
+    var pct = minutes ? Math.max(4, Math.min(100, Math.round((minutes / 40) * 100))) : 0;
+    var posLetter = (z.pos || "?").charAt(0);
+    return '<div class="court-chip' + (benchClass ? " bench" : "") + '">' +
+      '<span class="court-chip-badge">' + posLetter + "</span>" +
+      '<span class="court-chip-name">' + (z.player.name || z.player.player || "") + "</span>" +
+      '<span class="court-chip-bar"><span class="court-chip-bar-fill" style="width:' + pct + '%"></span></span>' +
+      "</div>";
+  }
+
+  function courtHalfHtml(label, players, box) {
+    var slots = buildLineupSlots(players, box);
+    var s = slots.selected;
+    var rows =
+      '<div class="court-row">' + s.Forward.map(function (z) { return courtChipHtml(z); }).join("") + "</div>" +
+      '<div class="court-row">' + (s.Center[0] ? courtChipHtml(s.Center[0]) : "") + (s.Guard[0] ? courtChipHtml(s.Guard[0]) : "") + "</div>" +
+      '<div class="court-row">' + (s.Guard[1] ? courtChipHtml(s.Guard[1]) : "") + "</div>";
+    var notable = slots.bench.filter(function (z) { return z.box && z.box.minutes >= COURT_SUB_MINUTES_THRESHOLD; });
+    var subsNote = notable.length
+      ? '<div class="court-lineup-subs">🔄 ' + window.I18n.t("common.alsoPlayedLine", {
+          names: notable.map(function (z) { return (z.player.name || z.player.player) + " (" + z.box.minutes + "')"; }).join(", "),
+        }) + "</div>"
+      : "";
+    return '<div class="court-half"><div class="court-half-label">' + label + "</div>" + rows + subsNote + "</div>";
+  }
+
+  // myLabel/oppLabel: plain text. myPlayers/oppPlayers: a team's .players
+  // array (buildTeamPlayers() shape). myBox/oppBox: the parallel box-line
+  // array from generateBoxScore() (or null - an empty court half is fine).
+  function courtLineupHtml(myLabel, myPlayers, myBox, oppLabel, oppPlayers, oppBox) {
+    return (
+      '<div class="court-lineup">' +
+      '<div class="court-lineup-header"><span>' + myLabel + '</span><span class="court-lineup-vs">VS</span><span>' + oppLabel + "</span></div>" +
+      '<div class="court-lineup-courts">' +
+      courtHalfHtml(myLabel, myPlayers, myBox) +
+      courtHalfHtml(oppLabel, oppPlayers, oppBox) +
+      "</div></div>"
+    );
+  }
+
+  window.CourtLineup = { html: courtLineupHtml };
+
   // ---------- Effects on/off preference ----------
   // A plain device-level UI preference (not a personal record), so it's
   // saved regardless of guest/registered mode and applies immediately by

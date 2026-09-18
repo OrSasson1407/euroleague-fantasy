@@ -29,6 +29,7 @@ window.LOCALE_EN = {
     minRating: "Minimum rating:",
     gotIt: "Got it",
     ageShort: "Age {{age}}",
+    alsoPlayedLine: "Also logged minutes: {{names}}",
     momentumLabels: ["Start", "Q1", "Q2", "Q3", "Q4"],
     takenTag: "Already picked",
     tooExpensiveTag: "Too expensive",

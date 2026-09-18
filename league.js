@@ -644,10 +644,13 @@
     var oppScore = iAmHome ? fixture.result.awayScore : fixture.result.homeScore;
     var myQuarters = iAmHome ? fixture.result.homeQuarters : fixture.result.awayQuarters;
     var oppQuarters = iAmHome ? fixture.result.awayQuarters : fixture.result.homeQuarters;
+    var myBox = iAmHome ? fixture.result.homeBox : fixture.result.awayBox;
+    var oppBox = iAmHome ? fixture.result.awayBox : fixture.result.homeBox;
     return {
       opponent: opponent, myScore: myScore, oppScore: oppScore, won: myScore > oppScore,
       myQuarters: myQuarters, oppQuarters: oppQuarters,
       otPeriods: fixture.result.otPeriods, homeAway: iAmHome ? "home" : "away",
+      myPlayers: mine.players, myBox: myBox, oppPlayers: opponent.players, oppBox: oppBox,
     };
   }
 
@@ -815,6 +818,7 @@
     });
 
     var momentumEl = document.getElementById("league-live-momentum");
+    var lineupEl = document.getElementById("league-live-lineup");
     var lastGame = lastMyGames[lastMyGames.length - 1];
     if (lastGame) {
       momentumEl.hidden = false;
@@ -822,8 +826,13 @@
         "<div>" + window.I18n.t("league.lastGameVs", { opponent: lastGame.opponent.label }) + "</div>" +
         '<div class="final-score">' + lastGame.myScore + " - " + lastGame.oppScore + "</div>" +
         window.MomentumGraph.html(cumulativeLine(lastGame.myQuarters), cumulativeLine(lastGame.oppQuarters), 4);
+      lineupEl.innerHTML = window.CourtLineup.html(
+        lastTeams[0].label, lastGame.myPlayers, lastGame.myBox,
+        lastGame.opponent.label, lastGame.oppPlayers, lastGame.oppBox
+      );
     } else {
       momentumEl.hidden = true;
+      lineupEl.innerHTML = "";
     }
 
     document.getElementById("league-live-record").textContent = window.I18n.t("league.recordSoFar", { wins: wins, losses: losses });

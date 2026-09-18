@@ -28,6 +28,7 @@ window.LOCALE_HE = {
     minRating: "דירוג מינימלי:",
     gotIt: "הבנתי",
     ageShort: "גיל {{age}}",
+    alsoPlayedLine: "גם קיבלו דקות: {{names}}",
     momentumLabels: ["התחלה", "רבע 1", "רבע 2", "רבע 3", "רבע 4"],
     takenTag: "כבר נבחר",
     tooExpensiveTag: "יקר מדי",

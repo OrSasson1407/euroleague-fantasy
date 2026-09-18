@@ -1136,6 +1136,123 @@ footer {
   font-size: 0.9rem;
 }
 
+/* ---------- Live "who's on the court" lineup panel ---------- */
+/* Two half-courts side by side, each showing the 5-man unit that actually
+   logged the most minutes in that specific game (not just the nominal
+   starters) - so a heavy bench night visibly shows different faces, which
+   is as close as this app's game-total minutes model gets to "substitutions"
+   without a full possession-by-possession simulation. */
+.court-lineup {
+  max-width: 640px;
+  margin: 0 auto 20px;
+}
+
+.court-lineup-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+.court-lineup-vs {
+  color: var(--accent-2);
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.court-lineup-courts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.court-half {
+  background: linear-gradient(180deg, rgba(255,183,3,0.10), rgba(255,183,3,0.03));
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 6px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.court-half-label {
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 4px;
+}
+
+.court-row {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.court-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 78px;
+}
+
+.court-chip-badge {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 800;
+  background: var(--accent);
+  color: #fff;
+}
+
+.court-chip.bench .court-chip-badge {
+  background: var(--bg-card-hover);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+
+.court-chip-name {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.court-chip-bar {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.court-chip-bar-fill {
+  height: 100%;
+  background: var(--success);
+}
+
+.court-lineup-subs {
+  text-align: center;
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  margin-top: 6px;
+}
+
 .live-game-row.win {
   border-color: var(--success);
 }
