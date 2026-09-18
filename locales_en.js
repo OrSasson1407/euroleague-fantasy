@@ -787,12 +787,10 @@ window.LOCALE_EN = {
       wonLine: "🏆 You won! A little fan support and reputation gained.",
       lostLine: "😔 You lost this time - it's only a friendly.",
     },
-    halftime: {
-      title: "Halftime",
-      scoreLine: "First half vs {{opponent}}: {{myScore}} - {{oppScore}}. What are your second-half instructions?",
-      pushTempo: "🏃 Push the tempo",
-      lockDefense: "🛡️ Lock down on defense",
-      stayCourse: "➡️ Stay the course",
+    quarterBreak: {
+      title: "Quarter Break",
+      scoreLine: "After Q{{quarter}} vs {{opponent}}: {{myScore}} - {{oppScore}}. How will you play the next quarter?",
+      optionsHint: "Which option helps more depends on your roster - we won't say which.",
     },
     stats: {
       nameLine: "Name: {{name}} &middot; Reputation: {{rep}}",

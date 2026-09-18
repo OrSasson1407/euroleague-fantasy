@@ -191,7 +191,6 @@
   var pendingFixtureList = null; // shuffled fixture list for the season in progress, same engine as league.js
   var pendingFixturePointer = 0;
   var seasonPlayerStats = {}; // this season's per-player box-score totals, scoped to coach.roster only (for MVP/DPOY/Most Improved)
-  var pendingHalftimeState = null; // { fixture, home, away, effHomeOffense, ... } while a halftime choice is being made
   var lastCoachLiveGame = null; // { myLabel, myPlayers, myBox, oppLabel, oppPlayers, oppBox } for the court lineup panel, set after each live-mode game
 
   function clamp(v, min, max) {
@@ -1092,7 +1091,7 @@
     pendingFixturePointer = 0;
     lastCoachLiveGame = null;
     if (coachLiveTickTimer) { clearInterval(coachLiveTickTimer); coachLiveTickTimer = null; }
-    pendingCoachRevealGame = null;
+    pendingQuarterState = null;
 
     if (mode === "live") {
       liveOpponentIndex = 0;
@@ -1155,7 +1154,7 @@
         finishSeasonSim();
         return;
       }
-      beginMyGameHalftime(pendingFixtureList[pendingFixturePointer]);
+      beginMyGameQuarters(pendingFixtureList[pendingFixturePointer]);
     });
   }
 
@@ -1180,21 +1179,29 @@
     renderStandingsTable(pendingSeasonTeams);
   }
 
-  // Only affects MY side's second-half effective offense/defense - a coaching
-  // lever, symmetric with how the assistant-coach/play-system bonuses already
-  // only ever apply to my own team.
-  var HALFTIME_CHOICES = [
-    { id: "pushTempo", offDelta: 4, defDelta: -2 },
-    { id: "lockDefense", offDelta: -2, defDelta: 4 },
-    { id: "stayCourse", offDelta: 0, defDelta: 0 },
-  ];
+  // Live-mode-only (feature 27, extended): instead of resolving a whole game
+  // in one simulateFullGame() call, it's played out and revealed one quarter
+  // at a time. After each of quarters 1-3 (not after Q4), the coach picks
+  // between two real play systems for just the next quarter - the exact
+  // same archetype+skill-attribute fit-bonus math that already drives a
+  // season-long system choice (play_systems.js), just scoped to one quarter
+  // and applied to my team only (symmetric with how the assistant-coach/
+  // play-system bonuses already only ever apply to my own team). Which
+  // option actually helps depends on my roster's real attributes relative
+  // to its system-less baseline, not a fixed number, and the two options
+  // are shown without saying which is better - the sim decides.
+  var QUARTER_BREAK_SYSTEM_IDS = ["fastbreak", "lockdown"];
 
-  // Live-mode-only (feature 27): pauses the fixture at halftime instead of
-  // resolving it in one simulateFullGame() call, using the same home-court/
-  // streak/foul-trouble numbers that call would have computed - only the
-  // second half's offense/defense (mine only) can then be nudged by the
-  // player's choice before the game is finished out.
-  function beginMyGameHalftime(fixture) {
+  function quarterBreakSystem(id) {
+    var found = null;
+    window.PlaySystems.forEach(function (s) { if (s.id === id) found = s; });
+    return found;
+  }
+
+  var pendingQuarterState = null; // { fixture, home, away, mine, iAmHome, eff, homeTotal, awayTotal, completedQuarters, myLineup, oppLineup }
+  var coachLiveTickTimer = null; // active while a quarter is being revealed minute-by-minute; a second click during this skips straight to the final result
+
+  function beginMyGameQuarters(fixture) {
     var teamA = fixture.teamA, teamB = fixture.teamB;
     var LSC = window.LeagueSimCore;
     var home;
@@ -1203,54 +1210,172 @@
     else home = Math.random() < 0.5 ? teamA : teamB;
     var away = home === teamA ? teamB : teamA;
     var mine = teamA.isMine ? teamA : teamB;
+    var opponentTeam = mine === teamA ? teamB : teamA;
 
-    var eff = LSC.computeEffectiveStrengths(home, away);
-    var firstHalfHome = LSC.simulateGamePortion(eff.effHomeOffense, eff.effAwayDefense, home.varianceMultiplier, 0.5);
-    var firstHalfAway = LSC.simulateGamePortion(eff.effAwayOffense, eff.effHomeDefense, away.varianceMultiplier, 0.5);
-
-    pendingHalftimeState = {
+    pendingQuarterState = {
       fixture: fixture, home: home, away: away, mine: mine, iAmHome: home === mine,
-      eff: eff, firstHalfHome: firstHalfHome, firstHalfAway: firstHalfAway,
+      eff: LSC.computeEffectiveStrengths(home, away), homeTotal: 0, awayTotal: 0, completedQuarters: 0,
+      myLineup: staticQuarterLineup(mine.players), oppLineup: staticQuarterLineup(opponentTeam.players),
     };
-    renderHalftimeDialog();
+    playQuarter(1, null);
   }
 
-  function renderHalftimeDialog() {
-    var st = pendingHalftimeState;
-    var opponent = st.mine === st.fixture.teamA ? st.fixture.teamB : st.fixture.teamA;
-    var myHalfScore = st.iAmHome ? st.firstHalfHome : st.firstHalfAway;
-    var oppHalfScore = st.iAmHome ? st.firstHalfAway : st.firstHalfHome;
+  // A fixed 2-Guard/2-Forward/1-Center lineup shown for the whole game - the
+  // real box-driven rotation (buildGameTimeline/buildQuarterLineups) needs
+  // the FINAL box score, which only exists once all 4 quarters are decided,
+  // so a live quarter-by-quarter reveal can't use it until the game is over.
+  function staticQuarterLineup(players) {
+    var byPos = { Guard: [], Forward: [], Center: [] };
+    window.LeagueSimCore.splitStartersBench(players, true).starters.forEach(function (p) {
+      if (byPos[p.position]) byPos[p.position].push({ player: p, box: null, pos: p.position });
+    });
+    return { Guard: byPos.Guard.slice(0, 2), Forward: byPos.Forward.slice(0, 2), Center: byPos.Center.slice(0, 1) };
+  }
 
-    document.getElementById("coach-hub-title").textContent = window.I18n.t("coachCareer.halftime.title");
+  // Mirrors league.js's splitIntoMinutes() (last minute absorbs the
+  // rounding remainder so the sum always matches the quarter total exactly).
+  function splitQuarterMinutes(total, count) {
+    var weights = [];
+    for (var i = 0; i < count; i++) weights.push(0.4 + Math.random());
+    var sum = 0;
+    weights.forEach(function (w) { sum += w; });
+    var values = [];
+    var running = 0;
+    for (var i = 0; i < count; i++) {
+      if (i === count - 1) {
+        values.push(Math.max(0, total - running));
+      } else {
+        var v = Math.max(0, Math.round((total * weights[i]) / sum));
+        values.push(v);
+        running += v;
+      }
+    }
+    return values;
+  }
+
+  function opponentOf(st) {
+    return st.mine === st.fixture.teamA ? st.fixture.teamB : st.fixture.teamA;
+  }
+
+  function playQuarter(quarterNumber, systemId) {
+    var st = pendingQuarterState;
+    var LSC = window.LeagueSimCore;
+    var sys = systemId ? quarterBreakSystem(systemId) : null;
+    var offDelta = 0, defDelta = 0;
+    if (sys) {
+      offDelta = LSC.offenseForMyRoster(st.mine.players, sys) - LSC.offenseForRoster(st.mine.players, true);
+      defDelta = LSC.defenseForMyRoster(st.mine.players, sys) - LSC.defenseForRoster(st.mine.players, true);
+    }
+
+    var homeOff = st.eff.effHomeOffense + (st.iAmHome ? offDelta : 0);
+    var homeDef = st.eff.effHomeDefense + (st.iAmHome ? defDelta : 0);
+    var awayOff = st.eff.effAwayOffense + (!st.iAmHome ? offDelta : 0);
+    var awayDef = st.eff.effAwayDefense + (!st.iAmHome ? defDelta : 0);
+
+    var qHome = LSC.simulateGamePortion(homeOff, awayDef, st.home.varianceMultiplier, 0.25);
+    var qAway = LSC.simulateGamePortion(awayOff, homeDef, st.away.varianceMultiplier, 0.25);
+
+    var priorHome = st.homeTotal, priorAway = st.awayTotal;
+    st.homeTotal += qHome;
+    st.awayTotal += qAway;
+    st.completedQuarters = quarterNumber;
+
+    revealQuarterTicks(quarterNumber, priorHome, qHome, priorAway, qAway, function () {
+      if (quarterNumber < 4) showQuarterBreakDialog(quarterNumber + 1);
+      else finishQuarterGame();
+    });
+  }
+
+  function revealQuarterTicks(quarterNumber, priorHome, qHome, priorAway, qAway, onDone) {
+    var st = pendingQuarterState;
+    var minutesHome = splitQuarterMinutes(qHome, 10);
+    var minutesAway = splitQuarterMinutes(qAway, 10);
+    var idx = 0;
+    var mBase = (quarterNumber - 1) * 10;
+    // Sentinel so renderLiveSeason()'s button-text check already shows
+    // "skip" on this render, before the real interval id exists yet.
+    coachLiveTickTimer = true;
+
+    function showTick() {
+      var cumHome = priorHome, cumAway = priorAway;
+      for (var i = 0; i <= idx; i++) { cumHome += minutesHome[i]; cumAway += minutesAway[i]; }
+      var myScore = st.iAmHome ? cumHome : cumAway;
+      var oppScore = st.iAmHome ? cumAway : cumHome;
+      var lineupEl = document.getElementById("coach-live-lineup");
+      if (lineupEl) {
+        lineupEl.innerHTML = window.CourtLineup.htmlLive(
+          st.mine.label, st.myLineup, opponentOf(st).label, st.oppLineup,
+          myScore, oppScore, mBase + idx + 1, 40
+        );
+      }
+      idx++;
+      if (idx >= 10) {
+        clearInterval(coachLiveTickTimer);
+        coachLiveTickTimer = null;
+        onDone();
+      }
+    }
+
+    // renderLiveSeason() needs to already be showing #coach-live-lineup
+    // before the first tick paints - re-render now, before ticking starts.
+    renderLiveSeason();
+    showTick();
+    coachLiveTickTimer = setInterval(showTick, 2000);
+  }
+
+  function showQuarterBreakDialog(nextQuarter) {
+    var st = pendingQuarterState;
+    var myScore = st.iAmHome ? st.homeTotal : st.awayTotal;
+    var oppScore = st.iAmHome ? st.awayTotal : st.homeTotal;
+    var opponent = opponentOf(st);
+    var options = QUARTER_BREAK_SYSTEM_IDS.map(quarterBreakSystem);
+
+    document.getElementById("coach-hub-title").textContent = window.I18n.t("coachCareer.quarterBreak.title");
     document.getElementById("coach-hub-status").textContent = "";
     var content = document.getElementById("coach-hub-content");
     content.innerHTML =
-      '<div class="career-event-card"><p>' + window.I18n.t("coachCareer.halftime.scoreLine", { opponent: opponent.label, myScore: myHalfScore, oppScore: oppHalfScore }) + "</p></div>" +
+      '<div class="career-event-card"><p>' + window.I18n.t("coachCareer.quarterBreak.scoreLine", { quarter: nextQuarter - 1, opponent: opponent.label, myScore: myScore, oppScore: oppScore }) + "</p>" +
+      "<p>" + window.I18n.t("coachCareer.quarterBreak.optionsHint") + "</p></div>" +
       '<div class="h2h-setup-buttons">' +
-      '<button id="btn-halftime-push">' + window.I18n.t("coachCareer.halftime.pushTempo") + "</button>" +
-      '<button id="btn-halftime-lock">' + window.I18n.t("coachCareer.halftime.lockDefense") + "</button>" +
-      '<button class="secondary" id="btn-halftime-stay">' + window.I18n.t("coachCareer.halftime.stayCourse") + "</button>" +
+      options.map(function (sys, i) {
+        return '<button id="btn-quarter-opt-' + i + '"><strong>' + window.PlaySystemsAPI.label(sys) + "</strong><br>" + window.PlaySystemsAPI.desc(sys) + "</button>";
+      }).join("") +
+      '<button class="secondary" id="btn-quarter-skip">' + window.I18n.t("league.skipToResultBtn") + "</button>" +
       "</div>";
 
-    document.getElementById("btn-halftime-push").addEventListener("click", function () { resolveHalftimeChoice(HALFTIME_CHOICES[0]); });
-    document.getElementById("btn-halftime-lock").addEventListener("click", function () { resolveHalftimeChoice(HALFTIME_CHOICES[1]); });
-    document.getElementById("btn-halftime-stay").addEventListener("click", function () { resolveHalftimeChoice(HALFTIME_CHOICES[2]); });
+    options.forEach(function (sys, i) {
+      document.getElementById("btn-quarter-opt-" + i).addEventListener("click", function () { playQuarter(nextQuarter, sys.id); });
+    });
+    document.getElementById("btn-quarter-skip").addEventListener("click", skipRemainingQuarters);
   }
 
-  function resolveHalftimeChoice(choice) {
-    var st = pendingHalftimeState;
+  // Resolves any quarters after the one currently in progress with no
+  // system chosen (a neutral "stay the course" baseline), then finalizes -
+  // used both by the quarter-break dialog's own skip link and by the
+  // generic live-viewer skip button while a quarter is mid-reveal.
+  function skipRemainingQuarters() {
+    var st = pendingQuarterState;
+    if (!st) return;
     var LSC = window.LeagueSimCore;
+    for (var q = st.completedQuarters + 1; q <= 4; q++) {
+      st.homeTotal += LSC.simulateGamePortion(st.eff.effHomeOffense, st.eff.effAwayDefense, st.home.varianceMultiplier, 0.25);
+      st.awayTotal += LSC.simulateGamePortion(st.eff.effAwayOffense, st.eff.effHomeDefense, st.away.varianceMultiplier, 0.25);
+    }
+    st.completedQuarters = 4;
+    finishQuarterGame();
+  }
 
-    var secondHalfHomeOffense = st.eff.effHomeOffense + (st.iAmHome ? choice.offDelta : 0);
-    var secondHalfHomeDefense = st.eff.effHomeDefense + (st.iAmHome ? choice.defDelta : 0);
-    var secondHalfAwayOffense = st.eff.effAwayOffense + (!st.iAmHome ? choice.offDelta : 0);
-    var secondHalfAwayDefense = st.eff.effAwayDefense + (!st.iAmHome ? choice.defDelta : 0);
+  function skipCoachLiveTick() {
+    if (!coachLiveTickTimer) return;
+    clearInterval(coachLiveTickTimer);
+    coachLiveTickTimer = null;
+    skipRemainingQuarters();
+  }
 
-    var secondHalfHome = LSC.simulateGamePortion(secondHalfHomeOffense, secondHalfAwayDefense, st.home.varianceMultiplier, 0.5);
-    var secondHalfAway = LSC.simulateGamePortion(secondHalfAwayOffense, secondHalfHomeDefense, st.away.varianceMultiplier, 0.5);
-
-    var scoreHome = st.firstHalfHome + secondHalfHome;
-    var scoreAway = st.firstHalfAway + secondHalfAway;
+  function finishQuarterGame() {
+    var st = pendingQuarterState;
+    var LSC = window.LeagueSimCore;
+    var scoreHome = st.homeTotal, scoreAway = st.awayTotal;
 
     var clutched = LSC.applyClutchAdjustment(scoreHome, scoreAway, st.home.players, st.away.players);
     scoreHome = clutched.homeScore;
@@ -1279,9 +1404,7 @@
 
     var myScore = st.iAmHome ? scoreHome : scoreAway;
     var oppScore = st.iAmHome ? scoreAway : scoreHome;
-    var opponent = st.mine === st.fixture.teamA ? st.fixture.teamB : st.fixture.teamA;
-    appendLiveLogRow(opponent.label, myScore, oppScore, myScore > oppScore);
-
+    var opponent = opponentOf(st);
     var myBox = st.iAmHome ? result.homeBox : result.awayBox;
     var oppBox = st.iAmHome ? result.awayBox : result.homeBox;
     var game = {
@@ -1290,58 +1413,11 @@
       otPeriods: result.otPeriods, opponentLabel: opponent.label, won: myScore > oppScore,
     };
     lastCoachLiveGame = game;
-
-    pendingHalftimeState = null;
-    startCoachLiveTick(game);
-  }
-
-  var coachLiveTickTimer = null; // active while a game is being revealed minute-by-minute; a second click during this skips to the end
-  var pendingCoachRevealGame = null;
-
-  // Reveals an already-fully-simulated game one minute at a time (2s/tick) -
-  // mirrors league.js's startLiveTick(), reusing the same shared
-  // LeagueSimCore.buildGameTimeline() so both live viewers behave identically.
-  function startCoachLiveTick(game) {
-    pendingCoachRevealGame = game;
-    var timeline = window.LeagueSimCore.buildGameTimeline(game.myPlayers, game.myBox, game.myScore, game.oppPlayers, game.oppBox, game.oppScore, game.otPeriods);
-    var idx = 0;
-    // Sentinel so renderLiveSeason()'s button-text check (below) already
-    // shows "skip" on this render, before the real interval id exists yet.
-    coachLiveTickTimer = true;
-
-    function showTick() {
-      var tick = timeline[idx];
-      var lineupEl = document.getElementById("coach-live-lineup");
-      if (lineupEl) {
-        lineupEl.innerHTML = window.CourtLineup.htmlLive(
-          game.myLabel, tick.lineupA, game.oppLabel, tick.lineupB,
-          tick.scoreA, tick.scoreB, tick.minute, timeline.length
-        );
-      }
-      idx++;
-      if (idx >= timeline.length) {
-        clearInterval(coachLiveTickTimer);
-        coachLiveTickTimer = null;
-        finishRevealedCoachGame(game);
-      }
-    }
-
-    // renderLiveSeason() needs to already be showing #coach-live-lineup
-    // before the first tick paints - re-render now, before ticking starts.
-    renderLiveSeason();
-    showTick();
-    coachLiveTickTimer = setInterval(showTick, 2000);
-  }
-
-  function skipCoachLiveTick() {
-    if (!coachLiveTickTimer) return;
-    clearInterval(coachLiveTickTimer);
-    coachLiveTickTimer = null;
-    finishRevealedCoachGame(pendingCoachRevealGame);
+    pendingQuarterState = null;
+    finishRevealedCoachGame(game);
   }
 
   function finishRevealedCoachGame(game) {
-    pendingCoachRevealGame = null;
     appendLiveLogRow(game.oppLabel, game.myScore, game.oppScore, game.won);
     afterMyLiveGame();
   }

@@ -786,12 +786,10 @@ window.LOCALE_HE = {
       wonLine: "🏆 ניצחתם! מעט אהדת קהל ומוניטין נוספו.",
       lostLine: "😔 הפסדתם הפעם - זה רק משחק הכנה.",
     },
-    halftime: {
-      title: "מחצית",
-      scoreLine: "מחצית ראשונה מול {{opponent}}: {{myScore}} - {{oppScore}}. מה ההוראות למחצית השנייה?",
-      pushTempo: "🏃 האיצו את הקצב",
-      lockDefense: "🛡️ ננעלו בהגנה",
-      stayCourse: "➡️ המשיכו כרגיל",
+    quarterBreak: {
+      title: "הפסקת רבע",
+      scoreLine: "אחרי רבע {{quarter}} מול {{opponent}}: {{myScore}} - {{oppScore}}. איך תשחקו את הרבע הבא?",
+      optionsHint: "השיטה שתעזור יותר תלויה בהרכב שלכם - לא נגלה לכם איזו.",
     },
     stats: {
       nameLine: "שם: {{name}} &middot; מוניטין: {{rep}}",
