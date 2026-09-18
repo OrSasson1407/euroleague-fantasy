@@ -476,6 +476,12 @@
     document.getElementById("btn-h2h-game-next").textContent = seriesDecided ? window.I18n.t("h2h.toFinalResultBtn") : window.I18n.t("h2h.nextGameBtn");
   }
 
+  // Reveals an already-decided game one minute at a time (2s/tick, matching
+  // League's and Coach Career's live viewers) instead of the old 4-step
+  // quarter jump. There's no bench/rotation concept in H2H - each side's 5
+  // picks play the whole game by design - so buildGameTimeline() (given no
+  // box data) naturally keeps the same 5-man lineup on screen the whole
+  // time; only the running score changes tick to tick.
   function revealGame() {
     awaitingReveal = false;
     var g = playOneGame(pendingGameIndex);
@@ -485,28 +491,31 @@
       return;
     }
 
-    var cum1 = cumulativeLine(g.quarters1);
-    var cum2 = cumulativeLine(g.quarters2);
+    var timeline = window.LeagueSimCore.buildGameTimeline(
+      state.sides[0].picks, null, g.score1,
+      state.sides[1].picks, null, g.score2,
+      0
+    );
     var preview = document.getElementById("h2h-game-preview");
+    var idx = 0;
 
-    function tick(step) {
-      var liveScore1 = step > 0 ? cum1[step - 1] : 0;
-      var liveScore2 = step > 0 ? cum2[step - 1] : 0;
-      preview.innerHTML =
-        '<div class="final-score">' + liveScore1 + " - " + liveScore2 + "</div>" +
-        window.MomentumGraph.html(cum1, cum2, step) +
-        '<div class="home-tag">' + window.I18n.t("h2h.quarterOfFour", { n: Math.min(step + 1, 4) }) + "</div>";
-      if (step > 0) window.Effects.playClick();
-      if (step < 4) {
-        revealTimer = setTimeout(function () { tick(step + 1); }, 550);
+    function tick() {
+      var t = timeline[idx];
+      preview.innerHTML = window.CourtLineup.htmlLive(
+        state.sides[0].label, t.lineupA, state.sides[1].label, t.lineupB,
+        t.scoreA, t.scoreB, t.minute, timeline.length
+      );
+      idx++;
+      if (idx < timeline.length) {
+        revealTimer = setTimeout(tick, 2000);
       } else {
-        revealTimer = setTimeout(function () { finalizeReveal(g); }, 500);
+        revealTimer = setTimeout(function () { finalizeReveal(g); }, 400);
       }
     }
 
     revealSkip = function () { finalizeReveal(g); };
     document.getElementById("btn-h2h-game-next").textContent = window.I18n.t("h2h.skipToResultBtn");
-    tick(0);
+    tick();
   }
 
   function renderFinalTeamGrid(gridId, side) {

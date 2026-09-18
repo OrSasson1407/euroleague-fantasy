@@ -167,8 +167,13 @@
   }
 
   function courtChipHtml(z, benchClass) {
-    var minutes = z.box && typeof z.box.minutes === "number" ? z.box.minutes : null;
-    var pct = minutes ? Math.max(4, Math.min(100, Math.round((minutes / 40) * 100))) : 0;
+    // No box data at all (e.g. H2H, which has no bench/rotation concept -
+    // all 5 picks play the whole game by design) means full participation,
+    // not zero - only a real box with a specific low minutes value should
+    // show a short bar.
+    var pct = z.box && typeof z.box.minutes === "number"
+      ? Math.max(4, Math.min(100, Math.round((z.box.minutes / 40) * 100)))
+      : 100;
     var posLetter = (z.pos || (z.player && z.player.position) || "?").charAt(0);
     return '<div class="court-chip' + (benchClass ? " bench" : "") + '">' +
       '<span class="court-chip-badge">' + posLetter + "</span>" +
