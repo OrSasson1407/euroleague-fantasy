@@ -5,8 +5,38 @@
   var TIME_LIMIT = 10; // seconds per question, in timed mode
   var TIMEOUT_SENTINEL = "__TIMEOUT__";
 
+  // A static general-knowledge question bank (champions, MVPs, club/player
+  // trivia) - unlike the team/season quiz types, these aren't generated from
+  // euroleague_data.js. Only the id and correct option letter live here;
+  // the question text and all 4 options are resolved through
+  // window.I18n.t("trivia.knowledge.<id>.<field>") so they stay fully
+  // localized like everything else in the app. Options are shuffled at
+  // render time, so their order in the source data doesn't matter.
+  var KNOWLEDGE_QUESTIONS = [
+    { id: "q1", correct: "B" }, { id: "q2", correct: "A" }, { id: "q3", correct: "A" }, { id: "q4", correct: "D" }, { id: "q5", correct: "B" },
+    { id: "q6", correct: "A" }, { id: "q7", correct: "B" }, { id: "q8", correct: "A" }, { id: "q9", correct: "B" }, { id: "q10", correct: "A" },
+    { id: "q11", correct: "A" }, { id: "q12", correct: "B" }, { id: "q13", correct: "A" }, { id: "q14", correct: "A" }, { id: "q15", correct: "B" },
+    { id: "q16", correct: "A" }, { id: "q17", correct: "A" }, { id: "q18", correct: "B" }, { id: "q19", correct: "A" }, { id: "q20", correct: "B" },
+    { id: "q21", correct: "B" }, { id: "q22", correct: "C" }, { id: "q23", correct: "A" }, { id: "q24", correct: "A" }, { id: "q25", correct: "A" },
+    { id: "q26", correct: "B" }, { id: "q27", correct: "B" }, { id: "q28", correct: "A" }, { id: "q29", correct: "B" }, { id: "q30", correct: "A" },
+    { id: "q31", correct: "C" }, { id: "q32", correct: "A" }, { id: "q33", correct: "C" }, { id: "q34", correct: "A" }, { id: "q35", correct: "B" },
+    { id: "q36", correct: "B" }, { id: "q37", correct: "A" }, { id: "q38", correct: "B" }, { id: "q39", correct: "B" }, { id: "q40", correct: "A" },
+    { id: "q41", correct: "B" }, { id: "q42", correct: "C" }, { id: "q43", correct: "A" }, { id: "q44", correct: "A" }, { id: "q45", correct: "B" },
+    { id: "q46", correct: "A" }, { id: "q47", correct: "B" }, { id: "q48", correct: "A" }, { id: "q49", correct: "C" }, { id: "q50", correct: "B" },
+    { id: "q51", correct: "B" }, { id: "q52", correct: "B" }, { id: "q53", correct: "A" }, { id: "q54", correct: "A" }, { id: "q55", correct: "A" },
+    { id: "q56", correct: "A" }, { id: "q57", correct: "A" }, { id: "q58", correct: "B" }, { id: "q59", correct: "A" }, { id: "q60", correct: "A" },
+    { id: "q61", correct: "A" }, { id: "q62", correct: "A" }, { id: "q63", correct: "A" }, { id: "q64", correct: "A" }, { id: "q65", correct: "A" },
+    { id: "q66", correct: "A" }, { id: "q67", correct: "A" }, { id: "q68", correct: "A" }, { id: "q69", correct: "A" }, { id: "q70", correct: "A" },
+    { id: "q71", correct: "A" }, { id: "q72", correct: "A" }, { id: "q73", correct: "A" }, { id: "q74", correct: "A" }, { id: "q75", correct: "A" },
+    { id: "q76", correct: "A" }, { id: "q77", correct: "A" }, { id: "q78", correct: "A" }, { id: "q79", correct: "A" }, { id: "q80", correct: "A" },
+    { id: "q81", correct: "A" }, { id: "q82", correct: "A" }, { id: "q83", correct: "A" }, { id: "q84", correct: "A" }, { id: "q85", correct: "A" },
+    { id: "q86", correct: "A" }, { id: "q87", correct: "A" }, { id: "q88", correct: "A" }, { id: "q89", correct: "B" }, { id: "q90", correct: "B" },
+    { id: "q91", correct: "C" }, { id: "q92", correct: "A" }, { id: "q93", correct: "C" }, { id: "q94", correct: "B" }, { id: "q95", correct: "B" },
+    { id: "q96", correct: "A" }, { id: "q97", correct: "B" }, { id: "q98", correct: "B" }, { id: "q99", correct: "A" }, { id: "q100", correct: "A" },
+  ];
+
   var state = {
-    quizType: "team", // 'team' | 'season'
+    quizType: "team", // 'team' | 'season' | 'knowledge'
     round: 0,
     score: 0, // total points, including speed bonuses in timed mode
     correctCount: 0, // number of questions answered correctly, out of TOTAL_QUESTIONS
@@ -16,6 +46,7 @@
     streak: 0,
     mistakes: [], // { titleText, subText, correctLabel, yourLabel }
     questionStartTime: 0,
+    usedKnowledgeIds: new Set(), // avoids repeating a knowledge question within one round
   };
 
   var timerHandle = null;
@@ -80,7 +111,7 @@
       if (contemporaries.length >= 3) decoyPool = contemporaries;
     }
     var decoys = shuffle(decoyPool).slice(0, 3);
-    var options = shuffle([combo.team].concat(decoys));
+    var options = shuffle([combo.team].concat(decoys)).map(function (raw) { return { value: raw, label: raw }; });
     return {
       type: "team",
       combo: combo,
@@ -117,7 +148,7 @@
       if (close.length >= 3) decoyPool = close;
     }
     var decoys = shuffle(decoyPool).slice(0, 3);
-    var options = shuffle([combo.season].concat(decoys));
+    var options = shuffle([combo.season].concat(decoys)).map(function (raw) { return { value: raw, label: formatSeason(raw) }; });
     return {
       type: "season",
       combo: combo,
@@ -125,6 +156,32 @@
       options: options,
       titleText: club,
       subText: window.I18n.t("trivia.questionSubSeason"),
+    };
+  }
+
+  // Unlike the team/season types, correctness is keyed by option letter
+  // (A-D) rather than by matching translated text - the source data (and
+  // its answer key) stays identical across languages, only the displayed
+  // text differs.
+  function buildKnowledgeQuestion() {
+    var pool = KNOWLEDGE_QUESTIONS.filter(function (q) { return !state.usedKnowledgeIds.has(q.id); });
+    if (pool.length === 0) {
+      state.usedKnowledgeIds = new Set();
+      pool = KNOWLEDGE_QUESTIONS.slice();
+    }
+    var q = pickRandom(pool);
+    state.usedKnowledgeIds.add(q.id);
+    var base = "trivia.knowledge." + q.id + ".";
+    var options = shuffle(["A", "B", "C", "D"]).map(function (letter) {
+      return { value: letter, label: window.I18n.t(base + letter) };
+    });
+    return {
+      type: "knowledge",
+      combo: null,
+      correctAnswer: q.correct,
+      options: options,
+      titleText: window.I18n.t(base + "text"),
+      subText: window.I18n.t("trivia.questionSubKnowledge"),
     };
   }
 
@@ -176,7 +233,9 @@
     }
     state.answered = false;
 
-    var question = state.quizType === "season" ? buildSeasonQuestion() : buildTeamQuestion();
+    var question = state.quizType === "season" ? buildSeasonQuestion()
+      : state.quizType === "knowledge" ? buildKnowledgeQuestion()
+      : buildTeamQuestion();
     state.currentQuestion = question;
 
     renderProgress();
@@ -189,26 +248,27 @@
 
     var rosterGrid = document.getElementById("trivia-roster-grid");
     rosterGrid.innerHTML = "";
-    question.combo.players.forEach(function (player) {
-      var chip = document.createElement("div");
-      chip.className = "player-chip";
-      chip.textContent = player.name + (player.position ? " (" + player.position + ")" : "");
-      rosterGrid.appendChild(chip);
-    });
+    if (question.combo) {
+      question.combo.players.forEach(function (player) {
+        var chip = document.createElement("div");
+        chip.className = "player-chip";
+        chip.textContent = player.name + (player.position ? " (" + player.position + ")" : "");
+        rosterGrid.appendChild(chip);
+      });
+    }
 
     var optionsContainer = document.getElementById("trivia-options");
     optionsContainer.innerHTML = "";
-    question.options.forEach(function (raw) {
-      var label = question.type === "season" ? formatSeason(raw) : raw;
+    question.options.forEach(function (opt) {
       var btn = document.createElement("button");
       btn.className = "trivia-option-btn";
       if (question.type === "team") {
-        btn.innerHTML = window.TeamBadge.html(raw, "badge-sm") + label;
+        btn.innerHTML = window.TeamBadge.html(opt.value, "badge-sm") + opt.label;
       } else {
-        btn.textContent = label;
+        btn.textContent = opt.label;
       }
       btn.addEventListener("click", function () {
-        handleAnswer(raw, btn);
+        handleAnswer(opt.value, btn);
       });
       optionsContainer.appendChild(btn);
     });
@@ -230,7 +290,8 @@
     var question = state.currentQuestion;
     var isTimeout = selected === TIMEOUT_SENTINEL;
     var correct = !isTimeout && selected === question.correctAnswer;
-    var correctLabel = question.type === "season" ? formatSeason(question.correctAnswer) : question.correctAnswer;
+    var correctOption = question.options.filter(function (o) { return o.value === question.correctAnswer; })[0];
+    var correctLabel = correctOption ? correctOption.label : "";
 
     var speedBonus = 0;
     if (correct) {
@@ -249,9 +310,10 @@
       state.score += 1 + speedBonus;
     } else {
       state.streak = 0;
+      var selectedOption = question.options.filter(function (o) { return o.value === selected; })[0];
       var yourLabel = isTimeout
         ? window.I18n.t("trivia.timeoutAnswerLabel")
-        : (question.type === "season" ? formatSeason(selected) : selected);
+        : (selectedOption ? selectedOption.label : selected);
       state.mistakes.push({
         titleText: question.titleText,
         subText: question.subText,
@@ -322,12 +384,17 @@
     document.getElementById("trivia-final-sub").textContent = msg;
     renderMistakes();
 
+    var PERFECT_ACHIEVEMENT_BY_TYPE = { team: "trivia_perfect_team", season: "trivia_perfect_season", knowledge: "trivia_perfect_knowledge" };
+    var BEST_KEY_BY_TYPE = { team: "trivia_best_team", season: "trivia_best_season", knowledge: "trivia_best_knowledge" };
+
     window.Achievements.markPlayed("trivia");
     if (state.correctCount === TOTAL_QUESTIONS) {
-      window.Achievements.unlock(state.quizType === "season" ? "trivia_perfect_season" : "trivia_perfect_team");
+      window.Achievements.unlock(PERFECT_ACHIEVEMENT_BY_TYPE[state.quizType]);
     }
-    var bestKey = state.quizType === "season" ? "trivia_best_season" : "trivia_best_team";
-    window.Achievements.reportBest(bestKey, state.correctCount);
+    window.Achievements.reportBest(BEST_KEY_BY_TYPE[state.quizType], state.correctCount);
+    // Kept scoped to the original team/season tracks - a new knowledge track
+    // shouldn't retroactively raise the bar on an achievement players may
+    // have already earned under the old two-track definition.
     if (window.Achievements.getBest("trivia_best_team") >= 20 && window.Achievements.getBest("trivia_best_season") >= 20) {
       window.Achievements.unlock("trivia_expert");
     }
@@ -342,6 +409,7 @@
     state.correctCount = 0;
     state.streak = 0;
     state.mistakes = [];
+    state.usedKnowledgeIds = new Set();
     renderQuestion();
   }
 
@@ -350,6 +418,9 @@
   });
   document.getElementById("btn-trivia-season").addEventListener("click", function () {
     startTrivia("season");
+  });
+  document.getElementById("btn-trivia-knowledge").addEventListener("click", function () {
+    startTrivia("knowledge");
   });
   document.getElementById("btn-trivia-restart").addEventListener("click", function () {
     window.AppNav.showScreen("triviaSelect");

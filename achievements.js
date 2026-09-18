@@ -32,6 +32,7 @@
     { id: "league_veteran", icon: "🏛️" },
     { id: "trivia_perfect_team", icon: "🧠" },
     { id: "trivia_perfect_season", icon: "📅" },
+    { id: "trivia_perfect_knowledge", icon: "🏆" },
     { id: "trivia_expert", icon: "📚" },
     { id: "explorer", icon: "🧭" },
     { id: "live_watch_full", icon: "📺" },
