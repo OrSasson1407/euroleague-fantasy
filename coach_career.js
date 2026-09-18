@@ -586,16 +586,26 @@
     return entries;
   }
 
-  function makeRosterEntry(p, team, season) {
+  // Falls back to a synthetic age only when the source record doesn't carry
+  // a real one (e.g. a crossover-legend signing built from a finished Player
+  // Career summary, not euroleague_data.js) - almost every historical player
+  // now has a real p.age, which also feeds applyGrowthAndDecline() below.
+  function rosterEntryAge(p) {
+    if (typeof p.age === "number") return p.age;
     var isStarterAge = Math.random() < 0.6;
-    var age = isStarterAge ? 22 + Math.floor(Math.random() * 8) : (Math.random() < 0.5 ? 19 + Math.floor(Math.random() * 5) : 30 + Math.floor(Math.random() * 5));
-    return {
+    return isStarterAge ? 22 + Math.floor(Math.random() * 8) : (Math.random() < 0.5 ? 19 + Math.floor(Math.random() * 5) : 30 + Math.floor(Math.random() * 5));
+  }
+
+  function makeRosterEntry(p, team, season) {
+    // Spreads every field the source record carries (offRating/defRating/
+    // height/jerseyNumber/the 23 skill attributes/archetype) so play-system
+    // fit bonuses and box-score generation see real per-player data.
+    return Object.assign({}, p, {
       id: rosterEntryId(p.name, team, season),
-      player: p.name, position: p.position, rating: p.rating, offRating: p.offRating, defRating: p.defRating,
-      archetype: p.archetype, team: team, season: season,
-      half: 2, age: age, injury: null, morale: 60, isLegendCrossover: false,
+      player: p.name, team: team, season: season,
+      half: 2, age: rosterEntryAge(p), injury: null, morale: 60, isLegendCrossover: false,
       contract: makePlayerContract(p.rating),
-    };
+    });
   }
 
   // Individual player contracts (feature 6) - a separate wage/years-left
@@ -715,7 +725,7 @@
     var renewCost = Math.round(entry.contract.salary * 0.5);
     var content = document.getElementById("coach-hub-content");
     content.innerHTML =
-      '<div class="career-event-card"><p>' + window.I18n.t("coachCareer.contracts.expiredLine", { name: entry.player }) + window.RatingTag.html(entry.rating) + "</p>" +
+      '<div class="career-event-card"><p>' + window.I18n.t("coachCareer.contracts.expiredLine", { name: entry.player }) + window.RatingTag.html(entry.rating) + window.PlayerMeta.html(entry) + "</p>" +
       '<div class="h2h-setup-buttons">' +
       '<button id="btn-contract-renew"' + (coach.budget < renewCost ? " disabled" : "") + ">" + window.I18n.t("coachCareer.contracts.renewBtn", { cost: renewCost.toLocaleString() }) + "</button>" +
       // Only block release at the roster floor when renewing is actually affordable -
@@ -987,11 +997,14 @@
   function effectiveRoster() {
     return coach.roster.map(function (e) {
       var mult = e.injury ? (e.injury.severe ? 0.7 : 0.85) : 1;
-      return {
-        id: e.id, player: e.player, position: e.position, half: e.half, archetype: e.archetype,
-        rating: e.rating, offRating: typeof e.offRating === "number" ? e.offRating * mult : e.offRating,
+      // Spreads every field off the roster entry (the 23 skill attributes/
+      // height/age/jerseyNumber included) so play-system fit and box-score
+      // generation see real per-player data - only offRating/defRating get
+      // an injury-derated override on top.
+      return Object.assign({}, e, {
+        offRating: typeof e.offRating === "number" ? e.offRating * mult : e.offRating,
         defRating: typeof e.defRating === "number" ? e.defRating * mult : e.defRating,
-      };
+      });
     });
   }
 
@@ -1581,7 +1594,7 @@
     var archetypeTag = entry && entry.archetype ? '<span class="archetype-tag">' + window.RatingArchetypesAPI.label(entry.archetype) + "</span>" : "";
     chip.innerHTML = entry
       ? '<span class="h2h-slot-type">' + window.RatingTag.html(entry.rating) + "</span>" +
-        '<span class="h2h-slot-player">' + entry.player + captainTag + injuryTag + archetypeTag + "</span>"
+        '<span class="h2h-slot-player">' + entry.player + window.PlayerMeta.html(entry) + captainTag + injuryTag + archetypeTag + "</span>"
       : '<span class="h2h-slot-type">' + (emptyLabel || "") + "</span>";
     if (entry) chip._entry = entry;
     container.appendChild(chip);
@@ -1655,7 +1668,7 @@
       chip.className = "h2h-slot-chip filled swappable" + (entry === transferTradeSelection ? " selected-swap" : "");
       chip.innerHTML =
         '<span class="h2h-slot-type">' + (POS_LABEL[entry.position] || "") + "</span>" +
-        '<span class="h2h-slot-player">' + entry.player + window.RatingTag.html(entry.rating) + "</span>";
+        '<span class="h2h-slot-player">' + entry.player + window.RatingTag.html(entry.rating) + window.PlayerMeta.html(entry) + "</span>";
       chip.addEventListener("click", function () {
         transferTradeSelection = entry === transferTradeSelection ? null : entry;
         renderTransferTradeCurrent();
@@ -1692,7 +1705,7 @@
       btn.className = "player-btn";
       btn.innerHTML = cand.player.name +
         '<span class="pos-tag">' + cand.player.position + "</span>" +
-        window.RatingTag.html(cand.player.rating) +
+        window.RatingTag.html(cand.player.rating) + window.PlayerMeta.html(cand.player) +
         '<span class="taken-tag">' + cand.club + " " + formatSeason(cand.season) + "</span>";
       btn.addEventListener("click", function () { completeTrade(cand); });
       grid.appendChild(btn);
@@ -1721,7 +1734,7 @@
       var card = document.createElement("div");
       card.className = "squad-player-card";
       card.innerHTML =
-        '<div class="name">' + e.player + window.RatingTag.html(e.rating) + "</div>" +
+        '<div class="name">' + e.player + window.RatingTag.html(e.rating) + window.PlayerMeta.html(e) + "</div>" +
         '<div class="meta">' + e.team + " " + formatSeason(e.season) + "</div>";
       var btn = document.createElement("button");
       btn.className = "player-dual-btn";
@@ -1775,17 +1788,17 @@
     var matches = window.PlayerSearch.search(trimmed).filter(function (entry) { return !currentNames[normalizeName(entry.name)]; });
     matches.slice(0, coach.scoutingBoostActive ? 15 : 10).forEach(function (entry) {
       var b = entry.bestAppearance;
-      var price = transferPrice(b.rating, 26);
+      var price = transferPrice(b.rating, typeof b.age === "number" ? b.age : 26);
       var btn = document.createElement("button");
       btn.className = "player-search-result";
       btn.disabled = coach.budget < price || coach.roster.length >= ROSTER_TARGET_SIZE + 3;
       btn.innerHTML =
         '<span class="name">' + entry.name + "</span>" +
         '<span class="meta">' + window.I18n.t("coachCareer.transfer.buyBtn", { price: price.toLocaleString() }) + "</span>" +
-        window.RatingTag.html(b.rating);
+        window.RatingTag.html(b.rating) + window.PlayerMeta.html(b);
       btn.addEventListener("click", function () {
         coach.budget -= price;
-        coach.roster.push(makeRosterEntry({ name: entry.name, position: b.position, rating: b.rating, offRating: b.offRating, defRating: b.defRating, archetype: b.archetype }, b.team, b.season));
+        coach.roster.push(makeRosterEntry(Object.assign({}, b, { name: entry.name }), b.team, b.season));
         coach.roster[coach.roster.length - 1].half = 2;
         saveCoach();
         renderTransferScreen(transferTargetQuery);

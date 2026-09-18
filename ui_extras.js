@@ -115,6 +115,23 @@
 
   window.RatingTag = { html: ratingTagHtml };
 
+  // ---------- Player meta line (jersey / height / age) ----------
+  // Placeholder-for-now fields (see euroleague_data.js's header comment) -
+  // rendered as one small muted fragment wherever a player card already has
+  // a meta/tag area, across every mode. Any field missing on a given entry
+  // (e.g. Coach Career's crossover-legend signing, not sourced from the
+  // dataset) is silently skipped rather than shown blank.
+  function playerMetaHtml(p) {
+    if (!p) return "";
+    var parts = [];
+    if (typeof p.jerseyNumber === "number") parts.push("#" + p.jerseyNumber);
+    if (typeof p.height === "number") parts.push(p.height.toFixed(2) + "m");
+    if (typeof p.age === "number") parts.push(window.I18n.t("common.ageShort", { age: p.age }));
+    return parts.length ? '<span class="player-meta-tag">' + parts.join(" &middot; ") + "</span>" : "";
+  }
+
+  window.PlayerMeta = { html: playerMetaHtml };
+
   // ---------- Effects on/off preference ----------
   // A plain device-level UI preference (not a personal record), so it's
   // saved regardless of guest/registered mode and applies immediately by

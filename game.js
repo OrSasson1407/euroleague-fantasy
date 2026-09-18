@@ -78,11 +78,7 @@
       budgetMode: state.budgetTotal > 0,
       systemLabel: state.selectedSystem ? window.PlaySystemsAPI.label(state.selectedSystem) : null,
       squad: state.squad.map(function (e) {
-        return {
-          player: e.player, position: e.position, rating: e.rating,
-          offRating: e.offRating, defRating: e.defRating, archetype: e.archetype,
-          team: e.team, season: e.season, slot: e.slot, slotLabel: e.slotLabel,
-        };
+        return Object.assign({}, e); // shallow copy so later roster edits don't retroactively change a saved leaderboard entry
       }),
     };
     list.push(entry);
@@ -150,7 +146,7 @@
           card.className = "squad-player-card";
           card.innerHTML =
             '<div class="name">' + e.player +
-              window.RatingTag.html(e.rating) + "</div>" +
+              window.RatingTag.html(e.rating) + window.PlayerMeta.html(e) + "</div>" +
             '<div class="meta">' + e.slotLabel + " &middot; " + e.team + " " + formatSeason(e.season) + "</div>";
           grid.appendChild(card);
         });
@@ -256,7 +252,7 @@
       chip.className = "h2h-slot-chip" + (slot.pick ? " filled" : "");
       chip.innerHTML =
         '<span class="h2h-slot-type">' + slot.label + "</span>" +
-        (slot.pick ? '<span class="h2h-slot-player">' + slot.pick.player + "</span>" : "");
+        (slot.pick ? '<span class="h2h-slot-player">' + slot.pick.player + window.PlayerMeta.html(slot.pick) + "</span>" : "");
       container.appendChild(chip);
     });
   }
@@ -308,6 +304,7 @@
       info.innerHTML = player.name +
         (player.position ? '<span class="pos-tag">' + player.position + "</span>" : "") +
         window.RatingTag.html(player.rating) +
+        window.PlayerMeta.html(player) +
         '<span class="cost-tag">' + formatSalary(playerCost(player)) + "</span>" +
         (taken ? '<span class="taken-tag">' + window.I18n.t("common.takenTag") + "</span>" :
           (tooExpensive ? '<span class="taken-tag">' + window.I18n.t("common.tooExpensiveTag") + "</span>" :
@@ -356,18 +353,16 @@
     state.pickedNames.add(normalizeName(player.name));
     state.needsByHalf[half][player.position]--;
     if (state.budgetTotal > 0) state.budgetRemaining -= playerCost(player);
-    state.squad.push({
+    // Spreads every field off the source record (offRating/defRating/height/
+    // age/jerseyNumber/the 23 skill attributes/archetype) so play-system fit
+    // bonuses see real per-player data instead of just the base rating.
+    state.squad.push(Object.assign({}, player, {
       player: player.name,
-      position: player.position,
-      rating: player.rating,
-      offRating: player.offRating,
-      defRating: player.defRating,
-      archetype: player.archetype,
       team: combo.team,
       season: combo.season,
       slot: half,
       slotLabel: POS_LABEL[player.position],
-    });
+    }));
     if (state.squad.length >= TOTAL_ROUNDS) {
       showLineupScreen();
       return;
@@ -386,7 +381,7 @@
       chip.innerHTML =
         '<span class="h2h-slot-type">' + slot.label + "</span>" +
         (slot.pick ? '<span class="h2h-slot-player">' + slot.pick.player +
-          window.RatingTag.html(slot.pick.rating) +
+          window.RatingTag.html(slot.pick.rating) + window.PlayerMeta.html(slot.pick) +
           "</span>" : "");
       if (slot.pick) {
         chip._entry = slot.pick;
@@ -463,7 +458,7 @@
       card.className = "squad-player-card";
       card.innerHTML =
         '<div class="name">' + entry.player +
-          window.RatingTag.html(entry.rating) + "</div>" +
+          window.RatingTag.html(entry.rating) + window.PlayerMeta.html(entry) + "</div>" +
         '<div class="meta">' + entry.slotLabel + " &middot; " + POS_LABEL[entry.position] + " &middot; " +
           entry.team + " " + formatSeason(entry.season) + "</div>";
 
@@ -488,7 +483,7 @@
     current.innerHTML =
       '<div class="meta">' + window.I18n.t("single.currentPlayerLabel") + "</div>" +
       '<div class="name">' + entry.player +
-        window.RatingTag.html(entry.rating) + "</div>" +
+        window.RatingTag.html(entry.rating) + window.PlayerMeta.html(entry) + "</div>" +
       '<div class="meta">' + entry.slotLabel + " &middot; " + POS_LABEL[entry.position] + " &middot; " +
         entry.team + " " + formatSeason(entry.season) + "</div>";
     grid.appendChild(current);
@@ -499,7 +494,7 @@
       card.innerHTML =
         '<div class="meta">' + window.I18n.t("single.tradeOfferLabel") + "</div>" +
         '<div class="name">' + offer.player.name +
-          window.RatingTag.html(offer.player.rating) + "</div>" +
+          window.RatingTag.html(offer.player.rating) + window.PlayerMeta.html(offer.player) + "</div>" +
         '<div class="meta">' + offer.combo.team + " " + formatSeason(offer.combo.season) + "</div>";
 
       var btn = document.createElement("button");
@@ -652,7 +647,7 @@
         (typeof entry.rating === "number" ? '<div class="player-card-rating">' + entry.rating + "</div>" : "") +
         '<div class="player-card-pos">' + (entry.position || "") + "</div>" +
         '<div class="player-card-name">' + entry.player + "</div>" +
-        '<div class="player-card-meta">' + entry.slotLabel + " &middot; " + entry.team + " " + formatSeason(entry.season) + "</div>" +
+        '<div class="player-card-meta">' + entry.slotLabel + " &middot; " + entry.team + " " + formatSeason(entry.season) + window.PlayerMeta.html(entry) + "</div>" +
         '<div class="player-card-meta">' +
           (typeof entry.offRating === "number" ? '<span class="off-tag">' + window.I18n.t("common.offAbbr") + " " + entry.offRating + "</span>" : "") +
           (typeof entry.defRating === "number" ? '<span class="def-tag">' + window.I18n.t("common.defAbbr") + " " + entry.defRating + "</span>" : "") +

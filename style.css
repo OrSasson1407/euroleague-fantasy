@@ -1320,6 +1320,39 @@ footer {
   margin-bottom: 20px;
 }
 
+.player-skill-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+  text-align: start;
+  margin-bottom: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.player-skill-group h4 {
+  margin: 0 0 6px;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.player-skill-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 0.8rem;
+  padding: 2px 0;
+}
+
+.player-skill-label {
+  color: var(--text);
+}
+
 .player-appearance-row {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -2363,6 +2396,18 @@ body.effects-off #screen-home::before {
   vertical-align: middle;
   background: rgba(214,40,40,0.18);
   color: var(--accent);
+}
+
+.player-meta-tag {
+  display: inline-block;
+  margin-inline-start: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  vertical-align: middle;
+  background: rgba(255,255,255,0.06);
+  color: var(--text-dim);
 }
 
 .rating-tag.rating-tag-good {

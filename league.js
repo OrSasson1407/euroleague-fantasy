@@ -223,7 +223,7 @@
       chip.innerHTML =
         '<span class="h2h-slot-type">' + slot.label + "</span>" +
         (slot.pick ? '<span class="h2h-slot-player">' + slot.pick.player +
-          window.RatingTag.html(slot.pick.rating) +
+          window.RatingTag.html(slot.pick.rating) + window.PlayerMeta.html(slot.pick) +
           "</span>" : "");
       container.appendChild(chip);
     });
@@ -271,6 +271,7 @@
       info.innerHTML = player.name +
         (player.position ? '<span class="pos-tag">' + player.position + "</span>" : "") +
         window.RatingTag.html(player.rating) +
+        window.PlayerMeta.html(player) +
         (typeof player.offRating === "number" ? '<span class="off-tag">' + window.I18n.t("common.offAbbr") + " " + player.offRating + "</span>" : "") +
         (typeof player.defRating === "number" ? '<span class="def-tag">' + window.I18n.t("common.defAbbr") + " " + player.defRating + "</span>" : "") +
         (player.archetype ? '<span class="archetype-tag">' + window.RatingArchetypesAPI.label(player.archetype) + "</span>" : "") +
@@ -313,18 +314,17 @@
     }
     state.pickedNames.add(normalizeName(player.name));
     state.needsByHalf[half][player.position]--;
-    state.myRoster.push({
+    // Spreads every field off the source record (offRating/defRating/height/
+    // age/jerseyNumber/the 23 skill attributes/archetype) so new dataset
+    // fields flow through to simulation/box-scores/play-system fit without
+    // another edit here.
+    state.myRoster.push(Object.assign({}, player, {
       player: player.name,
-      position: player.position,
-      rating: player.rating,
-      offRating: player.offRating,
-      defRating: player.defRating,
-      archetype: player.archetype,
       team: combo.team,
       season: combo.season,
       slotLabel: POS_LABEL[player.position],
       half: half,
-    });
+    }));
     if (state.myRoster.length >= TOTAL_PICKS) {
       showLineupScreen();
       return;
@@ -345,7 +345,7 @@
       chip.innerHTML =
         '<span class="h2h-slot-type">' + slot.label + "</span>" +
         (slot.pick ? '<span class="h2h-slot-player">' + slot.pick.player +
-          window.RatingTag.html(slot.pick.rating) +
+          window.RatingTag.html(slot.pick.rating) + window.PlayerMeta.html(slot.pick) +
           "</span>" : "");
       if (slot.pick) {
         chip._entry = slot.pick;
@@ -903,7 +903,7 @@
       chip.innerHTML =
         '<span class="h2h-slot-type">' + (entry.half === 1 ? window.I18n.t("league.startersShort") : window.I18n.t("common.bench")) + " · " + POS_LABEL[entry.position] + "</span>" +
         '<span class="h2h-slot-player">' + entry.player +
-          window.RatingTag.html(entry.rating) +
+          window.RatingTag.html(entry.rating) + window.PlayerMeta.html(entry) +
           "</span>";
       chip.addEventListener("click", function () {
         tradeSelection = entry;
@@ -934,7 +934,7 @@
       btn.className = "player-btn";
       btn.innerHTML = entry.player.name +
         '<span class="pos-tag">' + entry.player.position + "</span>" +
-        window.RatingTag.html(entry.player.rating) +
+        window.RatingTag.html(entry.player.rating) + window.PlayerMeta.html(entry.player) +
         '<span class="taken-tag">' + entry.combo.team + " " + formatSeason(entry.combo.season) + "</span>";
       btn.addEventListener("click", function () {
         completeTrade(entry.player, entry.combo);
@@ -946,18 +946,13 @@
   function completeTrade(newPlayer, combo) {
     var idx = state.myRoster.indexOf(tradeSelection);
     if (idx === -1) return;
-    state.myRoster[idx] = {
+    state.myRoster[idx] = Object.assign({}, newPlayer, {
       player: newPlayer.name,
-      position: newPlayer.position,
-      rating: newPlayer.rating,
-      offRating: newPlayer.offRating,
-      defRating: newPlayer.defRating,
-      archetype: newPlayer.archetype,
       team: combo.team,
       season: combo.season,
       slotLabel: POS_LABEL[newPlayer.position],
       half: tradeSelection.half,
-    };
+    });
     lastTeams[0].rating = ratingForMyRoster(state.myRoster);
     lastTeams[0].offense = offenseForMyRoster(state.myRoster, state.playSystem);
     lastTeams[0].defense = defenseForMyRoster(state.myRoster, state.playSystem);
@@ -997,7 +992,7 @@
       btn.innerHTML =
         '<span class="name">' + entry.name + "</span>" +
         '<span class="meta">' + entry.bestAppearance.team + " " + formatSeason(entry.bestAppearance.season) + "</span>" +
-        window.RatingTag.html(entry.bestAppearance.rating);
+        window.RatingTag.html(entry.bestAppearance.rating) + window.PlayerMeta.html(entry.bestAppearance);
       btn.addEventListener("click", function () {
         freeAgentTargetEntry = entry;
         renderFreeAgentSlotPicker();
@@ -1020,7 +1015,7 @@
         chip.className = "h2h-slot-chip filled swappable";
         chip.innerHTML =
           '<span class="h2h-slot-type">' + (entry.half === 1 ? window.I18n.t("league.startersShort") : window.I18n.t("common.bench")) + " · " + POS_LABEL[entry.position] + "</span>" +
-          '<span class="h2h-slot-player">' + entry.player + window.RatingTag.html(entry.rating) + "</span>";
+          '<span class="h2h-slot-player">' + entry.player + window.RatingTag.html(entry.rating) + window.PlayerMeta.html(entry) + "</span>";
         chip.addEventListener("click", function () {
           signFreeAgent(entry);
         });
@@ -1034,18 +1029,11 @@
     var idx = state.myRoster.indexOf(rosterEntry);
     if (idx === -1 || !freeAgentTargetEntry) return;
     var b = freeAgentTargetEntry.bestAppearance;
-    state.myRoster[idx] = {
+    state.myRoster[idx] = Object.assign({}, b, {
       player: freeAgentTargetEntry.name,
-      position: b.position,
-      rating: b.rating,
-      offRating: b.offRating,
-      defRating: b.defRating,
-      archetype: b.archetype,
-      team: b.team,
-      season: b.season,
       slotLabel: POS_LABEL[b.position],
       half: rosterEntry.half,
-    };
+    });
     if (lastTeams) {
       lastTeams[0].rating = ratingForMyRoster(state.myRoster);
       lastTeams[0].offense = offenseForMyRoster(state.myRoster, state.playSystem);
@@ -1243,10 +1231,13 @@
   var POSITION_AST_WEIGHT = { Guard: 3.0, Forward: 1.3, Center: 0.7 }; // 1.5 fallback for null position
 
   function toBoxPlayer(p, half) {
-    return {
-      name: p.player || p.name, position: p.position, rating: p.rating,
-      offRating: p.offRating, defRating: p.defRating, archetype: p.archetype, half: half,
-    };
+    // Spreads every field the roster entry / historical record carries
+    // (offRating/defRating/the 23 skill attributes/height/age/jerseyNumber)
+    // so generateBoxScore() and play-system fit bonuses see real per-player
+    // data instead of just the base rating - falls back gracefully wherever
+    // a specific attribute is missing (e.g. a Coach Career crossover-legend
+    // signing, which isn't sourced from euroleague_data.js).
+    return Object.assign({}, p, { name: p.player || p.name, half: half });
   }
 
   // Team objects only kept aggregated offense/defense numbers before this -
@@ -1381,15 +1372,22 @@
     });
     var pts = distributeStat(players, ptsWeights, teamScore);
 
+    // Prefer the real defensiveRebounding/passing+courtVision attributes
+    // (now present on almost every player via euroleague_data.js) over the
+    // generic position-weight table, which stays only as a fallback for box
+    // players that don't carry them (e.g. Coach Career's crossover-legend
+    // signing, built from a finished Player Career summary, not the dataset).
     var rebWeights = players.map(function (p, i) {
-      var posW = POSITION_REB_WEIGHT[p.position] || 1.4;
-      return posW * (0.7 + playerDefense(p) / 250) * minutesShares[i].share;
+      var attr = typeof p.defensiveRebounding === "number" ? p.defensiveRebounding : (POSITION_REB_WEIGHT[p.position] || 1.4) * 30;
+      return (attr / 30) * (0.7 + playerDefense(p) / 250) * minutesShares[i].share;
     });
     var reb = distributeStat(players, rebWeights, Math.round(TEAM_REBOUNDS_POOL * otScale));
 
     var astWeights = players.map(function (p, i) {
-      var posW = POSITION_AST_WEIGHT[p.position] || 1.5;
-      return posW * (0.7 + playerOffense(p) / 250) * minutesShares[i].share;
+      var attr = (typeof p.passing === "number" && typeof p.courtVision === "number")
+        ? (p.passing + p.courtVision) / 2
+        : (POSITION_AST_WEIGHT[p.position] || 1.5) * 30;
+      return (attr / 30) * (0.7 + playerOffense(p) / 250) * minutesShares[i].share;
     });
     var ast = distributeStat(players, astWeights, Math.round(TEAM_ASSISTS_POOL * otScale));
 

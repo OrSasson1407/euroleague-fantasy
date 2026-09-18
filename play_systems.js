@@ -16,6 +16,8 @@
       offBonus: 5,
       defBonus: 0,
       varianceMultiplier: 1.4,
+      skillFocus: ["threePoint", "speed"],
+      skillWeight: { off: 1.5, def: 0 },
     },
     {
       id: "lockdown",
@@ -23,6 +25,8 @@
       offBonus: 0,
       defBonus: 5,
       varianceMultiplier: 0.7,
+      skillFocus: ["perimeterDefense", "interiorDefense"],
+      skillWeight: { off: 0, def: 1.5 },
     },
     {
       id: "balanced",
@@ -30,6 +34,8 @@
       offBonus: 2,
       defBonus: 2,
       varianceMultiplier: 1.0,
+      skillFocus: ["passing", "courtVision"],
+      skillWeight: { off: 0.8, def: 0.8 },
     },
     {
       id: "starcentric",
@@ -38,6 +44,8 @@
       defBonus: 6,
       varianceMultiplier: 1.15,
       starMode: true,
+      skillFocus: ["insideScoring", "midRange"],
+      skillWeight: { off: 1.5, def: 0 },
     },
     {
       id: "clutch",
@@ -45,6 +53,8 @@
       offBonus: 4,
       defBonus: 4,
       varianceMultiplier: 0.85,
+      skillFocus: ["decisionMaking", "freeThrow"],
+      skillWeight: { off: 1, def: 1 },
     },
   ];
 
@@ -73,14 +83,33 @@
     return !!(player.archetype && system.fitArchetypes.indexOf(player.archetype.id) !== -1);
   }
 
+  // A small additional bonus/penalty on top of the archetype-based one,
+  // scaled by how far above/below a 65 baseline the player's average of the
+  // system's focus skill attributes sits - e.g. a Fast Break system further
+  // rewards a genuinely fast, three-point-shooting player, not just anyone
+  // tagged "sharpshooter". Capped at +/-2 per attribute average, so the
+  // total swing (up to skillWeight.off/def each) stays modest next to the
+  // archetype bonus (already +/-2 to +/-6).
+  function skillFitBonus(player, system) {
+    if (!system || !system.skillFocus) return { off: 0, def: 0 };
+    var sum = 0, n = 0;
+    system.skillFocus.forEach(function (attr) {
+      if (typeof player[attr] === "number") { sum += player[attr]; n++; }
+    });
+    if (!n) return { off: 0, def: 0 };
+    var delta = Math.max(-2, Math.min(2, (sum / n - 65) / 10));
+    return { off: delta * system.skillWeight.off, def: delta * system.skillWeight.def };
+  }
+
   // Returns { off, def } - the bonus (or small penalty) this player gets under
   // the given system. starPlayer only matters for star-centric systems.
   function fitBonus(player, system, starPlayer) {
     if (!system) return { off: 0, def: 0 };
-    if (fits(player, system, starPlayer)) {
-      return { off: system.offBonus, def: system.defBonus };
-    }
-    return { off: -system.offBonus * FIT_PENALTY_RATIO, def: -system.defBonus * FIT_PENALTY_RATIO };
+    var archetypeBonus = fits(player, system, starPlayer)
+      ? { off: system.offBonus, def: system.defBonus }
+      : { off: -system.offBonus * FIT_PENALTY_RATIO, def: -system.defBonus * FIT_PENALTY_RATIO };
+    var skillBonus = skillFitBonus(player, system);
+    return { off: archetypeBonus.off + skillBonus.off, def: archetypeBonus.def + skillBonus.def };
   }
 
   window.PlaySystems = SYSTEMS;

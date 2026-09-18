@@ -24,15 +24,11 @@
         if (!map[key]) {
           map[key] = { name: p.name, appearances: [] };
         }
-        map[key].appearances.push({
-          team: combo.team,
-          season: combo.season,
-          position: p.position,
-          rating: p.rating,
-          offRating: p.offRating,
-          defRating: p.defRating,
-          archetype: p.archetype,
-        });
+        // Spreads every field of the source record (offRating/defRating/
+        // height/age/jerseyNumber/the 23 skill attributes/archetype) rather
+        // than hand-listing them, so new fields on euroleague_data.js records
+        // automatically flow through here without another edit.
+        map[key].appearances.push(Object.assign({}, p, { team: combo.team, season: combo.season }));
       });
     });
 

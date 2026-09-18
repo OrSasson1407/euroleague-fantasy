@@ -15,6 +15,29 @@
     return div.innerHTML;
   }
 
+  // Same 5-category grouping as scripts/add_player_attributes.js and the
+  // README - reused here so the deep-dive profile is the one place a
+  // player's full placeholder-for-now skill set is actually visible.
+  var SKILL_GROUPS = [
+    { key: "scoring", attrs: ["insideScoring", "midRange", "threePoint", "freeThrow", "dunk", "layup", "postScoring"] },
+    { key: "playmaking", attrs: ["passing", "ballHandling", "courtVision", "decisionMaking", "pickAndRoll", "offBallMovement", "screening"] },
+    { key: "rebounding", attrs: ["offensiveRebounding", "defensiveRebounding"] },
+    { key: "defense", attrs: ["perimeterDefense", "interiorDefense"] },
+    { key: "athleticism", attrs: ["speed", "acceleration", "agility", "strength", "vertical", "stamina"] },
+  ];
+
+  function skillGridHtml(a) {
+    var groups = SKILL_GROUPS.map(function (g) {
+      var rows = g.attrs
+        .filter(function (attr) { return typeof a[attr] === "number"; })
+        .map(function (attr) {
+          return '<div class="player-skill-row"><span class="player-skill-label">' + window.I18n.t("skills." + attr) + "</span>" + window.RatingTag.html(a[attr]) + "</div>";
+        }).join("");
+      return rows ? '<div class="player-skill-group"><h4>' + window.I18n.t("playerSearch.skillGroups." + g.key) + "</h4>" + rows + "</div>" : "";
+    }).join("");
+    return groups ? '<div class="player-skill-grid">' + groups + "</div>" : "";
+  }
+
   function renderResults(query) {
     var resultsEl = document.getElementById("player-search-results");
     document.getElementById("player-profile").hidden = true;
@@ -56,7 +79,8 @@
       btn.className = "player-search-result";
       btn.innerHTML =
         '<span class="name">' + entry.name + "</span>" +
-        '<span class="meta">' + window.I18n.t("playerSearch.seasonsBestRating", { count: entry.seasonsCount, rating: (typeof entry.bestAppearance.rating === "number" ? entry.bestAppearance.rating : "-") }) + "</span>";
+        '<span class="meta">' + window.I18n.t("playerSearch.seasonsBestRating", { count: entry.seasonsCount, rating: (typeof entry.bestAppearance.rating === "number" ? entry.bestAppearance.rating : "-") }) + "</span>" +
+        window.PlayerMeta.html(entry.bestAppearance);
       btn.addEventListener("click", function () {
         renderProfile(entry);
       });
@@ -92,6 +116,7 @@
         (typeof a.offRating === "number" ? '<span class="off-tag">' + window.I18n.t("common.offAbbr") + " " + a.offRating + "</span>" : "") +
         (typeof a.defRating === "number" ? '<span class="def-tag">' + window.I18n.t("common.defAbbr") + " " + a.defRating + "</span>" : "") +
         (a.archetype ? '<span class="archetype-tag">' + window.RatingArchetypesAPI.label(a.archetype) + "</span>" : "") +
+        window.PlayerMeta.html(a) +
         "</div>"
       );
     }).join("");
@@ -107,6 +132,7 @@
         " (" + entry.bestAppearance.team + " " + formatSeason(entry.bestAppearance.season) + ")" +
       "</p>" +
       '<div class="player-rating-chart">' + chartBars + "</div>" +
+      skillGridHtml(entry.bestAppearance) +
       '<div class="player-appearances-list">' + rows + "</div>" +
       '<button class="secondary" id="btn-player-profile-back">&raquo; ' + window.I18n.t("playerSearch.backToResults") + "</button>";
 

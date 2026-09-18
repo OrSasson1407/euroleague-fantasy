@@ -128,7 +128,7 @@
       chip.innerHTML =
         '<span class="h2h-slot-type">' + slot.label + "</span>" +
         (slot.pick ? '<span class="h2h-slot-player">' + slot.pick.player +
-          window.RatingTag.html(slot.pick.rating) +
+          window.RatingTag.html(slot.pick.rating) + window.PlayerMeta.html(slot.pick) +
           "</span>" : "");
       container.appendChild(chip);
     });
@@ -183,6 +183,7 @@
       btn.innerHTML = player.name +
         (player.position ? '<span class="pos-tag">' + player.position + "</span>" : "") +
         window.RatingTag.html(player.rating) +
+        window.PlayerMeta.html(player) +
         (taken ? '<span class="taken-tag">' + window.I18n.t("common.takenTag") + "</span>" : (slotFull ? '<span class="taken-tag">' + window.I18n.t("common.slotFullTag") + "</span>" : ""));
       if (!disabled) {
         btn.addEventListener("click", function () {
@@ -246,17 +247,15 @@
     var side = state.sides[sideIndex];
     state.pickedNames.add(normalizeName(player.name));
     side.needs[player.position]--;
-    side.picks.push({
+    // Spreads every field off the source record (offRating/defRating/height/
+    // age/jerseyNumber/the 23 skill attributes/archetype) so play-system fit
+    // bonuses see real per-player data instead of just the base rating.
+    side.picks.push(Object.assign({}, player, {
       player: player.name,
-      position: player.position,
-      rating: player.rating,
-      offRating: player.offRating,
-      defRating: player.defRating,
-      archetype: player.archetype,
       team: combo.team,
       season: combo.season,
       slotLabel: POS_LABEL[player.position],
-    });
+    }));
     state.turn++;
     renderTurn();
   }
@@ -519,7 +518,7 @@
       card.innerHTML =
         '<div class="name">' + pick.player +
           (pick.position ? '<span class="pos-tag">' + pick.position + "</span>" : "") +
-          window.RatingTag.html(pick.rating) + "</div>" +
+          window.RatingTag.html(pick.rating) + window.PlayerMeta.html(pick) + "</div>" +
         '<div class="meta">' + pick.slotLabel + " &middot; " + pick.team + " " + formatSeason(pick.season) + "</div>" +
         '<div class="meta">' +
           (typeof pick.offRating === "number" ? '<span class="off-tag">' + window.I18n.t("common.offAbbr") + " " + pick.offRating + "</span>" : "") +
@@ -779,7 +778,7 @@
       chip.innerHTML =
         '<span class="h2h-slot-type">' + slot.label + "</span>" +
         (slot.pick ? '<span class="h2h-slot-player">' + slot.pick.player +
-          window.RatingTag.html(slot.pick.rating) +
+          window.RatingTag.html(slot.pick.rating) + window.PlayerMeta.html(slot.pick) +
           '<span class="cost-tag">$' + slot.pick.price + "</span>" +
           "</span>" : "");
       container.appendChild(chip);
@@ -801,7 +800,7 @@
       document.getElementById("h2h-auction-player-name").innerHTML =
         cp.player.name +
         (cp.player.position ? '<span class="pos-tag">' + cp.player.position + "</span>" : "") +
-        window.RatingTag.html(cp.player.rating);
+        window.RatingTag.html(cp.player.rating) + window.PlayerMeta.html(cp.player);
       document.getElementById("h2h-auction-player-meta").textContent =
         cp.combo.team + " &middot; " + seasonLabel(cp.combo.season);
     }
@@ -855,7 +854,7 @@
       card.className = "squad-player-card";
       card.innerHTML =
         '<div class="name">' + pick.player +
-          window.RatingTag.html(pick.rating) +
+          window.RatingTag.html(pick.rating) + window.PlayerMeta.html(pick) +
           '<span class="cost-tag">$' + pick.price + "</span></div>" +
         '<div class="meta">' + pick.slotLabel + " &middot; " + pick.team + " " + formatSeason(pick.season) + "</div>";
       grid.appendChild(card);
@@ -965,18 +964,13 @@
     }
     side.budget -= price;
     side.needs[cp.player.position]--;
-    side.picks.push({
+    side.picks.push(Object.assign({}, cp.player, {
       player: cp.player.name,
-      position: cp.player.position,
-      rating: cp.player.rating,
-      offRating: cp.player.offRating,
-      defRating: cp.player.defRating,
-      archetype: cp.player.archetype,
       team: cp.combo.team,
       season: cp.combo.season,
       slotLabel: POS_LABEL[cp.player.position],
       price: price,
-    });
+    }));
     state.pickedNames.add(normalizeName(cp.player.name));
     auction.roundStarter = 1 - auction.roundStarter;
     advanceAuction();

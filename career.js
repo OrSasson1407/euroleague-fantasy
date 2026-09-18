@@ -333,6 +333,82 @@
     return Math.round(base + bellRandom(20));
   }
 
+  // A one-time height for the custom character, same position-biased range
+  // as scripts/migrate_data.js uses for historical players - set once at
+  // creation (career.js has no dataset record to read a real height from)
+  // and never changes afterward.
+  var CAREER_HEIGHT_RANGE = { Guard: [1.83, 1.98], Forward: [1.96, 2.08], Center: [2.03, 2.18] };
+  function randomHeightForPosition(position) {
+    var range = CAREER_HEIGHT_RANGE[position] || [1.9, 2.05];
+    return Math.round((range[0] + Math.random() * (range[1] - range[0])) * 100) / 100;
+  }
+
+  // Mirrors scripts/add_player_attributes.js's position-bias/spread shape,
+  // but computed fresh from the character's CURRENT offRating/defRating/age
+  // every time it's displayed (not persisted) so it always reflects growth/
+  // decline instead of going stale season to season.
+  var CAREER_SKILL_SPEC = [
+    { id: "insideScoring", base: "off", bias: { Guard: -6, Forward: 2, Center: 8 } },
+    { id: "midRange", base: "off", bias: { Guard: 4, Forward: 2, Center: -6 } },
+    { id: "threePoint", base: "off", bias: { Guard: 8, Forward: 0, Center: -14 } },
+    { id: "freeThrow", base: "off", bias: { Guard: 4, Forward: 0, Center: -4 } },
+    { id: "dunk", base: "ovr", bias: { Guard: -8, Forward: 4, Center: 10 } },
+    { id: "layup", base: "off", bias: { Guard: 4, Forward: 0, Center: -2 } },
+    { id: "postScoring", base: "off", bias: { Guard: -14, Forward: 2, Center: 12 } },
+    { id: "passing", base: "off", bias: { Guard: 8, Forward: 0, Center: -8 } },
+    { id: "ballHandling", base: "off", bias: { Guard: 10, Forward: -2, Center: -14 } },
+    { id: "courtVision", base: "off", bias: { Guard: 8, Forward: 0, Center: -6 } },
+    { id: "decisionMaking", base: "ovr", bias: { Guard: 0, Forward: 0, Center: 0 } },
+    { id: "pickAndRoll", base: "ovr", bias: { Guard: 4, Forward: 2, Center: 4 } },
+    { id: "offBallMovement", base: "off", bias: { Guard: 2, Forward: 4, Center: -2 } },
+    { id: "screening", base: "ovr", bias: { Guard: -8, Forward: 4, Center: 10 } },
+    { id: "offensiveRebounding", base: "ovr", bias: { Guard: -10, Forward: 4, Center: 14 } },
+    { id: "defensiveRebounding", base: "def", bias: { Guard: -10, Forward: 4, Center: 14 } },
+    { id: "perimeterDefense", base: "def", bias: { Guard: 6, Forward: 0, Center: -8 } },
+    { id: "interiorDefense", base: "def", bias: { Guard: -10, Forward: 2, Center: 10 } },
+    { id: "speed", base: "flat70", bias: { Guard: 10, Forward: 0, Center: -14 } },
+    { id: "acceleration", base: "flat70", bias: { Guard: 9, Forward: 0, Center: -12 } },
+    { id: "agility", base: "flat70", bias: { Guard: 8, Forward: 0, Center: -10 } },
+    { id: "strength", base: "flat65", bias: { Guard: -10, Forward: 4, Center: 12 } },
+    { id: "vertical", base: "flat65", bias: { Guard: 2, Forward: 8, Center: 6 } },
+    { id: "stamina", base: "flat70", bias: { Guard: 0, Forward: 0, Center: 0 } },
+  ];
+
+  // Same grouping/locale keys as player_profile.js's skill grid (shared keys,
+  // duplicated function - each mode module stays self-contained here, same
+  // convention as this file's other small local helpers).
+  var CAREER_SKILL_GROUPS = [
+    { key: "scoring", attrs: ["insideScoring", "midRange", "threePoint", "freeThrow", "dunk", "layup", "postScoring"] },
+    { key: "playmaking", attrs: ["passing", "ballHandling", "courtVision", "decisionMaking", "pickAndRoll", "offBallMovement", "screening"] },
+    { key: "rebounding", attrs: ["offensiveRebounding", "defensiveRebounding"] },
+    { key: "defense", attrs: ["perimeterDefense", "interiorDefense"] },
+    { key: "athleticism", attrs: ["speed", "acceleration", "agility", "strength", "vertical", "stamina"] },
+  ];
+
+  function careerSkillGridHtml(skills) {
+    var groups = CAREER_SKILL_GROUPS.map(function (g) {
+      var rows = g.attrs.map(function (attr) {
+        return '<div class="player-skill-row"><span class="player-skill-label">' + window.I18n.t("skills." + attr) + "</span>" + window.RatingTag.html(skills[attr]) + "</div>";
+      }).join("");
+      return '<div class="player-skill-group"><h4>' + window.I18n.t("playerSearch.skillGroups." + g.key) + "</h4>" + rows + "</div>";
+    }).join("");
+    return '<div class="player-skill-grid">' + groups + "</div>";
+  }
+
+  function deriveSkillAttributes(offRating, defRating, position, age) {
+    var ovr = (offRating + defRating) / 2;
+    var ageFactor = clamp((28 - age) * 0.8, -10, 8);
+    var result = {};
+    CAREER_SKILL_SPEC.forEach(function (spec) {
+      var base = spec.base === "off" ? offRating : spec.base === "def" ? defRating
+        : spec.base === "ovr" ? ovr : spec.base === "flat70" ? 70 : 65;
+      var bias = spec.bias[position] || 0;
+      var athletic = (spec.base === "flat70" || spec.base === "flat65") ? ageFactor : (spec.id === "dunk" ? ageFactor * 0.5 : 0);
+      result[spec.id] = clamp(Math.round(base + bias + athletic), 30, 99);
+    });
+    return result;
+  }
+
   var CAREER_POS_REB_WEIGHT = { Guard: 2.5, Forward: 5, Center: 8 }; // per 36 minutes, 4 fallback for null position
   var CAREER_POS_AST_WEIGHT = { Guard: 5, Forward: 2.5, Center: 1.5 }; // per 36 minutes, 3 fallback for null position
 
@@ -539,6 +615,7 @@
       difficulty: createState.difficulty,
       offRating: 40 + createState.offPoints + (createState.background.offRatingBonus || 0),
       defRating: 40 + (20 - createState.offPoints) + (createState.background.defRatingBonus || 0),
+      height: randomHeightForPosition(createState.position),
       age: 16,
       phase: "academy",
       team: null,
@@ -1314,7 +1391,7 @@
     var content = document.getElementById("career-hub-content");
     content.innerHTML =
       '<div class="career-event-card">' +
-      "<p>" + window.I18n.t("career.statsNameLine", { name: career.name, position: career.position, age: career.age }) + "</p>" +
+      "<p>" + window.I18n.t("career.statsNameLine", { name: career.name, position: career.position, age: career.age, height: (typeof career.height === "number" ? career.height.toFixed(2) : "-") }) + "</p>" +
       "<p>" + window.I18n.t("career.statsSeasonsLine", { academySeasons: academySeasons, proSeasons: totals.proSeasons }) + "</p>" +
       "<p>" + window.I18n.t("career.statsWinsLine", { wins: totals.wins, ppg: avgPpg }) + "</p>" +
       "<p>" + window.I18n.t("career.statsTrophiesLine", { trophies: totals.trophies, peak: totals.peakRating }) + "</p>" +
@@ -1322,6 +1399,7 @@
       "<p>" + window.I18n.t("career.statsCurrentTeamLine", { team: (career.team ? career.team.label : "-") }) + (career.fanFavorite ? " &middot; ❤️ " + window.I18n.t("career.fanFavoriteTag") : "") + "</p>" +
       "<p>" + window.I18n.t("career.statsArchetypeLine", { archetype: window.RatingArchetypesAPI.label(career.archetype) + (career.secondaryArchetype ? " + " + window.RatingArchetypesAPI.label(career.secondaryArchetype) : "") }) + "</p>" +
       "</div>" +
+      careerSkillGridHtml(deriveSkillAttributes(career.offRating, career.defRating, career.position, career.age)) +
       '<div class="final-actions"><button id="btn-career-stats-back">' + window.I18n.t("career.backBtn") + "</button></div>";
 
     document.getElementById("btn-career-stats-back").addEventListener("click", returnFn);
