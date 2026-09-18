@@ -169,7 +169,7 @@
   function courtChipHtml(z, benchClass) {
     var minutes = z.box && typeof z.box.minutes === "number" ? z.box.minutes : null;
     var pct = minutes ? Math.max(4, Math.min(100, Math.round((minutes / 40) * 100))) : 0;
-    var posLetter = (z.pos || "?").charAt(0);
+    var posLetter = (z.pos || (z.player && z.player.position) || "?").charAt(0);
     return '<div class="court-chip' + (benchClass ? " bench" : "") + '">' +
       '<span class="court-chip-badge">' + posLetter + "</span>" +
       '<span class="court-chip-name">' + (z.player.name || z.player.player || "") + "</span>" +
@@ -177,13 +177,20 @@
       "</div>";
   }
 
+  // Renders the 2-2-1 formation (2 forwards, center + guard, guard) from an
+  // already-picked { Guard, Forward, Center } lineup object - shared by the
+  // final-snapshot half (below) and the live minute-by-minute tick view.
+  function courtRowsFromLineup(lineup) {
+    return (
+      '<div class="court-row">' + lineup.Forward.map(function (z) { return courtChipHtml(z); }).join("") + "</div>" +
+      '<div class="court-row">' + (lineup.Center[0] ? courtChipHtml(lineup.Center[0]) : "") + (lineup.Guard[0] ? courtChipHtml(lineup.Guard[0]) : "") + "</div>" +
+      '<div class="court-row">' + (lineup.Guard[1] ? courtChipHtml(lineup.Guard[1]) : "") + "</div>"
+    );
+  }
+
   function courtHalfHtml(label, players, box) {
     var slots = buildLineupSlots(players, box);
-    var s = slots.selected;
-    var rows =
-      '<div class="court-row">' + s.Forward.map(function (z) { return courtChipHtml(z); }).join("") + "</div>" +
-      '<div class="court-row">' + (s.Center[0] ? courtChipHtml(s.Center[0]) : "") + (s.Guard[0] ? courtChipHtml(s.Guard[0]) : "") + "</div>" +
-      '<div class="court-row">' + (s.Guard[1] ? courtChipHtml(s.Guard[1]) : "") + "</div>";
+    var rows = courtRowsFromLineup(slots.selected);
     var notable = slots.bench.filter(function (z) { return z.box && z.box.minutes >= COURT_SUB_MINUTES_THRESHOLD; });
     var subsNote = notable.length
       ? '<div class="court-lineup-subs">🔄 ' + window.I18n.t("common.alsoPlayedLine", {
@@ -207,7 +214,29 @@
     );
   }
 
-  window.CourtLineup = { html: courtLineupHtml };
+  // Renders one already-picked-per-quarter lineup, no bench/subs note (the
+  // lineup itself changing between ticks IS the visible substitution).
+  function courtHalfFromLineupHtml(label, lineup) {
+    return '<div class="court-half"><div class="court-half-label">' + label + "</div>" + courtRowsFromLineup(lineup) + "</div>";
+  }
+
+  // The live minute-by-minute reveal view - myLineup/oppLineup are one
+  // entry from league.js's buildGameTimeline() ticks ({ Guard, Forward,
+  // Center }), myScore/oppScore the running score at this tick, minute/
+  // totalMinutes for the clock line.
+  function courtLineupLiveHtml(myLabel, myLineup, oppLabel, oppLineup, myScore, oppScore, minute, totalMinutes) {
+    return (
+      '<div class="court-lineup">' +
+      '<div class="court-lineup-header"><span>' + myLabel + '</span><span class="court-lineup-vs">VS</span><span>' + oppLabel + "</span></div>" +
+      '<div class="court-lineup-clock">' + window.I18n.t("league.liveMinuteScore", { minute: minute, total: totalMinutes, myScore: myScore, oppScore: oppScore }) + "</div>" +
+      '<div class="court-lineup-courts">' +
+      courtHalfFromLineupHtml(myLabel, myLineup) +
+      courtHalfFromLineupHtml(oppLabel, oppLineup) +
+      "</div></div>"
+    );
+  }
+
+  window.CourtLineup = { html: courtLineupHtml, htmlLive: courtLineupLiveHtml };
 
   // ---------- Effects on/off preference ----------
   // A plain device-level UI preference (not a personal record), so it's

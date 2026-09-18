@@ -597,6 +597,8 @@ window.LOCALE_EN = {
     missedPlayoffs: "the playoffs",
     notReachedTitle: "Your squad didn't reach {{missed}}. Playoff champion: {{champion}}",
     overtimeLabel: "(OT x{{count}})",
+    liveMinuteScore: "Minute {{minute}}/{{total}} &middot; {{myScore}} - {{oppScore}}",
+    skipToResultBtn: "⏭ Skip to Result",
     statsBtn: "Stats Leaderboard",
     statsTitle: "Stats Leaderboard",
     statsTabScoring: "Scoring",

@@ -596,6 +596,8 @@ window.LOCALE_HE = {
     missedPlayoffs: "לפלייאוף",
     notReachedTitle: "ההרכב שלכם לא הגיע {{missed}}. אלופת הפלייאוף: {{champion}}",
     overtimeLabel: "(הארכה x{{count}})",
+    liveMinuteScore: "דקה {{minute}}/{{total}} &middot; {{myScore}} - {{oppScore}}",
+    skipToResultBtn: "⏭ דלגו לתוצאה",
     statsBtn: "לוח הסטטיסטיקות",
     statsTitle: "לוח הסטטיסטיקות",
     statsTabScoring: "קליעה",

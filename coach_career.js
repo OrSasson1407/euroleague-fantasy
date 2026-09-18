@@ -1091,6 +1091,8 @@
     pendingFixtureList = window.LeagueSimCore.buildFixtureList(teams);
     pendingFixturePointer = 0;
     lastCoachLiveGame = null;
+    if (coachLiveTickTimer) { clearInterval(coachLiveTickTimer); coachLiveTickTimer = null; }
+    pendingCoachRevealGame = null;
 
     if (mode === "live") {
       liveOpponentIndex = 0;
@@ -1136,12 +1138,19 @@
           lastCoachLiveGame.oppLabel, lastCoachLiveGame.oppPlayers, lastCoachLiveGame.oppBox
         )
       : "";
-    content.innerHTML = lineupHtml + '<div class="league-live-log" id="coach-live-log"></div>' +
-      '<div class="final-actions"><button id="btn-coach-live-next">' + window.I18n.t("h2h.nextGameBtn") + "</button></div>";
+    content.innerHTML = '<div id="coach-live-lineup">' + lineupHtml + "</div>" +
+      '<div class="league-live-log" id="coach-live-log"></div>' +
+      '<div class="final-actions"><button id="btn-coach-live-next">' +
+        (coachLiveTickTimer ? window.I18n.t("league.skipToResultBtn") : window.I18n.t("h2h.nextGameBtn")) +
+      "</button></div>";
     var logEl = document.getElementById("coach-live-log");
     logEl.innerHTML = (window.__coachLiveRows || []).join("");
 
     document.getElementById("btn-coach-live-next").addEventListener("click", function () {
+      if (coachLiveTickTimer) {
+        skipCoachLiveTick();
+        return;
+      }
       if (pendingFixturePointer >= pendingFixtureList.length) {
         finishSeasonSim();
         return;
@@ -1275,12 +1284,65 @@
 
     var myBox = st.iAmHome ? result.homeBox : result.awayBox;
     var oppBox = st.iAmHome ? result.awayBox : result.homeBox;
-    lastCoachLiveGame = {
-      myLabel: st.mine.label, myPlayers: st.mine.players, myBox: myBox,
-      oppLabel: opponent.label, oppPlayers: opponent.players, oppBox: oppBox,
+    var game = {
+      myLabel: st.mine.label, myPlayers: st.mine.players, myBox: myBox, myScore: myScore,
+      oppLabel: opponent.label, oppPlayers: opponent.players, oppBox: oppBox, oppScore: oppScore,
+      otPeriods: result.otPeriods, opponentLabel: opponent.label, won: myScore > oppScore,
     };
+    lastCoachLiveGame = game;
 
     pendingHalftimeState = null;
+    startCoachLiveTick(game);
+  }
+
+  var coachLiveTickTimer = null; // active while a game is being revealed minute-by-minute; a second click during this skips to the end
+  var pendingCoachRevealGame = null;
+
+  // Reveals an already-fully-simulated game one minute at a time (2s/tick) -
+  // mirrors league.js's startLiveTick(), reusing the same shared
+  // LeagueSimCore.buildGameTimeline() so both live viewers behave identically.
+  function startCoachLiveTick(game) {
+    pendingCoachRevealGame = game;
+    var timeline = window.LeagueSimCore.buildGameTimeline(game.myPlayers, game.myBox, game.myScore, game.oppPlayers, game.oppBox, game.oppScore, game.otPeriods);
+    var idx = 0;
+    // Sentinel so renderLiveSeason()'s button-text check (below) already
+    // shows "skip" on this render, before the real interval id exists yet.
+    coachLiveTickTimer = true;
+
+    function showTick() {
+      var tick = timeline[idx];
+      var lineupEl = document.getElementById("coach-live-lineup");
+      if (lineupEl) {
+        lineupEl.innerHTML = window.CourtLineup.htmlLive(
+          game.myLabel, tick.lineupA, game.oppLabel, tick.lineupB,
+          tick.scoreA, tick.scoreB, tick.minute, timeline.length
+        );
+      }
+      idx++;
+      if (idx >= timeline.length) {
+        clearInterval(coachLiveTickTimer);
+        coachLiveTickTimer = null;
+        finishRevealedCoachGame(game);
+      }
+    }
+
+    // renderLiveSeason() needs to already be showing #coach-live-lineup
+    // before the first tick paints - re-render now, before ticking starts.
+    renderLiveSeason();
+    showTick();
+    coachLiveTickTimer = setInterval(showTick, 2000);
+  }
+
+  function skipCoachLiveTick() {
+    if (!coachLiveTickTimer) return;
+    clearInterval(coachLiveTickTimer);
+    coachLiveTickTimer = null;
+    finishRevealedCoachGame(pendingCoachRevealGame);
+  }
+
+  function finishRevealedCoachGame(game) {
+    pendingCoachRevealGame = null;
+    appendLiveLogRow(game.oppLabel, game.myScore, game.oppScore, game.won);
     afterMyLiveGame();
   }
 

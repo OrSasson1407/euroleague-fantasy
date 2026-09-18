@@ -1163,6 +1163,14 @@ footer {
   opacity: 0.8;
 }
 
+.court-lineup-clock {
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin-bottom: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
 .court-lineup-courts {
   display: grid;
   grid-template-columns: 1fr 1fr;

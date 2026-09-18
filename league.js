@@ -616,6 +616,8 @@
     seasonPlayerStats = {};
     fixtureList = buildFixtureList(teams);
     fixturePointer = 0;
+    if (liveTickTimer) { clearInterval(liveTickTimer); liveTickTimer = null; }
+    pendingRevealGame = null;
 
     if (mode === "live") {
       fixturePointer = advanceFixtures(fixtureList, 0, "live", recordBoxScore).pointer;
@@ -863,7 +865,14 @@
     }
   }
 
+  var liveTickTimer = null; // active while a game is being revealed minute-by-minute; a second click during this skips to the end
+  var pendingRevealGame = null; // the fixtureToMyGame() result currently being ticked through
+
   function liveNext() {
+    if (liveTickTimer) {
+      skipLiveTick();
+      return;
+    }
     if (liveIndex >= myOpponents.length) {
       finalizeStandings(lastTeams);
       renderLeagueTable(lastStandings);
@@ -875,7 +884,47 @@
     }
     var fixture = fixtureList[fixturePointer];
     simulateFixture(fixture, recordBoxScore);
-    var game = fixtureToMyGame(fixture);
+    startLiveTick(fixtureToMyGame(fixture));
+  }
+
+  // Reveals an already-fully-simulated game one minute at a time (2s/tick),
+  // updating the running score and court lineup - the game itself was
+  // already decided by simulateFixture() above, this is purely a reveal
+  // animation over that fixed result.
+  function startLiveTick(game) {
+    pendingRevealGame = game;
+    var timeline = buildGameTimeline(game.myPlayers, game.myBox, game.myScore, game.oppPlayers, game.oppBox, game.oppScore, game.otPeriods);
+    var idx = 0;
+    var nextBtn = document.getElementById("btn-league-live-next");
+    nextBtn.textContent = window.I18n.t("league.skipToResultBtn");
+
+    function showTick() {
+      var tick = timeline[idx];
+      document.getElementById("league-live-lineup").innerHTML = window.CourtLineup.htmlLive(
+        lastTeams[0].label, tick.lineupA, game.opponent.label, tick.lineupB,
+        tick.scoreA, tick.scoreB, tick.minute, timeline.length
+      );
+      idx++;
+      if (idx >= timeline.length) {
+        clearInterval(liveTickTimer);
+        liveTickTimer = null;
+        finishRevealedGame(game);
+      }
+    }
+
+    showTick();
+    liveTickTimer = setInterval(showTick, 2000);
+  }
+
+  function skipLiveTick() {
+    if (!liveTickTimer) return;
+    clearInterval(liveTickTimer);
+    liveTickTimer = null;
+    finishRevealedGame(pendingRevealGame);
+  }
+
+  function finishRevealedGame(game) {
+    pendingRevealGame = null;
     lastMyGames.push(game);
     checkCloseWinAchievement(game);
     liveIndex++;
@@ -1405,6 +1454,98 @@
     });
   }
 
+  // ---------- Live minute-by-minute reveal (League's "game by game" viewer
+  // and Coach Career's live season) ----------
+  // There's no possession-by-possession simulation - a game's final score and
+  // box score are already fully known the moment simulateFullGame() returns.
+  // This builds a minute-by-minute REVEAL of that already-decided result (so
+  // the running score always lands exactly on the real quarter totals) plus
+  // an approximate rotation: each quarter, the 5 court slots go to whoever
+  // still has the most "remaining minutes" budget from their final computed
+  // total, so a bench player with real minutes naturally appears in a later
+  // quarter once a starter's budget is spent - not a fake random shuffle.
+
+  // Splits one quarter's point total into per-minute increments that sum to
+  // it exactly (random weights, same shape as distributeStat's remainder trick).
+  function splitIntoMinutes(quarterTotal, minuteCount) {
+    var weights = [];
+    for (var i = 0; i < minuteCount; i++) weights.push(0.4 + Math.random());
+    var sum = 0;
+    weights.forEach(function (w) { sum += w; });
+    var values = [];
+    var running = 0;
+    for (var i = 0; i < minuteCount; i++) {
+      if (i === minuteCount - 1) {
+        values.push(Math.max(0, quarterTotal - running));
+      } else {
+        var v = Math.max(0, Math.round((quarterTotal * weights[i]) / sum));
+        values.push(v);
+        running += v;
+      }
+    }
+    return values;
+  }
+
+  // One entry per game-minute (40, +5 per OT period) - the point total
+  // scored in that specific minute.
+  function buildMinuteScores(quarters, otPeriods) {
+    var perMinute = [];
+    for (var i = 0; i < 3; i++) perMinute = perMinute.concat(splitIntoMinutes(quarters[i], 10));
+    var lastQuarterMinutes = 10 + (otPeriods || 0) * 5;
+    perMinute = perMinute.concat(splitIntoMinutes(quarters[3], lastQuarterMinutes));
+    return perMinute;
+  }
+
+  // OT minutes (beyond 40) all share the 4th quarter's lineup.
+  function quarterIndexForMinute(minute) {
+    return Math.min(3, Math.floor((minute - 1) / 10));
+  }
+
+  function buildQuarterLineups(players, box) {
+    var byPos = { Guard: [], Forward: [], Center: [] };
+    (players || []).forEach(function (p, i) {
+      if (!byPos[p.position]) return;
+      var minutes = box && box[i] && typeof box[i].minutes === "number" ? box[i].minutes : 0;
+      byPos[p.position].push({ player: p, box: box ? box[i] : null, remaining: minutes });
+    });
+    var need = { Guard: 2, Forward: 2, Center: 1 };
+    var quarters = [];
+    for (var q = 0; q < 4; q++) {
+      var lineup = { Guard: [], Forward: [], Center: [] };
+      Object.keys(need).forEach(function (pos) {
+        var ordered = byPos[pos].slice().sort(function (a, b) { return b.remaining - a.remaining; });
+        for (var slot = 0; slot < need[pos] && slot < ordered.length; slot++) lineup[pos].push(ordered[slot]);
+      });
+      Object.keys(lineup).forEach(function (pos) {
+        lineup[pos].forEach(function (z) { z.remaining = Math.max(0, z.remaining - 10); });
+      });
+      quarters.push(lineup);
+    }
+    return quarters;
+  }
+
+  // The full minute-by-minute reveal timeline for one already-simulated game.
+  // playersA/boxA vs playersB/boxB are generic (not home/away or mine/opp
+  // specific) - the caller maps ticks.scoreA/lineupA etc. to whichever side
+  // it needs.
+  function buildGameTimeline(playersA, boxA, scoreA, playersB, boxB, scoreB, otPeriods) {
+    var quartersA = splitIntoQuarters(scoreA);
+    var quartersB = splitIntoQuarters(scoreB);
+    var minuteScoresA = buildMinuteScores(quartersA, otPeriods);
+    var minuteScoresB = buildMinuteScores(quartersB, otPeriods);
+    var lineupsA = buildQuarterLineups(playersA, boxA);
+    var lineupsB = buildQuarterLineups(playersB, boxB);
+    var ticks = [];
+    var cumA = 0, cumB = 0;
+    for (var m = 0; m < minuteScoresA.length; m++) {
+      cumA += minuteScoresA[m];
+      cumB += minuteScoresB[m];
+      var qIdx = quarterIndexForMinute(m + 1);
+      ticks.push({ minute: m + 1, scoreA: cumA, scoreB: cumB, lineupA: lineupsA[qIdx], lineupB: lineupsB[qIdx] });
+    }
+    return ticks;
+  }
+
   // The full per-game resolution: home court + streak confidence + foul
   // trouble adjust each side's effective offense/defense, simulateMatchScore
   // rolls the base result, a close game gives clutch-archetype players a
@@ -1725,5 +1866,6 @@
     computeEffectiveStrengths: computeEffectiveStrengths,
     applyClutchAdjustment: applyClutchAdjustment,
     resolveOvertimeIfTied: resolveOvertimeIfTied,
+    buildGameTimeline: buildGameTimeline,
   };
 })();
